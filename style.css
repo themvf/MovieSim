@@ -2459,3 +2459,60 @@ input[type="checkbox"] {
     scroll-behavior: auto !important;
   }
 }
+
+/* Once a studio has projects, the slate takes precedence over the welcome art. */
+.compact-hero {
+  min-height: 150px;
+}
+.compact-hero .hero-copy {
+  padding: 20px 26px;
+}
+.compact-hero .hero-copy h2 {
+  font-size: 27px;
+  margin: 9px 0;
+}
+.compact-hero .hero-copy p {
+  margin-bottom: 0;
+}
+.compact-hero .hero-art svg {
+  min-width: 0;
+  width: 100%;
+  height: auto;
+  right: 0;
+}
+@media (max-width: 650px) {
+  .compact-hero {
+    min-height: 130px;
+    display: block;
+  }
+  .compact-hero .hero-copy {
+    padding: 18px;
+    width: 78%;
+  }
+  .compact-hero .hero-copy h2 {
+    font-size: 24px;
+  }
+  .compact-hero .hero-copy p {
+    font-size: 9px;
+  }
+  .compact-hero .hero-copy .light-button {
+    font-size: 10px;
+    padding: 7px 0;
+  }
+  .compact-hero .hero-art {
+    left: 63%;
+    top: 0;
+    height: 100%;
+    opacity: 0.6;
+  }
+  .compact-hero .hero-art svg {
+    width: 400px;
+    right: -130px;
+  }
+  .compact-hero .hero-art:after {
+    background: linear-gradient(90deg, #263b3d, transparent);
+  }
+  .compact-hero .art-caption {
+    display: none;
+  }
+}
