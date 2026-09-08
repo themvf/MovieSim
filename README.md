@@ -2,6 +2,8 @@
 
 A movie studio management game designed for iOS, with a web prototype planned for testing.
 
+**[Play the five-year demo](https://themvf.github.io/MovieSim/)** — works in desktop and phone browsers. Progress saves on your device.
+
 Build a studio over five years: acquire scripts, discover actors, hire directors, finance productions, market and distribute movies, create sequels, and pursue both profits and awards.
 
 ## Design
