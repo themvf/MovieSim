@@ -57,10 +57,18 @@ const fs = require("node:fs");
         (await page.locator(".casting-list.shortlist > article").count()) !== 3
       )
         throw Error("Expected three shortlisted actors");
-      const firstThree = await page.locator(".casting-card h3").allTextContents();
+      const firstThree = await page
+        .locator(".casting-card h3")
+        .allTextContents();
       await click('[data-action="moreCasting"]');
       const expanded = await page.locator(".casting-card h3").allTextContents();
-      if (expanded.length !== 6 || expanded.slice(0,3).join() !== firstThree.join()) throw Error("More must append three actors and preserve first candidates");
+      if (
+        expanded.length !== 6 ||
+        expanded.slice(0, 3).join() !== firstThree.join()
+      )
+        throw Error(
+          "More must append three actors and preserve first candidates",
+        );
       const cashBefore = await page.evaluate(
         () => JSON.parse(localStorage.getItem("moviesim-save-v1")).cash,
       );
@@ -156,14 +164,29 @@ const fs = require("node:fs");
     !(await page.locator("dialog").innerText()).includes("Choose distribution")
   )
     throw Error("Missing distribution action heading");
-  await page.screenshot({path:"test-results/v08-distribution.png"});
+  await page.screenshot({ path: "test-results/v08-distribution.png" });
   await click('[data-action="dealReview"][data-deal="partner"]');
   await click('[data-action="distribute"][data-deal="partner"]');
   await click('[data-action="close"]');
   for (let i = 0; i < 3; i++) await click('[data-action="next"]');
   await page.waitForSelector(".opening-reveal");
-  const teamCount=await page.evaluate(()=>JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0].contracts.length+1);
-  if(await page.locator(".personal-recap .career-headline").count()!==teamCount) throw Error("Every cast member and director must have a career result");
+  const teamCount = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0].contracts
+        .length + 1,
+  );
+  if (
+    (await page.locator(".personal-recap .career-headline").count()) !==
+    teamCount
+  )
+    throw Error("Every cast member and director must have a career result");
+  const careerButton = page.locator('[data-action="viewCareers"]');
+  if (!(await careerButton.isVisible()))
+    throw Error("Missing opening career entry point");
+  await careerButton.click();
+  if ((await page.locator(".career-headline").count()) !== teamCount)
+    throw Error("Career summary must open whole team");
+  await click('[data-action="back"]');
   await page.locator(".opening-reveal > details > summary").click();
   await page.waitForSelector(".expectations-review");
   if ((await page.locator(".comparison-list").count()) !== 1)
@@ -178,9 +201,14 @@ const fs = require("node:fs");
   if (!(await page.locator(".comparison-list .rating-range").count()))
     throw Error("Missing colored ranges");
   await page.waitForSelector(".talent-review");
-  const badgeCount=await page.locator(".expectation-status").count();
-  const castCount=await page.evaluate(()=>JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0].contracts.length);
-  if (badgeCount !== castCount+2) throw Error("Missing opening or talent outcome badge");
+  const badgeCount = await page.locator(".expectation-status").count();
+  const castCount = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0].contracts
+        .length,
+  );
+  if (badgeCount !== castCount + 2)
+    throw Error("Missing opening or talent outcome badge");
   const performanceText = await page.locator(".talent-review").innerText();
   if (
     !performanceText.includes("Director") ||
@@ -265,6 +293,20 @@ const fs = require("node:fs");
     sequel.contracts.length !== original.contracts.length
   )
     throw Error("Original team not rehired");
+  if (
+    (await page.locator(".attached-team .award-row").count()) !==
+    original.contracts.length + 1
+  )
+    throw Error("Development must confirm attached team");
+  await page.reload();
+  await page
+    .locator('[data-action="movie"][data-id="' + sequel.id + '"]')
+    .click();
+  if (
+    (await page.locator(".attached-team .award-row").count()) !==
+    original.contracts.length + 1
+  )
+    throw Error("Attached team must survive reload");
   if (errors.length) throw Error(errors.join("\n"));
   console.log(
     JSON.stringify({

@@ -1,6 +1,6 @@
-import * as E from "./engine.js?v=0.8.0";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.8.0";
-const BUILD = "0.8.0";
+import * as E from "./engine.js?v=0.8.1";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.8.1";
+const BUILD = "0.8.1";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
   dialog = document.querySelector("#dialog");
@@ -162,7 +162,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.8.0 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.8.1 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
   <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : s.movies.some((m) => m.stage === "ready" && m.release == null) ? "Choose release date →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main><div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "ACQUISITIONS & DEVELOPMENT" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Create original", "original", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">Your five-year story is complete. Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
@@ -553,9 +553,32 @@ function careerResults(m) {
       .join("") || "<p>No career changes recorded for this earlier film.</p>"
   }</section>`;
 }
+function openingContext(m) {
+  const f = m.expectations,
+    forecast = !f
+      ? "No saved forecast"
+      : m.opening < f.low
+        ? "Below your forecast"
+        : m.opening > f.high
+          ? "Exceeded your forecast"
+          : "Met your forecast";
+  const changes = m.careerChanges ?? [],
+    gained = changes.filter(
+      (c) => Math.round(c.after) > Math.round(c.before),
+    ).length,
+    lost = changes.filter(
+      (c) => Math.round(c.after) < Math.round(c.before),
+    ).length;
+  return `<div class="opening-context"><p><strong>${forecast}</strong><br>${E.boxOfficeStatus(m).label} compared with other ${E.scopeName(m.scale).toLowerCase()}s.</p><p>Studio receipts so far: <strong>${E.money(m.receipts)}</strong></p>${button(`Cast careers: ${gained} gained · ${lost} lost · ${changes.length - gained - lost} unchanged →`, "viewCareers", `data-id="${m.id}"`, "outline full")}</div>`;
+}
+function attachedTeam(m) {
+  const team = [...m.contracts, ...(m.director ? [m.director] : [])];
+  if (!team.length) return "";
+  return `<section class="panel attached-team"><h3>Returning team attached</h3>${team.map((c) => `<div class="award-row"><span>${h(E.person(s, c.id).name)}<small class="block">${c === m.director ? "Director" : h(m.roles[c.role])}</small></span><strong>${E.money(c.fee)}<small class="block">${Math.round((c.grossShare ?? 0) * 100)}% of studio ticket receipts</small></strong></div>`).join("")}<p>Agreed fees: ${E.money(team.reduce((v, c) => v + c.fee + c.optionCost, 0))}. Paid at greenlight. Availability is checked again before filming.</p></section>`;
+}
 function releaseRecap(m) {
   const unrecovered = Math.max(0, m.spent - m.receipts);
-  return `<section class="personal-recap">${successSummary(m)}<div class="scores">${stat("STUDIO RECEIPTS SO FAR", E.money(m.receipts))}${stat(unrecovered ? "COSTS STILL TO RECOVER" : "MOVIE PROFIT SO FAR", E.money(unrecovered || m.receipts - m.spent))}</div><p class="muted small">Includes the advance and ticket share. This run is still earning; studio overhead is separate.</p>${careerResults(m)}<p>${m.fans >= 75 ? "Strong audience response gives this run a better chance to hold." : m.fans < 50 ? "Weak audience response may shorten this run." : "Audience response is mixed; watch the next few weeks."} ${m.releaseFactors?.reach < 20 ? "Your campaign reached a relatively small audience." : "Your campaign increased opening awareness."}</p></section>`;
+  return `<section class="personal-recap"><div class="scores">${stat("STUDIO RECEIPTS SO FAR", E.money(m.receipts))}${stat(unrecovered ? "COSTS STILL TO RECOVER" : "MOVIE PROFIT SO FAR", E.money(unrecovered || m.receipts - m.spent))}</div><p class="muted small">Includes the advance and ticket share. This run is still earning; studio overhead is separate.</p>${careerResults(m)}<p>${m.fans >= 75 ? "Strong audience response gives this run a better chance to hold." : m.fans < 50 ? "Weak audience response may shorten this run." : "Audience response is mixed; watch the next few weeks."} ${m.releaseFactors?.reach < 20 ? "Your campaign reached a relatively small audience." : "Your campaign increased opening awareness."}</p></section>`;
 }
 function sequelReview(m) {
   const team = E.returningTeam(s, m),
@@ -571,7 +594,7 @@ function movieDetail(m) {
   const cast = [...m.contracts].sort((a, b) => a.role - b.role);
   return `<div class="detail-hero">${poster(m, true)}<div>${pill(labels[m.stage])}<h2>${h(m.title)}</h2><p>${h(m.genre)} / ${h(m.subgenre)} · ${E.scopeName(m.scale)}</p><p class="muted">${h(m.premise)}</p><p class="scope-description">${E.SCOPES[m.scale].description}</p>${m.release ? `<p class="small peach">Release locked: ${E.date(m.release).label}, week ${E.date(m.release).week}</p>` : ""}</div></div><div class="detail-stats">${stat("SPENT", E.money(m.spent))}${stat("STUDIO RECEIPTS", E.money(m.receipts))}${stat("SCRIPT ESTIMATE", ratingRange(E.range(m.scriptQuality, s.departments.Development)))}</div>
  ${m.event ? productionDecision(m) : ""}
- ${m.stage === "development" ? `<div class="notice-banner">Your development department is writing. Ready in ${Math.max(0, m.ready - s.week)} weeks.</div>` : ""}
+ ${m.stage === "development" ? `<div class="notice-banner">Your development department is writing. Ready in ${Math.max(0, m.ready - s.week)} weeks.</div>${attachedTeam(m)}` : ""}
  ${
    m.stage === "packaging"
      ? `<section><div class="section-title"><h3>Cast & director</h3>${button("Rename movie", "rename", `data-id="${m.id}"`, "text-button")}</div><p class="muted small">Role difficulty ${E.score(m.difficulty)}/100. Auditions are free and immediate. Agreements are paid when cameras roll.</p><div class="role-list">${m.roles
@@ -688,6 +711,8 @@ function drawDialog() {
     projectFooter(m);
     return;
   }
+  if (v.kind === "careers")
+    return modal("Cast & director careers", careerResults(m), h(m.title));
   if (v.kind === "sequelReview") return sequelReview(m);
   if (v.kind === "script") {
     const sc = s.market.find((x) => x.id === v.script);
@@ -796,7 +821,7 @@ function drawDialog() {
   if (v.kind === "opening")
     return modal(
       "The numbers are in.",
-      `<div class="opening-reveal"><span class="eyebrow gold">OPENING WEEKEND</span><h2>${h(m.title)}</h2><strong class="opening-number">${E.money(m.opening)}</strong><p>GROSS BOX OFFICE</p>${expectationsReview(m)}${releaseRecap(m)}${button("Consider a sequel", "openingSequel", `data-id="${m.id}"`, "outline full")}<details><summary>Forecast & detailed performance report</summary>${poster(m, true)}<div class="scores">${stat("CRITICS", E.score(m.critics))}${stat("FANS", E.score(m.fans))}${stat("YOUR FIRST RECEIPTS", E.money(Math.max(0, m.receipts - m.advance)))}</div><p class="muted">${m.fans > 75 ? "The audience is talking. Now let’s see how long the run lasts." : m.fans < 50 ? "A tough first audience. Keep a close eye on further marketing spending." : "The first weekend is only the beginning. Word of mouth takes over from here."}</p></details>${button("Back to the lot →", "dismissNotice", "", "primary full")}</div>`,
+      `<div class="opening-reveal"><span class="eyebrow gold">OPENING WEEKEND</span><h2>${h(m.title)}</h2><strong class="opening-number">${E.money(m.opening)}</strong><p>GROSS BOX OFFICE</p>${openingContext(m)}${expectationsReview(m)}${releaseRecap(m)}${button("Consider a sequel", "openingSequel", `data-id="${m.id}"`, "outline full")}<details><summary>Forecast & detailed performance report</summary>${poster(m, true)}<div class="scores">${stat("CRITICS", E.score(m.critics))}${stat("FANS", E.score(m.fans))}${stat("YOUR FIRST RECEIPTS", E.money(Math.max(0, m.receipts - m.advance)))}</div><p class="muted">${m.fans > 75 ? "The audience is talking. Now let’s see how long the run lasts." : m.fans < 50 ? "A tough first audience. Keep a close eye on further marketing spending." : "The first weekend is only the beginning. Word of mouth takes over from here."}</p></details>${button("Back to the lot →", "dismissNotice", "", "primary full")}</div>`,
       "THE BOX OFFICE",
     );
   if (v.kind === "awardsInvite") return awardsInvite(v.year);
@@ -1012,7 +1037,7 @@ function productionPreview(m) {
       .reduce((v, c) => v + c.fee + c.optionCost, 0);
   if ($("production-total"))
     $("production-total").innerHTML =
-      `<strong>Plan total ${E.money(m.spent + fee + costs.total)}</strong><small>Cash after fees ${E.money(s.cash - fee)} · Talent shares ${Math.round(E.participationRate(m) * 100)}% of future ticket receipts</small>`;
+      `<strong>Plan total ${E.money(m.spent + fee + costs.total)}</strong><small>Production still to pay: ${E.money(costs.total + s.movies.filter((x) => x.id !== m.id).reduce((v, x) => v + E.remaining(x), 0))} across your slate</small><strong class="${s.cash - fee - costs.total - s.movies.filter((x) => x.id !== m.id).reduce((v, x) => v + E.remaining(x), 0) < 0 ? "negative" : ""}">Cash after commitments: ${E.money(s.cash - fee - costs.total - s.movies.filter((x) => x.id !== m.id).reduce((v, x) => v + E.remaining(x), 0))}</strong><small>Before overhead, loan payments and release costs.</small>`;
   const booked = [
     ...m.contracts.map((c) => ({ ...c, director: false })),
     ...(m.director ? [{ ...m.director, director: true }] : []),
@@ -1020,7 +1045,7 @@ function productionPreview(m) {
     (c) => !E.available(E.person(s, c.id), s.week, s.week + plan.duration),
   );
   $("production-preview").innerHTML =
-    `<div class="budget-impact"><span class="eyebrow">WHAT THIS BUDGET BUYS</span><h3>Production quality: about ${E.score(E.productionCraft(m, b))}/100</h3><p>Each department is compared with this ${h(m.subgenre)} film’s needs. Extra spending in one department cannot fully cover a shortage in another. Strong writing and talent still matter.</p><small>Talent fees and marketing are separate. Spending less does not automatically cause production delays.</small></div><div class="schedule-explainer"><span class="eyebrow">${schedule.label.toUpperCase()} SHOOT</span><h3>${plan.duration} weeks: ${plan.duration < schedule.target ? "short of the recommended schedule" : plan.duration === schedule.target ? "meets this script’s needs" : "extra time for rehearsal and coverage"}</h3><p>${plan.duration < schedule.target ? "The compressed schedule reduces execution quality. More demanding productions need more time." : "Your team has time to execute the script. Extra weeks cost more and have diminishing benefits."}</p><strong>${plan.duration === 8 ? "10 weeks would cost " + E.money(E.productionCosts(s, m, b, 10).total - base.total) + " more." : `${costs.total >= base.total ? "+" : "−"}${E.money(Math.abs(costs.total - base.total))} versus an 8-week shoot.`}</strong><small>Recommended: ${schedule.target} weeks. Schedule effect on film quality: ${schedule.quality > 0 ? "+" : ""}${schedule.quality} points. Longer shoots have diminishing benefits and do not guarantee better reviews.</small></div><div class="finance-lines"><div><span>Cast, director & options · paid now</span><strong>${E.money(fee)}</strong></div><div><span>Production · paid over ${plan.duration} weeks</span><strong>${E.money(costs.total)}</strong></div><div><span>Production cost each week</span><strong>${E.money(costs.weekly)}</strong></div><div><span>Planned total including script</span><strong>${E.money(m.spent + fee + costs.total)}</strong></div><div><span>Cash after immediate fees</span><strong class="${s.cash - fee < 0 ? "negative" : ""}">${E.money(s.cash - fee)}</strong></div></div>${
+    `<div class="budget-impact"><span class="eyebrow">WHAT THIS BUDGET BUYS</span><h3>Your production plan</h3><p>Each department is compared with this ${h(m.subgenre)} film’s needs. Extra spending in one department cannot fully cover a shortage in another. Strong writing and talent still matter.</p><small>Talent fees and marketing are separate. Spending less does not automatically cause production delays.</small></div><div class="schedule-explainer"><span class="eyebrow">${schedule.label.toUpperCase()} SHOOT</span><h3>${plan.duration} weeks: ${plan.duration < schedule.target ? "short of the recommended schedule" : plan.duration === schedule.target ? "meets this script’s needs" : "extra time for rehearsal and coverage"}</h3><p>${plan.duration < schedule.target ? "The compressed schedule reduces execution quality. More demanding productions need more time." : "Your team has time to execute the script. Extra weeks cost more and have diminishing benefits."}</p><strong>${plan.duration === 8 ? "10 weeks would cost " + E.money(E.productionCosts(s, m, b, 10).total - base.total) + " more." : `${costs.total >= base.total ? "+" : "−"}${E.money(Math.abs(costs.total - base.total))} versus an 8-week shoot.`}</strong><small>Recommended: ${schedule.target} weeks. Longer shoots have diminishing benefits and do not guarantee better reviews.</small></div><div class="finance-lines"><div><span>Cast, director & options · paid now</span><strong>${E.money(fee)}</strong></div><div><span>Production · paid over ${plan.duration} weeks</span><strong>${E.money(costs.total)}</strong></div><div><span>Production cost each week</span><strong>${E.money(costs.weekly)}</strong></div><div><span>Planned total including script</span><strong>${E.money(m.spent + fee + costs.total)}</strong></div><div><span>Cash after immediate fees</span><strong class="${s.cash - fee < 0 ? "negative" : ""}">${E.money(s.cash - fee)}</strong></div></div>${
       booked.length
         ? `<section class="conflict-panel"><h3>Let’s fix the casting conflicts</h3>${booked
             .map((c) => {
@@ -1039,14 +1064,16 @@ function releaseAndDistribution(m) {
   return `<section class="panel"><span class="eyebrow">NEXT ACTION</span><h3>Choose your distribution deal</h3><p>Your release date is set. Choose who releases the film and how much of each ticket payment your studio receives.</p>${button("Choose distribution →", "distribution", `data-id="${m.id}"`, "primary full")}</section>`;
 }
 function distributionOffers(m) {
-  return `<section><div class="section-title"><h3>How will you release it?</h3></div><p class="muted small">Compare cash needed, release support and when your ticket payments begin. Marketing campaigns are optional extra spending.</p><div class="distribution-options">${Object.entries(
+  return `<section><p class="muted small">Compare all three options. Cash now includes the payment to you minus any release fee.</p><table class="distribution-options distribution-overview"><thead><tr><th>Deal</th><th>Cash now</th><th>Share</th><th>Reach</th></tr></thead><tbody>${Object.entries(
     E.distribution(s, m),
   )
     .map(
       ([key, d]) =>
-        `<article class="distribution-card"><span class="eyebrow">${key === "secure" ? "MORE CASH NOW" : key === "partner" ? "SHARE THE UPSIDE" : "BACK IT YOURSELF"}</span><h3>${key === "secure" ? "Guaranteed payment" : key === "partner" ? "Distribution partner" : "Self-distribute"}</h3><div class="deal-numbers"><div><span>You get now</span><strong>${E.money(d.advance)}</strong></div><div><span>You pay now</span><strong>${E.money(d.cost)}</strong></div><div><span>Your share of ticket payments</span><strong>${Math.round(d.share * 100)}%</strong></div></div><p>${h(d.desc)}</p><p>Distributor release support: ${E.money(d.support)}<br>Recovered before ticket payments: ${E.money(d.recoup)}<br>Release reach: ${d.reach >= 1.1 ? "Wide" : d.reach >= 1 ? "Established" : "Limited"}</p>${button("Review this offer →", "dealReview", `data-id="${m.id}" data-deal="${key}"`, "outline full")}</article>`,
+        `<tr><th scope="row">${button(key === "secure" ? "Guaranteed →" : key === "partner" ? "Partner →" : "Self-release →", "dealReview", `data-id="${m.id}" data-deal="${key}"`, "text-button")}<small>${d.recoup ? `Recover ${E.money(d.recoup)} first` : "No recovery"}</small></th><td class="${d.advance - d.cost < 0 ? "negative" : "mint"}">${E.money(d.advance - d.cost)}</td><td>${Math.round(d.share * 100)}%</td><td>${d.reach >= 1.1 ? "Wide" : d.reach >= 1 ? "Established" : "Limited"}</td></tr>`,
     )
-    .join("")}</div></section>`;
+    .join(
+      "",
+    )}</tbody></table><p class="muted small">Share = your share of ticket sales, before talent payouts. For a partner deal, the advance and release support are recovered from that share before more cash reaches your studio.</p><p>Tap a deal to review costs and a dollar example before signing.</p></section>`;
 }
 function releasePlanner(m) {
   if (s.week >= E.END - 1)
@@ -1146,6 +1173,9 @@ function handle(e) {
   const a = b.dataset.action,
     id = b.dataset.id;
   switch (a) {
+    case "viewCareers":
+      open("careers", { id, back: { kind: "opening", id } });
+      break;
     case "moreCasting": {
       const scroll = dialog.querySelector(".modal-body").scrollTop;
       view.visibleCount = (view.visibleCount ?? 3) + 3;

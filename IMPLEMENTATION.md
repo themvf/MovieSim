@@ -162,3 +162,11 @@ Distribution offers use scope and drawing power rather than money spent. Guarant
 All actors and directors now get whole-number fame changes driven by individual performance and exposure. Weak performances can reduce fame even in successful films; studio losses do not automatically damage fame. Career results list everyone with before/after values and signed change. Stars decline genres below 45 aptitude; a stable subset (look modulo 3) also declines roles below difficulty 50. Newcomers remain open. Existing sequel options are honored; free choice hires enforce refusal before money changes. Returning-team availability also respects interest and the recommended schedule.
 
 Validation includes department substitution, schedule penalties, fame gains/losses, refusal reasons, accounting after save/reload, and scenarios where each distribution option wins. This is a transparent game model, not a claim of standard Hollywood contract rates.
+
+## Player feedback and comparison (0.8.1)
+
+Preserve spending discovery: remove exact pre-release craft and schedule-quality point previews. Keep actual costs, recommended schedule and qualitative department guidance; outcome feedback remains available after release. No new warnings about zero marginal spending benefit and no simulation balance changes.
+
+Production confirmation shows cash after the current talent fees, current proposed production, and remaining already-filming commitments across the studio. Overhead, debt payments and release costs are explicitly excluded.
+
+Distribution is a compact three-row overview of immediate net cash, share, reach and recoupment, with detailed terms one tap away. Opening night separates the player's forecast from scope-relative popularity and provides a one-tap whole-team career summary. Developing sequels visibly list the attached cast and director, agreed fees and participation, including after reload.
