@@ -1,4 +1,4 @@
-# Playable demo 0.5.2
+# Playable demo 0.6.0
 
 MovieSim is a dependency-free static web game. `engine.js` owns simulation state and decisions; `app.js` renders the interface and persists saves; `art.js` draws original SVG pixel portraits, posters, and the studio lot. No third-party artwork or game assets are used.
 
@@ -99,3 +99,13 @@ Two independent testers found four boundary defects, documented in ALPHA-TEST-RE
 Required movie finance values now validate before import, including costs, receipts, gross, catalog earnings, campaign spending, production budgets, contract fees, weekly filming cost, distribution advances/shares and opening gross where applicable. Missing, nonfinite, negative or mistyped values are rejected before replacing a working studio. Browser regressions exercise missing movie accounting fields and preserve playability.
 
 Loan cleanup now discards only floating-point residue far below a cent. Partial repayment and weekly amortization preserve real remaining balances, including $9 and $0.01. Targeted tests reconcile both principal and cash instead of accepting a zero residual by default. All 46 simulation tests pass.
+
+## Player flow update (0.6.0)
+
+Casting starts with three available candidates, a free batch audition, and an expandable full roster. Filters and secondary attributes remain available. Movie and production dialogs keep the next action and total costs visible in a fixed footer.
+
+Opening night now leads with studio receipts, unrecovered costs, and an individual performer’s career change. Detailed forecasts remain expandable. A sequel preview explains returning talent, audience carryover, and development cost before confirmation.
+
+Next event uses the same weekly simulation and accounting as Next week. It stops for decisions, completed stages, new scripts, openings, notices, resurgences, financial trouble, and the demo end. It does not bypass pending decisions.
+
+All 58 subgenres have story hooks and recognizable lead descriptions. Sequels retain their parent identity with a continuation premise. New creative and rehearsal decisions affect critics, audiences, or individual performances. Additive fields retain compatibility with existing version-5 saves.

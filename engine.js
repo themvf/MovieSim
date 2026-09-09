@@ -1,3 +1,4 @@
+import { storyFor } from "./stories.js?v=0.6";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
 export const END = 260;
@@ -489,38 +490,6 @@ const TITLES = [
   "Last Call",
   "Familiar Strangers",
 ];
-const PREMISES = {
-  Drama: [
-    "An estranged family reunites to sell the home none of them can let go.",
-    "A public defender takes the one case that could end their career.",
-    "Two former friends cross their hometown one last time.",
-  ],
-  Thriller: [
-    "An overnight operator receives a call from a house demolished years ago.",
-    "A missing witness leaves a trail through a city that refuses to talk.",
-    "A journalist discovers their best source has another identity.",
-  ],
-  Comedy: [
-    "Two strangers inherit a failing neighborhood cinema.",
-    "A disastrous office retreat becomes an unlikely second chance.",
-    "A local celebrity hires the only person who has never heard of them.",
-  ],
-  Horror: [
-    "A winter caretaker realizes the empty rooms are being occupied.",
-    "An isolated town celebrates a festival no outsider survives.",
-    "An old recording predicts what happens after dark.",
-  ],
-  Action: [
-    "A retired getaway driver has one night to bring someone home.",
-    "An extraction team discovers their target planned the mission.",
-    "Two rivals must steal back the same priceless artifact.",
-  ],
-  "Sci-fi": [
-    "A distant station receives a message in its own captain’s voice.",
-    "A city rents memories, until someone refuses to return one.",
-    "A researcher gets one chance to revisit an ordinary Tuesday.",
-  ],
-};
 export const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
 export function random(s) {
   s.rng = (Math.imul(1664525, s.rng) + 1013904223) >>> 0;
@@ -647,6 +616,46 @@ function talent(s, kind) {
     retired: false,
   });
 }
+function freshStory(s, subgenre) {
+  const used = new Set([...s.market, ...s.movies].map((m) => m.premise));
+  const start = roll(s, 0, 7);
+  for (let i = 0; i < 8; i++) {
+    const story = storyFor(subgenre, (start + i) % 8);
+    if (!used.has(story.premise)) return story;
+  }
+  const story = storyFor(subgenre, start);
+  story.premise += ` At the center is ${pick(s, FIRST)} ${pick(s, LAST)}, facing a decision that will define their life.`;
+  return story;
+}
+export function advanceToEvent(s) {
+  const start = s.week,
+    cash = s.cash;
+  const blocked = () =>
+    s.ended ||
+    s.epilogue ||
+    s.cash < 0 ||
+    s.notices.length ||
+    s.movies.some((m) => m.event || m.stage === "ready");
+  if (blocked()) return { weeks: 0, cashChange: 0 };
+  while (s.week < END) {
+    const stages = s.movies.map((m) => `${m.id}:${m.stage}`).join("|");
+    const season = s.movies.reduce(
+      (n, m) => n + (m.resurgences?.length ?? 0),
+      0,
+    );
+    const market = s.market.map((m) => m.id).join("|");
+    nextWeek(s);
+    notifyPrestige(s);
+    if (
+      blocked() ||
+      stages !== s.movies.map((m) => `${m.id}:${m.stage}`).join("|") ||
+      market !== s.market.map((m) => m.id).join("|") ||
+      season !== s.movies.reduce((n, m) => n + (m.resurgences?.length ?? 0), 0)
+    )
+      break;
+  }
+  return { weeks: s.week - start, cashChange: s.cash - cash };
+}
 function script(s) {
   const genre = pick(s, Object.keys(GENRES)),
     scale = pick(s, ["Small", "Small", "Small", "Mid-budget", "Blockbuster"]);
@@ -656,16 +665,18 @@ function script(s) {
     s.movies.some((m) => m.title === title)
   )
     title = `${title}: ${pick(s, ["Echoes", "Reckoning", "Daybreak", "Homecoming"])}`;
+  const subgenre = pick(s, GENRES[genre]);
+  const story = freshStory(s, subgenre);
   return {
     id: `s${s.next++}`,
     title,
     genre,
-    subgenre: pick(s, GENRES[genre]),
+    subgenre,
     scale,
     quality: roll(s, 45, 92),
     difficulty: roll(s, 35, 95),
     price: roll(s, 45, 160) * (SCALES.indexOf(scale) + 1),
-    premise: pick(s, PREMISES[genre]),
+    ...story,
     roles:
       scale === "Blockbuster"
         ? ["Lead", "Co-lead", "Supporting"]
@@ -819,6 +830,9 @@ function addMovie(s, sc, parent = null, developing = false) {
     release: null,
     quality: null,
     penalty: 0,
+    criticBias: 0,
+    audienceBias: 0,
+    productionDecisions: [],
     event: null,
     eventCount: 0,
     boxWeeks: [],
@@ -909,7 +923,7 @@ export function act(s, type, a = {}) {
             ? ["Lead", "Co-lead", "Supporting"]
             : ["Lead", "Supporting"],
       });
-      sc.premise = "An original screenplay commissioned by your studio.";
+      Object.assign(sc, freshStory(s, a.subgenre));
       m = addMovie(s, sc, null, true);
       break;
     }
@@ -919,6 +933,8 @@ export function act(s, type, a = {}) {
       const sc = {
         ...m,
         title: `${m.title} ${n}`.slice(0, 60),
+        premise: `After ${m.title}, ${m.roleDescriptions?.[0] ?? "the returning lead"} faces a new consequence of the original story. ${storyFor(m.subgenre, n).premise.split(". ").at(-1)}`,
+        careerChanges: [],
         price: 140,
         quality: clamp(roll(s, 40, 83) + s.departments.Development * 2),
         scriptQuality: null,
@@ -1038,6 +1054,45 @@ export function act(s, type, a = {}) {
       if (!m.event) throw Error("There is no production decision pending.");
       if (!["pay", "cut", "split"].includes(a.choice))
         throw Error("Choose a response.");
+      if (m.event.kind === "creative" || m.event.kind === "performance") {
+        const event = m.event;
+        m.productionDecisions ??= [];
+        if (event.kind === "creative") {
+          m.audienceBias =
+            (m.audienceBias ?? 0) +
+            (a.choice === "pay" ? 6 : a.choice === "split" ? -3 : 0);
+          m.criticBias =
+            (m.criticBias ?? 0) +
+            (a.choice === "split" ? 6 : a.choice === "pay" ? -3 : 0);
+        } else {
+          for (const c of m.contracts) {
+            const boost =
+              a.choice === "cut"
+                ? 2
+                : a.choice === "pay"
+                  ? c.role === m.roles.length - 1
+                    ? 5
+                    : 0
+                  : c.role === 0
+                    ? 4
+                    : 0;
+            const key = `${c.role}:${c.id}`;
+            m.auditions[key] = clamp(m.auditions[key] + boost);
+          }
+        }
+        m.productionDecisions.push({
+          week: s.week,
+          kind: event.kind,
+          choice: a.choice,
+        });
+        log(
+          s,
+          `${m.title}: ${event.kind === "creative" ? (a.choice === "pay" ? "a crowd-pleasing edit" : a.choice === "split" ? "the director’s challenging edit" : "the balanced edit") : a.choice === "pay" ? "extra attention for the supporting role" : a.choice === "split" ? "extra attention for the lead" : "rehearsal shared across the ensemble"} selected.`,
+          "action",
+        );
+        m.event = null;
+        break;
+      }
       const cost =
         m.event.cost *
         (a.choice === "pay" ? 1 : a.choice === "split" ? 0.5 : 0);
@@ -1196,6 +1251,8 @@ export function act(s, type, a = {}) {
       while (!award.completed) revealAward(s, a.year);
       break;
     }
+    case "nextEvent":
+      return advanceToEvent(s);
     case "next":
       nextWeek(s);
       break;
@@ -1263,11 +1320,20 @@ function finish(s, m) {
     98,
   );
   m.critics = clamp(
-    Math.round(m.quality + roll(s, -12, 12) + (m.difficulty - 60) * 0.09),
+    Math.round(
+      m.quality +
+        roll(s, -12, 12) +
+        (m.difficulty - 60) * 0.09 +
+        (m.criticBias ?? 0),
+    ),
     5,
     99,
   );
-  m.fans = clamp(Math.round(m.quality + roll(s, -17, 17)), 5, 99);
+  m.fans = clamp(
+    Math.round(m.quality + roll(s, -17, 17) + (m.audienceBias ?? 0)),
+    5,
+    99,
+  );
   m.stage = "ready";
   log(
     s,
@@ -1302,6 +1368,7 @@ function opening(s, m) {
     (0.55 + m.fans / 145) *
     (0.7 + random(s) * 0.6) *
     sequel;
+  m.careerChanges = [];
   m.opening = openingGross;
   m.releaseFactors = { stars, reach, season, rival };
   m.stage = "theaters";
@@ -1319,6 +1386,13 @@ function opening(s, m) {
     );
     p.star = clamp(p.star + rise);
     p.fee = Math.round(35 + p.star * p.star * 0.35);
+    m.careerChanges.push({
+      id: p.id,
+      before,
+      after: p.star,
+      fee: p.fee,
+      performance: m.performances[i],
+    });
     const major = m.scale !== "Small" || openingGross >= 3000;
     if (major) p.majorCredits++;
     p.history.push({
@@ -1336,6 +1410,7 @@ function opening(s, m) {
       );
   }
   const d = person(s, m.director.id);
+  const directorBefore = d.star;
   d.history.push({
     id: m.id,
     title: m.title,
@@ -1344,6 +1419,13 @@ function opening(s, m) {
   });
   d.star = clamp(d.star + Math.max(0, (m.critics - 55) / 9));
   d.fee = Math.round(35 + d.star * d.star * 0.35);
+  m.careerChanges.push({
+    id: d.id,
+    before: directorBefore,
+    after: d.star,
+    fee: d.fee,
+    performance: m.directorPerformance ?? m.critics,
+  });
   s.prestige = clamp(s.prestige + Math.max(0, m.critics - 60) / 9);
   log(
     s,
@@ -1578,6 +1660,19 @@ function nextWeek(s) {
           cost: Math.round(m.weekly * 0.8 + 35),
           damage: roll(s, 6, 12),
         };
+        const kind = roll(s, 0, 2);
+        if (kind === 1)
+          m.event = {
+            kind: "creative",
+            title: "Two endings, two audiences",
+            text: "The edit can favor a satisfying crowd-pleaser or a more challenging ending. The existing budget covers either version; neither guarantees good reviews.",
+          };
+        if (kind === 2)
+          m.event = {
+            kind: "performance",
+            title: "Who gets the final rehearsal?",
+            text: "There is time for one more rehearsal within the existing schedule. Choose which performance receives the attention.",
+          };
         log(s, `${m.title} needs a production decision.`, "action");
       }
     }

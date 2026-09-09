@@ -39,14 +39,35 @@ const fs = require("node:fs");
   for (let role = 0; role < 3; role++) {
     const next = page.locator(`[data-action="casting"][data-role="${role}"]`);
     if (!(await next.count())) break;
-    await next.click();
+    await next.first().click();
+    if (role === 0) {
+      if (
+        (await page.locator(".casting-list.shortlist > article").count()) !== 3
+      )
+        throw Error("Expected three shortlisted actors");
+      const cashBefore = await page.evaluate(
+        () => JSON.parse(localStorage.getItem("moviesim-save-v1")).cash,
+      );
+      await click('[data-action="auditionShortlist"]');
+      const cashAfter = await page.evaluate(
+        () => JSON.parse(localStorage.getItem("moviesim-save-v1")).cash,
+      );
+      if (cashAfter !== cashBefore) throw Error("Batch auditions must be free");
+      await page.screenshot({ path: "test-results/mobile-shortlist.png" });
+      await click('[data-action="castingMode"]');
+      if ((await page.locator(".casting-list > article").count()) <= 3)
+        throw Error("Browse all did not expand candidates");
+      await click('[data-action="castingMode"]');
+    }
+    await page.locator(".casting-filter-details > summary").click();
     await page.locator("#casting-budget").selectOption("250");
-    await click('[data-action="audition"]');
+    if (await page.locator('[data-action="audition"]').count()) await click('[data-action="audition"]');
     await click('[data-action="offer"]');
     if (role === 0) await page.locator('input[name="option"]').check();
     await page.locator("#offer-form button").click();
   }
   await click('[data-action="director"]');
+  await page.locator(".casting-filter-details > summary").click();
   await page.locator("#casting-budget").selectOption("750");
   await click('[data-action="offer"]');
   await page.locator("#offer-form button").click();
@@ -55,7 +76,7 @@ const fs = require("node:fs");
     path: "test-results/mobile-production.png",
     fullPage: true,
   });
-  await page.locator("#production-form button").click();
+  await page.locator('button[form="production-form"]').click();
   await click('[data-action="close"]');
   let state = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("moviesim-save-v1")),
@@ -96,8 +117,9 @@ const fs = require("node:fs");
   await click('[data-action="dealReview"][data-deal="partner"]');
   await click('[data-action="distribute"][data-deal="partner"]');
   await click('[data-action="close"]');
-  for (let i = 0; i < 3; i++) await click('[data-action="next"]');
+  await click('[data-action="nextEvent"]');
   await page.waitForSelector(".opening-reveal");
+  await page.locator(".opening-reveal > details > summary").click();
   await page.waitForSelector(".expectations-review");
   await page.waitForSelector(".talent-review");
   const performanceText = await page.locator(".talent-review").innerText();

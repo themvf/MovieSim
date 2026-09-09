@@ -71,11 +71,13 @@ const fs = require("node:fs");
   );
   await page.screenshot({ path: "test-results/v02-production-conflict.png" });
   await click('[data-action="replaceConflict"]');
+  await page.locator(".casting-filter-details > summary").click();
   await page.locator("#casting-budget").selectOption("250");
   assert.match(
     await page.locator("dialog").innerText(),
     /Returning to your production plan/,
   );
+  await page.locator(".talent-secondary > summary").first().click();
   assert.match(await page.locator("dialog").innerText(), /SCREEN PRESENCE/);
   await page.screenshot({ path: "test-results/v02-casting.png" });
   await click('[data-action="audition"]');
@@ -86,7 +88,7 @@ const fs = require("node:fs");
   assert.equal(await page.locator('input[name="duration"]').inputValue(), "10");
   assert.equal(await page.locator("#sets-cost").innerText(), cost);
   assert.equal(await page.locator(".conflict-panel").count(), 0);
-  await page.locator("#production-form button").click();
+  await page.locator('button[form="production-form"]').click();
   assert.equal((await state()).movies[0].release, null);
   await click('[data-action="close"]');
   // Jump only the simulation in a fixture to test the new post-wrap release/distribution UI.

@@ -3018,3 +3018,122 @@ input[type="range"] {
 .top-stats strong {
   font-size: clamp(16px, 2vw, 26px);
 }
+
+/* Focused mobile decisions */
+dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-head {
+  flex-shrink: 0;
+}
+.modal-body {
+  overflow-y: auto;
+  min-height: 0;
+  scroll-padding-top: 12px;
+}
+.action-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+.action-footer small {
+  display: block;
+  margin-top: 4px;
+}
+.action-footer .primary {
+  padding: 12px;
+  white-space: normal;
+}
+.production-footer > div {
+  min-width: 0;
+}
+.advance-event {
+  font-size: 12px;
+  padding: 10px;
+}
+.casting-mode {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+.casting-filter-details {
+  margin: 12px 0;
+}
+summary {
+  cursor: pointer;
+  padding: 10px 0;
+  color: var(--mint);
+}
+.shortlist .casting-card {
+  padding: 12px;
+}
+.shortlist .person-heading {
+  margin-bottom: 6px;
+}
+.shortlist .person-heading h3 {
+  font-size: 16px;
+}
+.shortlist .talent-accolades {
+  margin: 6px 0;
+}
+.shortlist .casting-metrics {
+  margin: 6px 0;
+}
+.shortlist .talent-secondary summary {
+  font-size: 12px;
+  padding: 4px 0;
+}
+.shortlist .fresh-note {
+  display: none;
+}
+.career-headline {
+  display: flex;
+  gap: 12px;
+  text-align: left;
+  padding: 12px 0;
+}
+.career-headline p {
+  font-size: 12px;
+}
+.personal-recap {
+  margin: 12px 0;
+}
+.personal-recap .scores {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.role-description {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.poster strong {
+  overflow-wrap: anywhere;
+  font-size: clamp(13px, 3vw, 22px);
+  line-height: 1.05;
+}
+.opening-reveal > .opening-number {
+  font-size: 40px;
+}
+.topbar {
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .advance-event {
+    margin-left: auto;
+  }
+  .action-footer {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .shortlist .casting-card .portrait {
+    width: 40px;
+    height: 40px;
+  }
+}
