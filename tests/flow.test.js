@@ -51,7 +51,7 @@ test("fast advancement matches manual simulation and stops for every production 
   assert.equal(E.act(s, "nextEvent").weeks, 0);
   assert.deepEqual(s, before);
   E.act(s, "setRelease", { id: m.id, release: s.week + 1 });
-  E.act(s, "confirmMarketing", { id: m.id });
+  E.act(s, "confirmMarketing", { id: m.id, none: !m.campaignSpend });
   E.act(s, "distribute", { id: m.id, deal: "partner" });
   assert.equal(E.act(s, "nextEvent").weeks, 1);
   assert.equal(m.stage, "theaters");

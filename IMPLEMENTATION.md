@@ -178,3 +178,16 @@ After locking a release date, the player must explicitly confirm purchased marke
 The release comparison includes selected marketing budget versus spending through opening, and identifies the opening forecast as using that plan. Forecasts refresh for subsequent pre-release campaign purchases and signed distribution terms. The actual opening is compared with the whole-film forecast, not mislabeled as an isolated causal effect of advertising. Later campaign spending does not rewrite opening-period actual spending.
 
 Talent age remains present and advances annually. Gender and role age requirements remain unimplemented.
+
+
+## Marketing, casting direction, calendar and financing (0.9.0)
+- Marketing step offers $0 and selectable paid campaigns. Selection is reversible and uncharged until confirmation; confirmation validates the complete selection before charging. Existing launched campaigns remain committed. Direct post-confirmation campaigns retain their existing behavior.
+- Opening ranges now use +/-25%, 20%, 15%, 10% at Research levels 1–4, rather than +/-83% at level 1. These are rough estimates, not guaranteed bounds on actual performance.
+- Talent has persistent fictional gender alongside aging. Actors display playing-age ranges; roles provide suggested gender/playing age as creative direction only. These attributes do not filter hiring, change fees, or apply performance penalties.
+- Shared opening/forecast seasonal multiplier: October horror 1.30, February romantic subgenres 1.20, June–August action/sci-fi 1.30, November–December family subgenres 1.25. Matches use a single bonus, never stack. Existing August/December general windows remain as fallback. Calendar cards explain opportunities; rivalry still reduces demand.
+- Banks: First Picture 8% APR / 25% of total capacity, Meridian 12% / 37.5%, Premiere 18% / 37.5%. Initial limits $2m/$3m/$3m, total grows with prestige. Each has separate outstanding balance capacity. Loans amortize principal over 104 weeks, with weekly interest on remaining principal. Legacy unassigned debt is allocated proportionally for capacity and preserves 12% APR.
+- Loan shark: once bank offers are exhausted (each below the $1,000 minimum), receive $2m and owe $2.4m including fixed fee. Entire unpaid balance due 13 weeks later, after weekly receipts and expenses. Automatic payoff if affordable; otherwise immediate studio closure, no refinancing after the deadline. Early repayments prioritize the shark. No second shark loan; requires 13 weeks remaining in the demo to avoid an endgame escape. Balance and deadline survive saves and appear on slate/finances.
+- Build marker 0.9.0 intentionally starts a fresh studio; same-build reloads preserve progress.
+- Verification: 73 engine tests, mobile/desktop lifecycle smoke, usability regression, and focused marketing/bank browser checks.
+
+Seasonal inspiration: [NBCUniversal on February romantic releases](https://www.nbcuniversal.com/article/february-show-your-love-two-sustainable-rom-coms) and [Disney’s Thanksgiving Moana 2 release](https://movies.disney.com/moana-2). Multipliers are game balancing choices, not empirical revenue promises.

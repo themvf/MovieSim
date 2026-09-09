@@ -114,6 +114,7 @@ const fs = require("node:fs");
   await click('[data-action="releaseWeek"][data-week="35"]');
   await page.screenshot({ path: "test-results/v02-release.png" });
   await page.locator("#release-form > button").click();
+  if (await page.locator('[data-action="selectNoMarketing"]').isEnabled()) await click('[data-action="selectNoMarketing"]');
   await click('[data-action="confirmMarketing"]');
   assert.equal(
     await page.locator(".distribution-overview tbody tr").count(),

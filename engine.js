@@ -1,4 +1,4 @@
-import { storyFor } from "./stories.js?v=0.8.2";
+import { storyFor } from "./stories.js?v=0.9.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
 export const END = 260;
@@ -143,6 +143,7 @@ export function notifyPrestige(s) {
   s.prestigeLevel = Math.max(s.prestigeLevel ?? 0, level);
 }
 export function enrichTalent(p) {
+  p.gender ??= ["Woman", "Man", "Nonbinary"][(p.look ?? 0) % 20 < 9 ? 0 : (p.look ?? 0) % 20 < 18 ? 1 : 2];
   if (!p.genres) {
     const n = p.look ?? 0;
     p.genres = Object.fromEntries(
@@ -388,7 +389,9 @@ export function migrateSave(s) {
         !Number.isFinite(l.balance) ||
         !Number.isFinite(l.principal) ||
         l.balance < 0 ||
-        l.principal < 0,
+        l.principal < 0 ||
+        (l.apr !== undefined && (!Number.isFinite(l.apr) || l.apr < 0 || l.apr > 1)) ||
+        (l.shark && (!Number.isInteger(l.due) || l.due < 0)),
     ) ||
     s.people.some(
       (p) =>
@@ -808,13 +811,35 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
 }
 export const debtTotal = (s) => s.debt.reduce((a, l) => a + l.balance, 0);
 export const creditLimit = (s) => 8000 + s.prestige * 60;
-export const creditAvailable = (s) =>
-  Math.max(0, creditLimit(s) - debtTotal(s));
-export const loanPayment = (s) =>
-  s.debt.reduce(
-    (a, l) => a + Math.min(l.principal, l.balance) + (l.balance * 0.12) / 52,
-    0,
-  );
+export const BANKS = [
+  { id: "first", name: "First Picture Bank", apr: .08, weight: .25 },
+  { id: "meridian", name: "Meridian Commercial Bank", apr: .12, weight: .375 },
+  { id: "premiere", name: "Premiere Capital Bank", apr: .18, weight: .375 },
+];
+export function bankAvailable(s, bankId) {
+  const bank = BANKS.find(b => b.id === bankId);
+  if (!bank) return 0;
+  const legacy = s.debt.filter(l => !l.bankId && !l.shark).reduce((v,l) => v+l.balance,0);
+  return Math.max(0, creditLimit(s)*bank.weight - legacy*bank.weight - s.debt.filter(l => l.bankId === bankId).reduce((v,l) => v+l.balance,0));
+}
+export const creditAvailable = s => BANKS.reduce((v,b) => v+bankAvailable(s,b.id),0);
+export const sharkAvailable = s => BANKS.every(b => bankAvailable(s,b.id) < 1) && !s.sharkUsed && s.week <= END-13;
+export const loanPayment = s => s.debt.reduce((v,l) => v + (l.shark ? 0 : Math.min(l.principal,l.balance)+l.balance*(l.apr ?? .12)/52),0);
+export function castingGuidance(m, role) {
+  if (m.castingDirections?.[role]) return m.castingDirections[role];
+  const n = (m.art ?? 0) + Number(role)*7;
+  const youth = /coming.of.age|teen/i.test(m.subgenre ?? "");
+  const low = youth ? 18 : [25,35,45][n%3];
+  return { gender: ["Any gender", "Woman", "Man", "Any gender"][n%4], low, high: low+(youth ? 10 : 15) };
+}
+export function seasonOpportunity(m, month) {
+  if (month === 9 && m.genre === "Horror") return { label: "Halloween · Horror", multiplier: 1.3 };
+  if (month === 1 && /roman/i.test(m.subgenre ?? "")) return { label: "Valentine’s · Romance", multiplier: 1.2 };
+  if ([5,6,7].includes(month) && ["Action","Sci-fi"].includes(m.genre)) return { label: "Summer · Action & sci-fi", multiplier: 1.3 };
+  if ([10,11].includes(month) && /family|animat|holiday/i.test(m.subgenre ?? "")) return { label: "Holidays · Family films", multiplier: 1.25 };
+  if ([7,11].includes(month)) return { label: "Peak moviegoing", multiplier: m.scale === "Blockbuster" ? 1.45 : 1.17 };
+  return { label: "Normal demand", multiplier: 1 };
+}
 export const overhead = (s) =>
   5 +
   Object.values(s.departments).reduce((a, v) => a + (v - 1) * 2, 0) +
@@ -959,16 +984,12 @@ export function projection(s, m) {
   const reach =
     m.campaigns.reduce((v, c) => v + CAMPAIGNS[c].reach, 0) *
     (1 + (s.departments.Marketing - 1) * 0.09);
-  const season = [7, 11].includes(date(m.release ?? s.week).month)
-    ? m.scale === "Blockbuster"
-      ? 1.45
-      : 1.17
-    : 1;
+  const season = seasonOpportunity(m, date(m.release ?? s.week).month).multiplier;
   const base =
     ((market * (0.36 + stars / 100 + reach / 95) * season) /
       (1 + competition(s, m))) *
     (0.55 + (m.screen ?? 60) / 145);
-  const spread = Math.max(0.25, 0.95 - s.departments.Research * 0.12);
+  const spread = Math.max(0.10, 0.30 - s.departments.Research * 0.05);
   return [
     base * (m.distributionReach ?? 1) * (1 - spread),
     base * (m.distributionReach ?? 1) * (1 + spread),
@@ -980,6 +1001,7 @@ function addMovie(s, sc, parent = null, developing = false) {
     id: `m${s.next++}`,
     parent,
     stage: developing ? "development" : "packaging",
+    castingDirections: sc.roles.map((_,i) => castingGuidance(sc,i)),
     ready: s.week + 3,
     contracts: [],
     director: null,
@@ -1061,7 +1083,7 @@ export function act(s, type, a = {}) {
     throw Error("Finish the final awards season to see your retrospective.");
   if (
     s.cash < 0 &&
-    !["loan", "end", "awardReveal", "awardSummary", "ackNominations"].includes(
+    !["loan", "sharkLoan", "end", "awardReveal", "awardSummary", "ackNominations"].includes(
       type,
     )
   )
@@ -1362,6 +1384,16 @@ export function act(s, type, a = {}) {
       stage(m, ["ready", "scheduled"]);
       if (a.none && m.campaignSpend > 0)
         throw Error("Marketing is already purchased. Confirm that budget.");
+      const chosen = a.campaigns ?? [];
+      if (!Array.isArray(chosen) || new Set(chosen).size !== chosen.length || chosen.some(i => !Number.isInteger(i) || !CAMPAIGNS[i] || m.campaigns.includes(i)))
+        throw Error("Choose valid marketing options.");
+      if (a.none && chosen.length) throw Error("Choose either no marketing or paid campaigns.");
+      if (!a.none && !chosen.length && !m.campaignSpend) throw Error("Select a marketing option, including $0, before confirming.");
+      for (const i of chosen) {
+        debit(s, CAMPAIGNS[i].cost, m);
+        m.campaignSpend += CAMPAIGNS[i].cost;
+        m.campaigns.push(i);
+      }
       m.marketingConfirmed = true;
       m.marketingBudget = m.campaignSpend;
       saveForecast(s, m);
@@ -1409,13 +1441,20 @@ export function act(s, type, a = {}) {
       break;
     }
     case "loan": {
-      const amount = amt(a.amount, 1, creditAvailable(s));
+      const bank = BANKS.find(b => b.id === (a.bankId ?? "meridian"));
+      if (!bank) throw Error("Choose a bank.");
+      const amount = amt(a.amount, 1, bankAvailable(s,bank.id));
       s.cash += amount;
-      s.debt.push({ balance: amount, principal: amount / 104 });
-      log(
-        s,
-        `Bank financing accepted: ${money(amount)} at 12% APR over 104 weeks.`,
-      );
+      s.debt.push({ bankId: bank.id, apr: bank.apr, balance: amount, principal: amount / 104 });
+      log(s, `${bank.name}: ${money(amount)} at ${bank.apr*100}% APR over 104 weeks.`);
+      break;
+    }
+    case "sharkLoan": {
+      if (!sharkAvailable(s)) throw Error("The loan shark is available only once, after all bank credit is exhausted.");
+      s.sharkUsed = true;
+      s.cash += 2000;
+      s.debt.push({ shark: true, balance: 2400, principal: 0, due: s.week+13 });
+      log(s, "Loan shark accepted: $2,000,000 received. $2,400,000 due in 13 weeks or the studio closes.");
       break;
     }
     case "repay": {
@@ -1430,7 +1469,7 @@ export function act(s, type, a = {}) {
           ? available
           : Math.min(requested, available);
       let left = amount;
-      for (const l of s.debt) {
+      for (const l of [...s.debt].sort((a,b) => Number(!!b.shark)-Number(!!a.shark))) {
         const pay = Math.min(left, l.balance);
         l.balance -= pay;
         left -= pay;
@@ -1591,11 +1630,7 @@ function opening(s, m) {
   const reach =
     m.campaigns.reduce((v, c) => v + CAMPAIGNS[c].reach, 0) *
     (1 + (s.departments.Marketing - 1) * 0.09);
-  const season = [7, 11].includes(date(s.week).month)
-    ? m.scale === "Blockbuster"
-      ? 1.45
-      : 1.17
-    : 1;
+  const season = seasonOpportunity(m, date(s.week).month).multiplier;
   const rival = competition(s, m);
   const appeal = 0.36 + stars / 100 + reach / 95;
   const sequel = m.parent
@@ -1848,8 +1883,9 @@ function nextWeek(s) {
   s.week++;
   debit(s, overhead(s));
   for (const l of s.debt) {
+    if (l.shark) continue;
     const principal = Math.min(l.principal, l.balance);
-    debit(s, principal + (l.balance * 0.12) / 52);
+    debit(s, principal + (l.balance * (l.apr ?? .12)) / 52);
     l.balance -= principal;
   }
   s.debt = s.debt.filter((l) => l.balance > DEBT_EPSILON);
@@ -2020,6 +2056,20 @@ function nextWeek(s) {
     for (let i = 0; i < 4; i++)
       s.people.push(talent(s, i === 3 ? "director" : "actor"));
     log(s, "New talent has arrived. Another year of movie history begins.");
+  }
+  const shark = s.debt.find(l => l.shark && l.due <= s.week);
+  if (shark) {
+    if (s.cash + DEBT_EPSILON >= shark.balance) {
+      s.cash -= shark.balance;
+      s.debt = s.debt.filter(l => l !== shark);
+      log(s, "Loan shark repaid in full. Your studio stays open.");
+    } else {
+      s.ended = true;
+      s.epilogue = false;
+      s.endReason = "The loan shark closed your studio: the 13-week payment was missed.";
+      s.notices = [];
+      return;
+    }
   }
   const year = date(s.week).year;
   if (s.week % 52 === 44) s.notices.push({ kind: "awardsHeadsUp", year });

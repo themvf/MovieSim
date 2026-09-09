@@ -15,7 +15,7 @@ test("distribution saves a forecast and theater marketing cannot rewrite it", ()
   const s = E.newGame(41);
   const m = E.act(s, "buy", { script: s.market[0].id });
   Object.assign(m, { stage: "ready", release: 5, screen: 70 });
-  E.act(s, "confirmMarketing", { id: m.id });
+  E.act(s, "confirmMarketing", { id: m.id, none: !m.campaignSpend });
   E.act(s, "distribute", { id: m.id, deal: "partner" });
   const saved = structuredClone(m.expectations);
   assert.ok(saved.high > saved.low);

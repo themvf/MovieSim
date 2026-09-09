@@ -169,6 +169,7 @@ const fs = require("node:fs");
   await page.locator('[data-action="distribution"]').first().click();
   if (!(await page.locator('[data-action="confirmMarketing"]').isVisible()))
     throw Error("Cannot bypass marketing by opening distribution");
+  if (await page.locator('[data-action="selectNoMarketing"]').isEnabled()) await click('[data-action="selectNoMarketing"]');
   await click('[data-action="confirmMarketing"]');
   if (!(await page.locator(".distribution-options").isVisible()))
     throw Error("Distribution screen did not open after setting release");
@@ -299,6 +300,19 @@ const fs = require("node:fs");
     path: "test-results/desktop-active.png",
     fullPage: true,
   });
+  await click('[data-action="movie"]');
+  // Isolate the rehire UI from random rival bookings earned during the lifecycle.
+  await page.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem("moviesim-save-v1"));
+    const m = s.movies[0];
+    for (const c of [...m.contracts,m.director]) {
+      const p=s.people.find(p=>p.id===c.id);
+      p.bookings=[];
+      p.genres[m.genre]=80;
+    }
+    localStorage.setItem("moviesim-save-v1",JSON.stringify(s));
+  });
+  await page.reload();
   await click('[data-action="movie"]');
   await click('[data-action="sequel"]');
   const rehire = page.locator('[data-action="confirmSequel"]').first();

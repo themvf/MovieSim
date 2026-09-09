@@ -71,7 +71,7 @@ function finish(s, m) {
 function release(s, m, deal = "partner") {
   if (m.release === null)
     E.act(s, "setRelease", { id: m.id, release: s.week + 3 });
-  E.act(s, "confirmMarketing", { id: m.id });
+  E.act(s, "confirmMarketing", { id: m.id, none: !m.campaignSpend });
   E.act(s, "distribute", { id: m.id, deal });
   while (m.stage === "scheduled") tick(s);
 }
@@ -147,7 +147,7 @@ test("all distribution options disclose and apply their share and fee", () => {
     const d = E.distribution(s, m)[deal],
       cash = s.cash,
       spent = m.spent;
-    E.act(s, "confirmMarketing", { id: m.id });
+    E.act(s, "confirmMarketing", { id: m.id, none: !m.campaignSpend });
     E.act(s, "distribute", { id: m.id, deal });
     assert.equal(s.cash, cash + d.advance - d.cost);
     assert.equal(m.spent, spent + d.cost);

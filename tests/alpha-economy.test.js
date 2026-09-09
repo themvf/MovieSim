@@ -49,7 +49,7 @@ test("alpha: full-dollar loan limits and invalid transactions preserve state", (
     assert.throws(() => E.act(s, "loan", { amount: E.fromDollars(text) }));
     assert.equal(JSON.stringify(s), before);
   }
-  E.act(s, "loan", { amount: E.fromDollars("8,000,000") });
+  for (const bank of E.BANKS) E.act(s, "loan", { bankId: bank.id, amount: E.bankAvailable(s,bank.id) });
   assert.equal(E.creditAvailable(s), 0);
   assert.equal(s.cash, 14000);
   E.act(s, "repay", { amount: E.fromDollars("7,999,999") });
@@ -134,7 +134,7 @@ test("alpha: final legal shoot reaches a release and awards epilogue without ext
   });
   for (let i = 0; i < 4; i++) tick(s);
   E.act(s, "setRelease", { id: m.id, release: 259 });
-  E.act(s, "confirmMarketing", { id: m.id });
+  E.act(s, "confirmMarketing", { id: m.id, none: !m.campaignSpend });
   E.act(s, "distribute", { id: m.id, deal: "secure" });
   while (s.week < 260) tick(s);
   assert.equal(s.epilogue, true);
