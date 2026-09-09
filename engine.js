@@ -1,4 +1,4 @@
-import { storyFor } from "./stories.js?v=0.6.2";
+import { storyFor } from "./stories.js?v=0.7.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
 export const END = 260;
@@ -258,10 +258,15 @@ function validMovieFinances(m) {
     if (
       !contract ||
       !nonnegative(contract.fee) ||
-      !nonnegative(contract.optionCost)
+      !nonnegative(contract.optionCost) ||
+      (contract.participationPaid !== undefined &&
+        !nonnegative(contract.participationPaid)) ||
+      (contract.grossShare !== undefined &&
+        (!nonnegative(contract.grossShare) || contract.grossShare > 0.05))
     )
       return false;
   const optional = [
+    "participationPaid",
     "weekly",
     "productionTotal",
     "facilitySaving",
@@ -762,11 +767,72 @@ export const burn = (s) =>
 export function available(p, start, end) {
   return !p.retired && !p.bookings.some((b) => start < b.end && end > b.start);
 }
+export function participationDemand(p, m) {
+  if (freshFace(p) || p.star < 60) return 0;
+  if (m.scale === "Small" && m.difficulty >= 75) return 0;
+  return m.scale === "Blockbuster"
+    ? 0.05
+    : m.scale === "Mid-budget"
+      ? 0.03
+      : 0.02;
+}
+export const participationRate = (m) =>
+  [...m.contracts, ...(m.director ? [m.director] : [])].reduce(
+    (sum, c) => sum + (c.grossShare ?? 0),
+    0,
+  );
+export function castDraw(s, m) {
+  const cast = m.contracts.map((c) => ({
+    p: person(s, c.id),
+    weight: c.role === 0 ? 1 : 0.5,
+  }));
+  if (m.director) cast.push({ p: person(s, m.director.id), weight: 1 });
+  return cast.length
+    ? cast.reduce((sum, c) => sum + c.p.star * c.weight, 0) /
+        cast.reduce((sum, c) => sum + c.weight, 0)
+    : 20;
+}
+export function boxOfficeStatus(m) {
+  const base =
+    m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
+  const final = m.stage === "catalog";
+  const ratio = (final ? m.gross / 3 : (m.opening ?? 0)) / base;
+  const label =
+    ratio >= 3
+      ? "Monster hit"
+      : ratio >= 2
+        ? "Blockbuster"
+        : ratio >= 1
+          ? "Hit"
+          : ratio >= 0.5
+            ? "Modest turnout"
+            : "Flop";
+  return {
+    label: final
+      ? label
+      : ratio >= 3
+        ? "Monster opening"
+        : ratio >= 2
+          ? "Huge opening"
+          : ratio >= 1
+            ? "Strong opening"
+            : ratio >= 0.5
+              ? "Modest opening"
+              : "Weak opening",
+    final,
+  };
+}
 export function quote(s, p, m, role = 0) {
   const option =
     m.parent &&
     movie(s, m.parent)?.contracts.find((c) => c.id === p.id && c.option);
-  if (option) return { low: option.fee, high: option.fee, option: true };
+  if (option)
+    return {
+      low: option.fee,
+      high: option.fee,
+      option: true,
+      grossShare: option.grossShare ?? 0,
+    };
   const discount =
     p.kind === "actor" && m.difficulty >= 75 && p.talent >= 65 ? 0.76 : 1;
   const base = p.fee * discount * (1 - s.prestige / 500);
@@ -774,6 +840,7 @@ export function quote(s, p, m, role = 0) {
     low: roundAmount(base * 0.85),
     high: roundAmount(base * 1.12),
     option: false,
+    grossShare: participationDemand(p, m),
   };
 }
 export function competition(s, m, week = m.release ?? s.week + 1) {
@@ -787,10 +854,7 @@ export function competition(s, m, week = m.release ?? s.week + 1) {
 export function projection(s, m) {
   const market =
     m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
-  const stars = m.contracts.length
-    ? m.contracts.reduce((v, c) => v + person(s, c.id).star, 0) /
-      m.contracts.length
-    : 20;
+  const stars = castDraw(s, m);
   const reach =
     m.campaigns.reduce((v, c) => v + CAMPAIGNS[c].reach, 0) *
     (1 + (s.departments.Marketing - 1) * 0.09);
@@ -990,6 +1054,7 @@ export function act(s, type, a = {}) {
         id: p.id,
         role: a.role ?? null,
         fee: offer,
+        grossShare: q.grossShare,
         option: !!a.option,
         optionCost: a.option ? offer * 0.2 : 0,
         expectation: talentEstimate(
@@ -1344,9 +1409,7 @@ function finish(s, m) {
 function opening(s, m) {
   const market =
     m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
-  const stars =
-    m.contracts.reduce((v, c) => v + person(s, c.id).star, 0) /
-    m.contracts.length;
+  const stars = castDraw(s, m);
   const reach =
     m.campaigns.reduce((v, c) => v + CAMPAIGNS[c].reach, 0) *
     (1 + (s.departments.Marketing - 1) * 0.09);
@@ -1356,10 +1419,7 @@ function opening(s, m) {
       : 1.17
     : 1;
   const rival = competition(s, m);
-  const presence =
-    m.contracts.reduce((v, c) => v + person(s, c.id).presence, 0) /
-    m.contracts.length;
-  const appeal = 0.36 + (stars * 0.85 + presence * 0.15) / 100 + reach / 95;
+  const appeal = 0.36 + stars / 100 + reach / 95;
   const sequel = m.parent
     ? 1 + clamp(movie(s, m.parent).fans - 45, 0, 50) / 160
     : 1;
@@ -1411,6 +1471,7 @@ function opening(s, m) {
   }
   const d = person(s, m.director.id);
   const directorBefore = d.star;
+  if (m.scale !== "Small" || openingGross >= 3000) d.majorCredits++;
   d.history.push({
     id: m.id,
     title: m.title,
@@ -1718,6 +1779,13 @@ function nextWeek(s) {
       const receipts = gross * m.share;
       m.receipts += receipts;
       s.cash += receipts;
+      const payout = receipts * participationRate(m);
+      m.participationPaid = (m.participationPaid ?? 0) + payout;
+      m.spent += payout;
+      s.cash -= payout;
+      for (const c of [...m.contracts, ...(m.director ? [m.director] : [])])
+        c.participationPaid =
+          (c.participationPaid ?? 0) + receipts * (c.grossShare ?? 0);
       if (age >= 3 && (gross < m.opening * 0.1 || age >= 11)) {
         m.stage = "catalog";
         m.catalogStart = s.week;

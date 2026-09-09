@@ -110,12 +110,19 @@ Next event uses the same weekly simulation and accounting as Next week. It stops
 
 All 58 subgenres have story hooks and recognizable lead descriptions. Sequels retain their parent identity with a continuation premise. New creative and rehearsal decisions affect critics, audiences, or individual performances. Additive fields retain compatibility with existing version-5 saves.
 
-
 ## Weekly pacing (0.6.1)
 
 The player-facing advance controls move one week at a time, leaving opportunities to start other films between production milestones. Each published build starts a fresh studio; reloads within that build preserve progress. Explicit new-studio starts also clear casting filters and draft production plans.
 
-
 ## Distribution action (0.6.2)
 
 Locking the release date opens a dedicated distribution screen. Ready-film cards and the fixed project action also open it directly. Offer review returns to the distribution screen, while marketing remains on the project desk.
+
+## Talent participation and box-office identity (0.7.0)
+
+- Talent with fame at least 60 and an existing major credit demands 2% / 3% / 5% of studio ticket receipts on low / mid / big-budget films. Low-budget films with difficulty at least 75 waive the demand. Both actors and directors use the same rule. These are explicit demo balancing choices, not industry-standard percentages.
+- Shares are required alongside the upfront fee, not a player-proposed bargaining slider. All shares use the same studio ticket receipts before participation. They exclude advances and licensing. Weekly payments increase movie spending and reduce cash; they do not reduce reported gross ticket sales or double-deduct receipts. Sequel options retain fee and participation terms. Legacy contracts default to zero participation.
+- Fame drawing power weights the lead and director equally (1 each), supporting roles at 0.5 each. Presence affects performance, not direct pre-release awareness. Projection and opening both use the combined fame score.
+- Directors have Emerging / Established labels based on major credits or three feature-history entries, with fame and awards separate.
+- Opening assessments are provisional. Final theatrical popularity uses gross compared with a scope benchmark: $5,400,000 / $15,000,000 / $43,500,000. Below half the benchmark is Flop; half is Modest turnout; one is Hit; two is Blockbuster; three is Monster hit. These labels never depend on actual spending, salaries or distribution share. Financial results remain separate and include participation costs, excluding general studio overhead.
+- This new build starts a fresh studio as requested; refreshes retain the current build's progress.
