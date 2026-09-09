@@ -28,18 +28,26 @@ const fs = require("node:fs");
       .first()
       .click();
   await click('[data-action="nav"][data-tab="scripts"]');
-  await click('[data-action="script"]');
+  const scriptId = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem("moviesim-save-v1")).market.find(
+        (m) => m.scale === "Small",
+      ).id,
+  );
+  await click(`[data-action="script"][data-script="${scriptId}"]`);
   await click('[data-action="buy"]');
   for (let role = 0; role < 3; role++) {
     const next = page.locator(`[data-action="casting"][data-role="${role}"]`);
     if (!(await next.count())) break;
     await next.click();
+    await page.locator("#casting-budget").selectOption("250");
     await click('[data-action="audition"]');
     await click('[data-action="offer"]');
     if (role === 0) await page.locator('input[name="option"]').check();
     await page.locator("#offer-form button").click();
   }
   await click('[data-action="director"]');
+  await page.locator("#casting-budget").selectOption("750");
   await click('[data-action="offer"]');
   await page.locator("#offer-form button").click();
   await click('[data-action="production"]');
@@ -72,6 +80,18 @@ const fs = require("node:fs");
   await click('[data-action="movie"]');
   await click('[data-action="screen"]');
   await click('[data-action="campaign"][data-campaign="0"]');
+  await click('[data-action="release"]');
+  await page
+    .locator("#release-select")
+    .selectOption(
+      String(
+        (await page.evaluate(
+          () => JSON.parse(localStorage.getItem("moviesim-save-v1")).week,
+        )) + 3,
+      ),
+    );
+  await page.locator("#release-form button").click();
+  await click('[data-action="dealReview"][data-deal="partner"]');
   await click('[data-action="distribute"][data-deal="partner"]');
   await click('[data-action="close"]');
   for (let i = 0; i < 3; i++) await click('[data-action="next"]');

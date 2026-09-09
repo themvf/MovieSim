@@ -51,6 +51,16 @@ function greenlight(s, m, extra = {}) {
   });
 }
 function tick(s) {
+  for (const n of [...s.notices]) {
+    if (n.kind === "nominations") E.act(s, "ackNominations", { year: n.year });
+    if (n.kind === "awards") E.act(s, "awardSummary", { year: n.year });
+  }
+  if (s.epilogue) {
+    for (const a of s.awards)
+      if (!a.completed) E.act(s, "awardSummary", { year: a.year });
+  }
+  s.notices = [];
+  if (s.ended) return;
   for (const m of s.movies)
     if (m.event) E.act(s, "event", { id: m.id, choice: "split" });
   E.act(s, "next");
@@ -59,6 +69,8 @@ function finish(s, m) {
   while (m.stage === "filming") tick(s);
 }
 function release(s, m, deal = "partner") {
+  if (m.release === null)
+    E.act(s, "setRelease", { id: m.id, release: s.week + 3 });
   E.act(s, "distribute", { id: m.id, deal });
   while (m.stage === "scheduled") tick(s);
 }
@@ -124,6 +136,7 @@ test("all distribution options disclose and apply their share and fee", () => {
     packageFilm(s, m);
     greenlight(s, m);
     finish(s, m);
+    E.act(s, "setRelease", { id: m.id, release: s.week + 3 });
     const d = E.distribution(s, m)[deal],
       cash = s.cash,
       spent = m.spent;
@@ -146,19 +159,25 @@ test("production conflicts are blocked without partially changing state", () => 
   assert.equal(b.stage, "packaging");
   assert.equal(s.cash, cash);
 });
-test("player-selected release is fixed and distribution must be chosen on time", () => {
+test("release date can only be chosen after wrap and is fixed after confirmation", () => {
   const s = E.newGame(8),
     m = acquire(s);
   packageFilm(s, m);
-  greenlight(s, m, { release: 20 });
-  assert.equal(m.release, 20);
+  greenlight(s, m);
+  assert.equal(m.release, null);
+  assert.throws(() => E.act(s, "setRelease", { id: m.id, release: 20 }));
   finish(s, m);
+  assert.equal(m.release, null);
+  assert.throws(() => E.act(s, "distribute", { id: m.id, deal: "self" }));
+  E.act(s, "setRelease", { id: m.id, release: 20 });
+  assert.throws(() => E.act(s, "setRelease", { id: m.id, release: 22 }));
   while (s.week < 19) tick(s);
   assert.throws(() => tick(s), /distribution/);
   assert.equal(s.week, 19);
   release(s, m);
   assert.equal(m.release, 20);
 });
+
 test("pending production events pause time and both cash/quality responses work", () => {
   for (const choice of ["pay", "cut", "split"]) {
     const s = E.newGame(4),

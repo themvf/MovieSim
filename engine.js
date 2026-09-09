@@ -1,5 +1,5 @@
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
-export const VERSION = 1;
+export const VERSION = 2;
 export const END = 260;
 export const GENRES = {
   Drama: ["Character study", "Courtroom", "Coming of age"],
@@ -10,6 +10,162 @@ export const GENRES = {
   "Sci-fi": ["Space", "Near future", "Time travel"],
 };
 export const SCALES = ["Small", "Mid-budget", "Blockbuster"];
+export const PRESTIGE_LEVELS = [
+  {
+    at: 0,
+    name: "New independent",
+    description: "A new name with everything to prove.",
+  },
+  {
+    at: 15,
+    name: "On the radar",
+    description: "Your films are getting the industry’s attention.",
+  },
+  {
+    at: 35,
+    name: "Respected studio",
+    description: "Talent and distributors take your calls seriously.",
+  },
+  {
+    at: 60,
+    name: "Major player",
+    description: "Your track record gives you real negotiating power.",
+  },
+  {
+    at: 85,
+    name: "Prestige powerhouse",
+    description: "Your studio is a destination for ambitious filmmakers.",
+  },
+];
+export const prestigeLevel = (value) =>
+  PRESTIGE_LEVELS.findLastIndex((l) => value >= l.at);
+export function notifyPrestige(s) {
+  const level = prestigeLevel(s.prestige);
+  for (let i = (s.prestigeLevel ?? 0) + 1; i <= level; i++)
+    s.notices.push({ kind: "prestige", level: i });
+  s.prestigeLevel = Math.max(s.prestigeLevel ?? 0, level);
+}
+export function enrichTalent(p) {
+  if (!p.genres) {
+    const n = p.look ?? 0;
+    p.genres = Object.fromEntries(
+      Object.keys(GENRES).map((g, i) => [
+        g,
+        35 + ((n * (i + 3) + i * 19) % 61),
+      ]),
+    );
+  }
+  p.presence ??= 40 + (((p.look ?? 0) * 17) % 56);
+  p.majorCredits ??=
+    (p.star >= 25 ? Math.max(1, Math.floor(p.star / 6)) : 0) +
+    p.history.filter((f) => f.major).length;
+  return p;
+}
+export const freshFace = (p) => p.majorCredits === 0;
+export const specialties = (p) =>
+  Object.entries(p.genres).sort((a, b) => b[1] - a[1]);
+export const roleAbility = (p, genre) =>
+  p.talent * 0.62 + p.presence * 0.15 + (p.genres[genre] ?? 50) * 0.23;
+export const BUDGET_TIERS = [
+  "Shoestring",
+  "Lean",
+  "Standard",
+  "Premium",
+  "Flagship",
+];
+export const BUDGET_DETAILS = {
+  sets: [
+    "Borrowed spaces & minimal dressing",
+    "A few practical locations",
+    "Dedicated sets & location crew",
+    "Custom builds & location variety",
+    "Large builds & specialist locations",
+  ],
+  crew: [
+    "Skeleton crew & basic editing",
+    "Small crew with limited coverage",
+    "Full crew & dedicated post team",
+    "Specialists & extra camera coverage",
+    "Multiple units & extensive post",
+  ],
+  effects: [
+    "Minimal effects & simple fixes",
+    "Basic practical effects",
+    "Practical effects & selected VFX",
+    "Dedicated effects team",
+    "Extensive custom effects work",
+  ],
+};
+export function budgetCost(m, key, tier) {
+  const needs =
+    m.scale === "Small" ? 650 : m.scale === "Mid-budget" ? 2200 : 6500;
+  const effects = ["Action", "Sci-fi"].includes(m.genre)
+    ? 0.4
+    : m.genre === "Horror"
+      ? 0.2
+      : 0.05;
+  const weight =
+    key === "crew" ? 0.45 : key === "sets" ? 0.55 - effects : effects;
+  return Math.max(
+    key === "effects" ? 0 : 25,
+    Math.round((needs * weight * [0.3, 0.65, 1, 1.5, 2.2][tier]) / 5) * 5,
+  );
+}
+export function scheduleInfo(duration) {
+  return {
+    label:
+      duration < 8
+        ? "Rushed"
+        : duration === 8
+          ? "Standard"
+          : duration <= 12
+            ? "Room to rehearse"
+            : "Extended shoot",
+    multiplier: (duration / 8) ** 0.6,
+    quality: (duration - 8) * 1.1,
+    risk: clamp(0.3 * (8 / duration) ** 1.5, 0.08, 0.6),
+  };
+}
+export function productionCosts(s, m, b, duration) {
+  const saving =
+    s.facilities.Soundstage * 0.09 * b.sets +
+    s.facilities["Effects workshop"] * 0.09 * b.effects +
+    s.facilities["Editing suite"] * 0.04 * b.crew;
+  const total =
+    (b.sets + b.crew + b.effects - saving) * scheduleInfo(duration).multiplier;
+  return { saving, total, weekly: total / duration };
+}
+export function migrateSave(s) {
+  if (
+    !s ||
+    ![1, VERSION].includes(s.version) ||
+    !Array.isArray(s.movies) ||
+    !Array.isArray(s.people) ||
+    !s.departments ||
+    !Number.isFinite(s.cash) ||
+    !Number.isInteger(s.week) ||
+    s.week < 0 ||
+    s.week > END
+  )
+    throw Error("Invalid save");
+  for (const p of s.people) enrichTalent(p);
+  s.seasons ??= [];
+  s.epilogue ??= false;
+  s.prestigeLevel ??= prestigeLevel(s.prestige);
+  for (const m of s.movies) {
+    if (s.version === 1 && ["filming", "ready"].includes(m.stage))
+      m.release = null;
+  }
+  for (const a of s.awards) {
+    a.completed ??= true;
+    a.revealed ??= a.results.length;
+  }
+  if (s.version === 1) {
+    s.notices = s.notices.filter((n) => n.kind !== "awards");
+  }
+  s.version = VERSION;
+  return s;
+}
 export const CAMPAIGNS = [
   {
     name: "Social campaign",
@@ -210,7 +366,7 @@ function talent(s, kind) {
       : index % 3 === 0
         ? roll(s, 25, 50)
         : roll(s, 2, 20);
-  return {
+  return enrichTalent({
     id: `p${s.next++}`,
     name,
     kind,
@@ -223,7 +379,7 @@ function talent(s, kind) {
     awards: 0,
     bookings: [],
     retired: false,
-  };
+  });
 }
 function script(s) {
   const genre = pick(s, Object.keys(GENRES)),
@@ -275,6 +431,9 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
     facilities: { Soundstage: 0, "Editing suite": 0, "Effects workshop": 0 },
     log: [],
     awards: [],
+    seasons: [],
+    epilogue: false,
+    prestigeLevel: 0,
     notices: [],
     ended: false,
     started: false,
@@ -340,7 +499,7 @@ export function quote(s, p, m, role = 0) {
     option: false,
   };
 }
-export function competition(s, m, week = m.release) {
+export function competition(s, m, week = m.release ?? s.week + 1) {
   return s.rivals
     .filter((r) => Math.abs(r.week - week) <= 2)
     .reduce(
@@ -430,8 +589,19 @@ function amt(value, min, max) {
   return n;
 }
 export function act(s, type, a = {}) {
-  live(s);
-  if (s.cash < 0 && !["loan", "end"].includes(type))
+  if (!["awardReveal", "awardSummary", "ackNominations"].includes(type))
+    live(s);
+  if (
+    s.epilogue &&
+    !["awardReveal", "awardSummary", "ackNominations"].includes(type)
+  )
+    throw Error("Finish the final awards season to see your retrospective.");
+  if (
+    s.cash < 0 &&
+    !["loan", "end", "awardReveal", "awardSummary", "ackNominations"].includes(
+      type,
+    )
+  )
     throw Error("Review emergency financing before making another decision.");
   let m = a.id ? required(s, a.id) : null;
   switch (type) {
@@ -500,7 +670,7 @@ export function act(s, type, a = {}) {
       const key = `${a.role}:${p.id}`;
       if (!m.auditions[key])
         m.auditions[key] = clamp(
-          p.talent +
+          roleAbility(p, m.genre) +
             roll(s, -13, 13) -
             (m.difficulty > p.talent ? (m.difficulty - p.talent) * 0.2 : 0),
         );
@@ -561,27 +731,16 @@ export function act(s, type, a = {}) {
         crew: amt(a.crew, 25, 15000),
         effects: amt(a.effects, 0, 20000),
       };
-      const release = amt(
-        a.release ?? s.week + duration + 3,
-        s.week + duration + 3,
-        END - 1,
-      );
-      if (!Number.isInteger(release))
-        throw Error("Choose a whole release week.");
       m.budget = b;
       m.duration = duration;
       m.progress = 0;
       m.start = s.week;
-      m.release = release;
+      m.release = null;
       m.stage = "filming";
-      const facilitySaving =
-        s.facilities.Soundstage * 0.09 * b.sets +
-        s.facilities["Effects workshop"] * 0.09 * b.effects +
-        s.facilities["Editing suite"] * 0.04 * b.crew;
-      m.productionTotal =
-        (b.sets + b.crew + b.effects - facilitySaving) * (duration / 8) ** 0.6;
-      m.weekly = m.productionTotal / duration;
-      m.facilitySaving = facilitySaving;
+      const costs = productionCosts(s, m, b, duration);
+      m.productionTotal = costs.total;
+      m.weekly = costs.weekly;
+      m.facilitySaving = costs.saving;
       const fees = [...m.contracts, m.director].reduce(
         (v, c) => v + c.fee + c.optionCost,
         0,
@@ -591,7 +750,7 @@ export function act(s, type, a = {}) {
         p.bookings.push({ start: s.week, end: s.week + duration, movie: m.id });
       log(
         s,
-        `Cameras roll on ${m.title}. Release locked for ${date(m.release).label}, week ${date(m.release).week}.`,
+        `Cameras roll on ${m.title}. Choose the release date after filming wraps.`,
       );
       break;
     }
@@ -638,8 +797,23 @@ export function act(s, type, a = {}) {
       m.campaigns.push(Number(a.campaign));
       break;
     }
+    case "setRelease": {
+      stage(m, ["ready"]);
+      if (m.release !== null)
+        throw Error("The release date is already locked.");
+      const release = amt(a.release, s.week + 1, END - 1);
+      if (!Number.isInteger(release))
+        throw Error("Choose a whole release week.");
+      m.release = release;
+      log(
+        s,
+        `${m.title} opens ${date(release).label}, week ${date(release).week}.`,
+      );
+      break;
+    }
     case "distribute": {
       stage(m, ["ready"]);
+      if (m.release === null) throw Error("Choose a release date first.");
       if (!["secure", "partner", "self"].includes(a.deal))
         throw Error("Choose a distribution deal.");
       const deals = distribution(s, m),
@@ -705,10 +879,30 @@ export function act(s, type, a = {}) {
     }
     case "awardsCampaign": {
       stage(m, ["theaters", "catalog"]);
-      if (m.awardSpend || date(m.release).year !== date(s.week).year)
+      if (m.awardSpend || !canCampaign(s, m))
         throw Error("This film is not eligible for a campaign this year.");
       m.awardSpend = 150;
       debit(s, 150, m);
+      break;
+    }
+    case "ackNominations": {
+      const season = s.seasons.find((x) => x.year === a.year);
+      if (!season) throw Error("Nominations not announced.");
+      season.acknowledged = true;
+      s.notices = s.notices.filter(
+        (n) => !(n.kind === "nominations" && n.year === a.year),
+      );
+      if (s.epilogue) ceremony(s, a.year);
+      break;
+    }
+    case "awardReveal": {
+      revealAward(s, a.year);
+      break;
+    }
+    case "awardSummary": {
+      const award = s.awards.find((x) => x.year === a.year);
+      if (!award) throw Error("The ceremony has not started.");
+      while (!award.completed) revealAward(s, a.year);
       break;
     }
     case "next":
@@ -721,6 +915,7 @@ export function act(s, type, a = {}) {
     default:
       throw Error("Unknown decision.");
   }
+  notifyPrestige(s);
   return m;
 }
 export function upgradeCost(s, name) {
@@ -782,9 +977,11 @@ function finish(s, m) {
   m.quality = clamp(
     scriptQuality * 0.25 +
       (performances.reduce((a, v) => a + v, 0) / performances.length) * 0.3 +
-      person(s, m.director.id).talent * 0.2 +
+      (person(s, m.director.id).talent * 0.8 +
+        person(s, m.director.id).genres[m.genre] * 0.2) *
+        0.2 +
       craft * 0.25 +
-      (m.duration - 8) * 1.1 +
+      scheduleInfo(m.duration).quality +
       (s.departments.Production - 1) * 2 -
       m.penalty,
     10,
@@ -818,7 +1015,10 @@ function opening(s, m) {
       : 1.17
     : 1;
   const rival = competition(s, m);
-  const appeal = 0.36 + stars / 100 + reach / 95;
+  const presence =
+    m.contracts.reduce((v, c) => v + person(s, c.id).presence, 0) /
+    m.contracts.length;
+  const appeal = 0.36 + (stars * 0.85 + presence * 0.15) / 100 + reach / 95;
   const sequel = m.parent
     ? 1 + clamp(movie(s, m.parent).fans - 45, 0, 50) / 160
     : 1;
@@ -844,7 +1044,11 @@ function opening(s, m) {
     );
     p.star = clamp(p.star + rise);
     p.fee = Math.round(35 + p.star * p.star * 0.35);
+    const major = m.scale !== "Small" || openingGross >= 3000;
+    if (major) p.majorCredits++;
     p.history.push({
+      major,
+      genre: m.genre,
       id: m.id,
       title: m.title,
       score: m.performances[i],
@@ -872,78 +1076,170 @@ function opening(s, m) {
     "release",
   );
 }
-function ceremony(s) {
-  const year = date(s.week - 1).year;
+export const AWARD_CATEGORIES = [
+  "Supporting Acting",
+  "Lead Acting",
+  "Director",
+  "Picture",
+];
+export function canCampaign(s, m) {
+  if (!["theaters", "catalog"].includes(m.stage)) return false;
+  const year = date(m.release).year,
+    current = date(s.week).year;
+  return (
+    year === current ||
+    (year === current - 1 &&
+      s.week % 52 < 10 &&
+      !s.awards.some((a) => a.year === year))
+  );
+}
+function candidate(s, m, category) {
+  const role = category === "Supporting Acting" ? m.roles.length - 1 : 0;
+  const idx = m.contracts.findIndex((c) => c.role === role);
+  const personId =
+    category === "Director"
+      ? m.director.id
+      : category.includes("Acting")
+        ? m.contracts[idx]?.id
+        : null;
+  const score = category.includes("Acting")
+    ? (m.performances[idx] || m.critics) * 0.8 + m.difficulty * 0.2
+    : m.critics;
+  return {
+    id: m.id,
+    title: m.title,
+    person: personId,
+    name: personId ? person(s, personId).name : null,
+    score,
+  };
+}
+export function nominations(s, year, epilogue = false) {
+  if (
+    s.seasons.some((a) => a.year === year) ||
+    s.awards.some((a) => a.year === year)
+  )
+    return;
   const eligible = s.movies.filter(
     (m) =>
       ["theaters", "catalog"].includes(m.stage) &&
       date(m.release).year === year,
   );
-  const categories = [
-    "Picture",
-    "Director",
-    "Lead Acting",
-    "Supporting Acting",
-  ];
-  const results = [];
-  for (const cat of categories) {
-    const nominees = eligible
-      .map((m) => {
-        const idx =
-          cat === "Supporting Acting"
-            ? m.contracts.findIndex((c) => c.role === m.roles.length - 1)
-            : m.contracts.findIndex((c) => c.role === 0);
-        const score = cat.includes("Acting")
-          ? (m.performances[idx] || m.critics) * 0.8 + m.difficulty * 0.2
-          : m.critics;
-        return {
-          id: m.id,
-          title: m.title,
-          score: score + (m.awardSpend ? 5 : 0) + roll(s, -8, 8),
-          person:
-            cat === "Director"
-              ? m.director.id
-              : cat.includes("Acting")
-                ? m.contracts[idx]?.id
-                : null,
-        };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
-    const rival = { title: pick(s, TITLES), score: roll(s, 70, 93), id: null };
-    const winner = nominees[0]?.score > rival.score ? nominees[0] : rival;
-    if (winner.id) {
-      const m = movie(s, winner.id);
-      m.awards.push(`${year} ${cat}`);
-      s.prestige = clamp(s.prestige + 8);
-      if (winner.person) {
-        const p = person(s, winner.person);
-        p.awards++;
-        p.star = clamp(p.star + 12);
-        p.fee = Math.round(35 + p.star * p.star * 0.35);
-      }
-      log(
-        s,
-        `${m.title} wins ${cat} at the ${year} Silver Screen Awards!`,
-        "award",
+  const categories = AWARD_CATEGORIES.map((category) => {
+    const candidates = eligible.map((m) => ({
+      ...candidate(s, m, category),
+      nominationScore:
+        candidate(s, m, category).score +
+        (m.awardSpend ? 3 : 0) +
+        roll(s, -8, 8),
+    }));
+    for (let i = 0; i < 4; i++) {
+      const unused = TITLES.filter(
+        (title) => !candidates.some((c) => c.title === title),
       );
+      const title = unused.length
+        ? pick(s, unused)
+        : `A New Horizon ${year}-${i + 1}`;
+      candidates.push({
+        id: null,
+        title,
+        person: null,
+        name:
+          category === "Picture" ? null : `${pick(s, FIRST)} ${pick(s, LAST)}`,
+        score: roll(s, 66, 92),
+        nominationScore: roll(s, 67, 94),
+      });
     }
-    results.push({
-      category: cat,
-      nominees: nominees.map((n) => n.title),
-      winner: winner.title,
-      ours: !!winner.id,
-    });
+    return {
+      category,
+      nominees: candidates
+        .sort((a, b) => b.nominationScore - a.nominationScore)
+        .slice(0, 4),
+    };
+  });
+  s.seasons.push({ year, categories, acknowledged: false, epilogue });
+  s.notices.push({ kind: "nominations", year, epilogue });
+  log(
+    s,
+    `${year} nominations are announced. Visit Awards to see your contenders.`,
+    "award",
+  );
+}
+export function ceremony(s, year) {
+  if (s.awards.some((a) => a.year === year)) return;
+  let season = s.seasons.find((a) => a.year === year);
+  if (!season) {
+    nominations(s, year);
+    season = s.seasons.find((a) => a.year === year);
   }
-  s.awards.push({ year, results });
+  if (!season) return;
+  const results = season.categories.map(({ category, nominees }) => {
+    const ranked = nominees
+      .map((n) => ({
+        ...n,
+        finalScore:
+          n.score +
+          (n.id && movie(s, n.id).awardSpend ? 5 : 0) +
+          roll(s, -8, 8),
+      }))
+      .sort((a, b) => b.finalScore - a.finalScore);
+    const winner = ranked[0];
+    return {
+      category,
+      nominees: nominees.map((n) => n.title),
+      entries: nominees,
+      winner: winner.title,
+      winnerName: winner.name,
+      person: winner.person,
+      id: winner.id,
+      ours: !!winner.id,
+    };
+  });
+  s.awards.push({ year, results, revealed: 0, completed: false });
   s.notices.push({ kind: "awards", year });
 }
+export function revealAward(s, year) {
+  const award = s.awards.find((a) => a.year === year);
+  if (!award) throw Error("The ceremony is not ready.");
+  if (award.completed) return;
+  const r = award.results[award.revealed];
+  if (r.ours) {
+    const m = movie(s, r.id);
+    m.awards.push(`${year} ${r.category}`);
+    s.prestige = clamp(s.prestige + 8);
+    if (r.person) {
+      const p = person(s, r.person);
+      p.awards++;
+      p.star = clamp(p.star + 12);
+      p.majorCredits = Math.max(1, p.majorCredits);
+      p.fee = Math.round(35 + p.star * p.star * 0.35);
+    }
+    log(
+      s,
+      `${m.title} wins ${r.category} at the ${year} Silver Screen Awards!`,
+      "award",
+    );
+  }
+  award.revealed++;
+  award.completed = award.revealed === award.results.length;
+  if (award.completed) {
+    s.notices = s.notices.filter(
+      (n) => !(n.kind === "awards" && n.year === year),
+    );
+    if (s.epilogue) {
+      s.epilogue = false;
+      s.ended = true;
+      s.endReason = "Five years in pictures";
+    }
+  }
+}
 function nextWeek(s) {
+  if (s.notices.some((n) => ["nominations", "awards"].includes(n.kind)))
+    throw Error("Visit the awards-season announcement before advancing.");
   const pending = s.movies.find((m) => m.event);
   if (pending)
     throw Error(`Resolve the production decision on ${pending.title} first.`);
   const due = s.movies.find(
-    (m) => m.stage === "ready" && m.release <= s.week + 1,
+    (m) => m.stage === "ready" && m.release !== null && m.release <= s.week + 1,
   );
   if (due)
     throw Error(
@@ -967,7 +1263,7 @@ function nextWeek(s) {
         m.progress > 1 &&
         m.progress < m.duration - 1 &&
         m.eventCount < SCALES.indexOf(m.scale) + 1 &&
-        random(s) < 0.3
+        random(s) < scheduleInfo(m.duration).risk
       ) {
         m.eventCount++;
         const action = ["Action", "Sci-fi"].includes(m.genre);
@@ -1061,7 +1357,6 @@ function nextWeek(s) {
     }
   }
   if (s.week % 52 === 0) {
-    ceremony(s);
     for (const p of s.people) {
       p.age++;
       if (p.age >= 65 && random(s) < 0.25) {
@@ -1073,9 +1368,18 @@ function nextWeek(s) {
       s.people.push(talent(s, i === 3 ? "director" : "actor"));
     log(s, "New talent has arrived. Another year of movie history begins.");
   }
+  const year = date(s.week).year;
+  if (s.week % 52 === 44) s.notices.push({ kind: "awardsHeadsUp", year });
+  if (s.week >= 52 && s.week % 52 === 3) nominations(s, year - 1);
+  if (s.week >= 52 && s.week % 52 === 10) ceremony(s, year - 1);
   if (s.week >= END) {
-    s.ended = true;
-    s.endReason = "Five years in pictures";
+    s.epilogue = true;
+    const finalYear = 2030;
+    if (s.awards.some((a) => a.year === finalYear && a.completed)) {
+      s.epilogue = false;
+      s.ended = true;
+      s.endReason = "Five years in pictures";
+    } else nominations(s, finalYear, true);
   }
 }
 export function summary(s) {
@@ -1110,7 +1414,10 @@ export function summary(s) {
               : "An unwritten story",
     released: released.length,
     wins: s.awards.reduce(
-      (v, a) => v + a.results.filter((r) => r.ours).length,
+      (v, a) =>
+        v +
+        a.results.slice(0, a.revealed ?? a.results.length).filter((r) => r.ours)
+          .length,
       0,
     ),
   };

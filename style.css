@@ -18,6 +18,357 @@
     sans-serif;
   font-size: 14px;
 }
+.budget-slider {
+  padding: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.slider-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.slider-heading output {
+  color: var(--peach);
+  font-size: 19px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+input[type="range"] {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  accent-color: var(--peach);
+  min-height: 38px;
+  cursor: pointer;
+}
+.modal-head h2:focus {
+  outline: none;
+}
+.slider-ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 10px;
+}
+.tier-summary {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--mint);
+  line-height: 1.5;
+}
+.schedule-explainer {
+  padding: 19px;
+  border-left: 3px solid var(--mint);
+  background: #253632;
+  border-radius: 4px;
+}
+.schedule-explainer h3 {
+  margin: 9px 0;
+}
+.schedule-explainer p {
+  font-size: 12px;
+}
+.schedule-explainer strong {
+  color: var(--peach);
+  font-size: 13px;
+}
+.schedule-explainer small {
+  display: block;
+  color: var(--muted);
+  margin-top: 10px;
+  line-height: 1.6;
+}
+.conflict-panel {
+  padding: 17px;
+  background: #382e29;
+  border: 1px solid var(--peach);
+  border-radius: 6px;
+}
+.conflict-panel p {
+  font-size: 11px;
+  margin: 10px 0 0;
+}
+.conflict-panel .role-row small {
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+.casting-context {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+.casting-context span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.casting-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.casting-filters label {
+  font-size: 11px;
+}
+.actor-ratings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  margin: 19px 0;
+}
+.actor-ratings .stat > strong {
+  font-size: 17px;
+}
+.actor-ratings .stat > span {
+  font-size: 7px;
+  margin-bottom: 6px;
+}
+.genre-strengths {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+  font-size: 11px;
+  text-align: left;
+  line-height: 1.5;
+}
+.genre-strengths b {
+  color: var(--muted);
+  font-size: 10px;
+  display: inline-block;
+  min-width: 105px;
+  font-weight: 500;
+}
+.fresh-note {
+  color: var(--mint);
+  font-size: 10px !important;
+  margin: 12px 0;
+}
+.fee-line {
+  font-size: 11px;
+  margin: 15px 0 0 !important;
+}
+.fee-line strong {
+  color: var(--text);
+  display: block;
+  margin-top: 5px;
+}
+.genre-scores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 25px 0;
+}
+.genre-scores span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.genre-scores b {
+  display: block;
+  margin-top: 6px;
+  color: var(--text);
+}
+.distribution-options {
+  display: grid;
+  gap: 15px;
+}
+.distribution-card {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  padding: 20px;
+}
+.distribution-card > .eyebrow {
+  color: var(--mint);
+  margin-bottom: 9px;
+}
+.distribution-card p {
+  font-size: 12px;
+  margin-bottom: 0;
+}
+.deal-numbers {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.3fr;
+  gap: 15px;
+  margin: 22px 0;
+}
+.deal-numbers span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+  min-height: 30px;
+}
+.deal-numbers strong {
+  display: block;
+  margin-top: 9px;
+  font-size: 22px;
+  color: var(--peach);
+}
+.block {
+  display: block;
+  margin-top: 7px;
+}
+.awards-timeline {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin: 28px 0;
+}
+.awards-timeline > span {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--gold);
+}
+.awards-timeline small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.nomination-category {
+  margin: 23px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.nominee-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+.nominee-row:last-child {
+  border: 0;
+}
+.nominee-row strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+.nominee-row > div > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.studio-nominee strong,
+.studio-nominee > div > span {
+  color: var(--gold);
+}
+.ceremony-invite,
+.prestige-reveal {
+  text-align: center;
+}
+.ceremony-invite h2,
+.prestige-reveal h2 {
+  font-family: Georgia, serif;
+  font-size: 30px;
+  margin-top: 18px;
+}
+.ceremony-progress {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 2px;
+  margin: 20px 0 26px;
+  color: var(--muted);
+}
+.winner-card {
+  text-align: center;
+  padding: 35px 20px;
+  border: 1px solid var(--gold);
+  border-radius: 7px;
+  background: #32382e;
+}
+.winner-card h2 {
+  font-family: Georgia, serif;
+  font-size: 35px;
+  margin: 22px 0 12px;
+}
+.winner-card h3 {
+  margin: 18px 0;
+  font-size: 23px;
+}
+.winner-card p {
+  font-size: 12px;
+}
+.benefit-list {
+  text-align: left;
+  margin: 24px 0;
+}
+.benefit-list > div {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.benefit-list strong {
+  font-size: 13px;
+  color: var(--mint);
+}
+.benefit-list span {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+@media (max-width: 650px) {
+  .casting-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .casting-filters > label:last-child {
+    grid-column: 1/-1;
+  }
+  .budget-slider {
+    padding: 15px;
+  }
+  .slider-heading strong {
+    font-size: 12px;
+  }
+  .slider-heading output {
+    font-size: 18px;
+  }
+  .tier-summary {
+    font-size: 11px;
+  }
+  .deal-numbers {
+    gap: 9px;
+  }
+  .deal-numbers strong {
+    font-size: 20px;
+  }
+  .deal-numbers span {
+    font-size: 9px;
+  }
+  .awards-timeline {
+    gap: 13px;
+  }
+  .awards-timeline small {
+    font-size: 9px;
+  }
+  .awards-timeline > span {
+    font-size: 8px;
+  }
+  .conflict-panel {
+    padding: 13px;
+  }
+  .genre-strengths b {
+    min-width: 0;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .talent-card .actor-ratings .stat > strong {
+    font-size: 16px;
+  }
+  .ceremony-invite h2,
+  .prestige-reveal h2 {
+    font-size: 27px;
+  }
+}
 * {
   box-sizing: border-box;
 }
@@ -2515,4 +2866,12 @@ input[type="checkbox"] {
   .compact-hero .art-caption {
     display: none;
   }
+}
+
+input[type="range"] {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-height: 38px;
+  accent-color: var(--peach);
 }

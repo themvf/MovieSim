@@ -1,4 +1,4 @@
-# Playable demo 0.1
+# Playable demo 0.2
 
 MovieSim is a dependency-free static web game. `engine.js` owns simulation state and decisions; `app.js` renders the interface and persists saves; `art.js` draws original SVG pixel portraits, posters, and the studio lot. No third-party artwork or game assets are used.
 
@@ -16,13 +16,13 @@ Open http://127.0.0.1:4173. Run simulation tests with `npm test`. Browser checks
 
 - Five-year, 260-week runs starting in January 2026, $6M starting cash, generated actors/directors, script refreshes, and annual new talent.
 - Script purchases and renaming; original title/genre/subgenre/scale selection; department-developed sequels with inherited rights.
-- Free auditions with uncertain estimates, fee ranges, negotiated offers, sequel options, named directors, and booking conflict checks.
-- Separate sets, crew/post, and effects allocations; adjustable 4–20-week schedules; player-selected release dates locked at greenlight.
+- Free auditions with uncertain estimates, genre strengths and weaknesses, screen presence, fame, overall rating, fresh-face labels, fee ranges, negotiated offers, sequel options, named directors, and in-place booking-conflict replacement.
+- Named, costed sliders for sets, crew/post, and effects; adjustable 4–20-week schedules with clear tradeoffs; release dates selected and locked after filming wraps.
 - Weekly production cash flow, scope-dependent interruptions with three cost/quality responses, and cancellation closeout.
 - Optional paid test screening, four individual marketing campaigns, three distribution structures, and visible competing releases.
 - Opening-weekend reveal, weekly theatrical holds, separate critic/fan scores, filmography and fee growth, automatic catalog income, and detailed financial reports.
 - Department/facility upgrades, voluntary and emergency bank loans, repayment, finite credit, and optional closure on a deficit.
-- Annual Picture/Director/Lead/Supporting awards, paid campaigns, prestige effects, and a five-year financial/prestige retrospective.
+- January nominations, March ceremony invitations, manual category reveals, awards archives, paid campaigns, prestige milestone announcements, and a five-year financial/prestige retrospective after a final awards-only epilogue.
 - Responsive phone/desktop layouts, local autosave, JSON save export/import, guide, and restart.
 
 ## Concrete balancing choices
@@ -31,7 +31,7 @@ Money is stored in thousands of dollars. The base weekly overhead is $5K. Depart
 
 Talent fees and 20% sequel-option premiums are paid at greenlight. Filming costs are paid in weekly installments. A cancellation pays a 15% closeout on remaining filming commitments and releases bookings; sunk costs and bank debt remain.
 
-Release dates are selected at greenlight, at least three weeks after the planned wrap, and cannot move. Production incidents force spending/quality tradeoffs without extending the committed schedule. Distribution must be selected before time can advance into the release week. Greenlighting is blocked if the film cannot finish and release within the five-year run.
+Release dates are selected only after filming wraps, at least one week in the future, and cannot move after confirmation. Production incidents force spending/quality tradeoffs without extending the committed schedule. Distribution must be selected before time can advance into the release week. Greenlighting is blocked if the film cannot finish and release within the five-year run.
 
 Distributor advances are non-recoupable guarantees in this simplified demo. Harbor offers 40% of costs as an advance and 13% of gross ticket sales; Meridian offers 15% and 31%, with an $80K booking fee. Prestige improves these terms. Self-distribution charges a scale-dependent booking fee and returns 50% of gross after theaters. All marketing is studio-funded. Reports distinguish gross box office, studio receipts, costs, and profit.
 
@@ -45,4 +45,18 @@ Publish the root of `main` with GitHub Pages. All asset paths are relative, so `
 
 ## Scope and limitations
 
-This is the first balance prototype, not a finished iOS application. It uses a deliberately small event and campaign library, abstract distribution/awards formulas, stylized generated art, and local browser saves. Personalities, chemistry, loyalty advantages, individual employees, negotiated catalog deals, and changing tastes remain deferred as agreed. Native iOS packaging, device-specific Safari certification, audio, and deeper content variety are future work.
+This is an early balance prototype, not a finished iOS application. It uses a deliberately small event and campaign library, abstract distribution/awards formulas, stylized generated art, and local browser saves. Personalities, chemistry, loyalty advantages, individual employees, negotiated catalog deals, and changing tastes remain deferred as agreed. Native iOS packaging, device-specific Safari certification, audio, and deeper content variety are future work.
+
+## Demo 0.2 behavior and compatibility
+
+Production sliders use Shoestring, Lean, Standard, Premium, and Flagship tiers. Their prices depend on project scale and category; effects allocation also reflects genre. Each slider describes the facilities or staffing purchased and updates costs immediately. The selected plan survives actor/director replacement within the production dialog.
+
+Compared with 8 weeks, 10 weeks costs approximately 14% more for the same allocations, adds 2.2 execution points before other influences, and reduces weekly incident probability. The interface describes rehearsal, coverage, cost, and risk without promising better reviews.
+
+Acting ability for a role combines overall talent (62%), screen presence (15%), and genre ability (23%). Fame influences audience draw rather than acting ability. Fresh-face status means no major credits; a major studio release, breakout opening, or individual award can end that status.
+
+Prestige milestones occur at 15, 35, 60, and 85 points. Announcements explain the existing gradual improvements to fee expectations, distributor advances/ticket shares, and credit limits. Milestones do not create hard talent or facility gates.
+
+The persistent browser storage key stays unchanged. Version 1 saves migrate in place without rerolling talent identities, changing cash, or consuming RNG state. New attributes are deterministic. Existing signed release/distribution agreements stay fixed; unfinished or undistributed films get the new post-wrap date selection. Old completed awards are preserved and not awarded twice.
+
+See [awards timeline research](AWARDS-RESEARCH.md) for official sources and the simplified game cadence.

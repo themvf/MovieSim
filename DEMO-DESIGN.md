@@ -1,8 +1,8 @@
 # Movie Studio Game — Five-Year Demo Design
 
-Status: agreed concept, ready for implementation planning. Working project name only.
+Status: playable demo, revised through the 0.2 usability update. Concrete implementation choices are documented in IMPLEMENTATION.md.
 
-This is a new game, separate from all previous game projects. This document records the design discussion; it does not indicate that a prototype or GitHub repository has been created. Numerical balance, formulas, and technical architecture remain to be designed.
+This is a new game, separate from all previous game projects. This document records the agreed design. MovieSim now has a playable GitHub Pages demo; numerical balance remains iterative.
 
 ## Vision
 
@@ -43,7 +43,7 @@ Rival studios remain in the background, supplying competing releases and awards 
 8. Experience the opening-weekend reveal, then weekly theatrical results and possible marketing adjustments.
 9. Receive automatic streaming and licensing income after the theatrical run, pursue annual awards, and reinvest.
 
-Players can run multiple movies. There is no fixed simultaneous-project cap; budget and talent scheduling govern what is feasible. The exact point at which a release date is committed must be resolved before implementation. Once committed, it cannot be moved in the demo.
+Players can run multiple movies. There is no fixed simultaneous-project cap; budget and talent scheduling govern what is feasible. The player chooses a release date after filming wraps. Once confirmed, it cannot be moved in the demo.
 
 ## Scripts and original projects
 
@@ -53,11 +53,11 @@ Purchased scripts can be renamed and include sequel rights automatically. The pl
 
 For an original project, the player enters a title and chooses genre, subgenre, and scale: small, mid-budget, or blockbuster. The development department produces the script. No premise-writing step is required. Scale establishes ambition and complexity; the player still chooses actual spending.
 
-Do not provide a recommended production budget range. Players learn investment requirements from project scope, decisions, and outcome reports. Costs and contractual obligations should remain visible; uncertainty concerns outcomes, not hidden charges.
+Use named spending tiers with visible costs and descriptions of what each buys. Sliders provide context for the investment while preserving player choice and uncertain outcomes. This supersedes the first-pass bare budget fields. Costs and contractual obligations should remain visible; uncertainty concerns outcomes, not hidden charges.
 
 ## Actors, auditions, and directors
 
-Actors have identities, portraits, salary expectations, estimated talent, and visible career histories. A fresh pool is generated each run. Casting should encourage attachment to an unknown who becomes a star through the player’s films.
+Actors have identities, portraits, salary expectations, estimated overall talent, genre strengths and weaknesses, screen presence, fame, and visible career histories. A Fresh face badge identifies actors without major credits. A fresh pool is generated each run. Casting should encourage attachment to an unknown who becomes a star through the player’s films.
 
 - Show expected salary ranges before auditions, so the player can build an affordable shortlist without repeated negotiation clicks.
 - Auditions are free and immediate in the demo.
@@ -79,7 +79,7 @@ Players split spending across production areas rather than choosing one total bu
 
 Players also choose the filming schedule. Shorter schedules save money but raise production risk; more time costs more and gives the team additional room to deliver. Production decisions vary with project type and scope. A small drama and a large action movie should not generate an identical number or kind of interruptions.
 
-Problems force consequential choices. To protect a locked release date, the player can fund overtime, cut planned work and accept a quality compromise, or combine those responses. Ordinary production incidents may affect completion time, spending, or quality. The rules for a film that still cannot finish before its locked date remain unresolved.
+Problems force consequential choices. To protect the filming schedule, the player can fund overtime, cut planned work and accept a quality compromise, or combine those responses. Ordinary production incidents may affect completion time, spending, or quality. The release date is chosen after filming, so production decisions do not require recasting a locked release calendar.
 
 A movie can be canceled. Money already spent is lost; the decision should clearly disclose remaining contractual obligations and future spending avoided. Cancellation must not silently erase debt or committed payments.
 
@@ -125,7 +125,7 @@ Prestige makes actors and directors more receptive and improves distribution off
 
 ## Awards and success
 
-Hold an annual awards ceremony with nominations, optional paid campaigns, and a reveal of winners. Use multiple categories. The initial proposed set is Picture, Director, Lead Acting, and Supporting Acting; final category naming is not settled.
+Announce nominations in January for the previous year’s releases, then invite players to watch a March ceremony. Winners reveal manually, category by category, with an intentional Show results alternative. Use an awards-only epilogue for year-five releases before the retrospective. Optional campaigns remain available. Use multiple categories. The initial proposed set is Picture, Director, Lead Acting, and Supporting Acting; final category naming is not settled.
 
 Awards contribute to studio prestige and individual careers. Challenging roles offer opportunity, while the delivered performance and movie still matter. Awards spending must compete with other uses of cash.
 
@@ -155,7 +155,7 @@ Moving release dates is excluded from the demo; whether to add it later is not y
 ## Decisions required before implementation
 
 1. Define starting finances, minimum viable project economics, weekly payment timing, and loan rules.
-2. Resolve when release dates lock and what happens if production cannot finish on time. Talent must be reserved only for feasible schedules.
+2. Continue tuning post-wrap release timing and production scheduling. Talent must be reserved only for feasible schedules.
 3. Specify distribution cash flows and separate gross box office from studio receipts and profit.
 4. Design bounded uncertainty for scripts, auditions, screenings, and forecasts; upgrades improve information without guaranteeing hits.
 5. Set department and facility costs and effects without introducing unwanted project caps or talent gates.

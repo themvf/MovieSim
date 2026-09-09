@@ -35,17 +35,21 @@ const assert = require("node:assert/strict");
     ),
     850,
   );
-  await fixture(() => {
+  await fixture(async () => {
+    const E = await import("./engine.js");
     const s = JSON.parse(localStorage.getItem("moviesim-save-v1"));
-    s.week = 51;
+    E.nominations(s, 2026);
+    E.act(s, "ackNominations", { year: 2026 });
+    s.week = 61;
     s.cash = 6000;
     localStorage.setItem("moviesim-save-v1", JSON.stringify(s));
   });
   await click('[data-action="next"]');
-  await page.waitForSelector(".ceremony-category");
+  await page.waitForSelector(".ceremony-invite");
+  await click('[data-action="summarizeAwards"]');
   assert.equal(await page.locator(".ceremony-category").count(), 4);
   await page.screenshot({ path: "test-results/mobile-ceremony.png" });
-  await click('[data-action="dismissNotice"]');
+  await click('[data-action="afterAwards"]');
   await fixture(() => {
     const s = JSON.parse(localStorage.getItem("moviesim-save-v1"));
     s.week = 259;
@@ -53,7 +57,9 @@ const assert = require("node:assert/strict");
     localStorage.setItem("moviesim-save-v1", JSON.stringify(s));
   });
   await click('[data-action="next"]');
-  await click('[data-action="dismissNotice"]');
+  await click('[data-action="ackNominations"]');
+  await click('[data-action="summarizeAwards"]');
+  await click('[data-action="afterAwards"]');
   await page.waitForSelector(".recap");
   await page.screenshot({ path: "test-results/mobile-recap.png" });
   assert.match(await page.locator(".recap").innerText(), /unwritten story/);
