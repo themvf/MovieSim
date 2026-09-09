@@ -1,6 +1,6 @@
-import * as E from "./engine.js?v=0.7.5";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.7.5";
-const BUILD = "0.7.5";
+import * as E from "./engine.js?v=0.7.6";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.7.6";
+const BUILD = "0.7.6";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
   dialog = document.querySelector("#dialog");
@@ -162,7 +162,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.7.5 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.7.6 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
   <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : s.movies.some((m) => m.stage === "ready" && m.release == null) ? "Choose release date →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main><div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "ACQUISITIONS & DEVELOPMENT" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Create original", "original", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">Your five-year story is complete. Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
@@ -808,8 +808,8 @@ function drawDialog() {
       "THE PRODUCER’S HANDBOOK",
     );
 }
-function castingShortlist(people, director) {
-  if (director) return people.slice(0, 3);
+function castingShortlist(people, director, count = 3) {
+  if (director) return people.slice(0, count);
   const group = (p) =>
     E.freshFace(p) ? "fresh" : p.star >= 60 ? "star" : "working";
   const selected = ["fresh", "working", "star"]
@@ -817,7 +817,7 @@ function castingShortlist(people, director) {
     .filter(Boolean);
   return [...selected, ...people.filter((p) => !selected.includes(p))].slice(
     0,
-    3,
+    count,
   );
 }
 function casting(m, director) {
@@ -888,7 +888,7 @@ function casting(m, director) {
             !m.contracts.some((c) => c.id === p.id)),
       )
       .flatMap((p, i, list) =>
-        view.showAll ? [p] : i === 0 ? castingShortlist(list, director) : [],
+        view.showAll ? [p] : i === 0 ? castingShortlist(list, director, view.visibleCount ?? 3) : [],
       )
       .map((p) => {
         const q = E.quote(s, p, m, role),
@@ -900,6 +900,9 @@ function casting(m, director) {
       .join("")}</div>`,
     director ? "DIRECTOR SEARCH" : "CASTING ROOM",
   );
+  const matching = people.filter(p => (budgetFilter === "all" || E.quote(s,p,m,role).low <= Number(budgetFilter)) && E.available(p,s.week,s.week+plan.duration) && !m.contracts.some(c=>c.id===p.id));
+  if (!view.showAll && matching.length > (view.visibleCount ?? 3))
+    dialog.querySelector(".casting-list").insertAdjacentHTML("afterend", button(director ? "More directors ↓" : "More actors ↓", "moreCasting", "", "outline full"));
   if (!dialog.querySelector(".casting-card"))
     dialog.querySelector(".casting-list").innerHTML =
       `<p>No available candidates match. Adjust the budget or browse all to inspect schedules.</p>`;
@@ -1083,8 +1086,16 @@ function handle(e) {
   const a = b.dataset.action,
     id = b.dataset.id;
   switch (a) {
+    case "moreCasting": {
+      const scroll = dialog.querySelector(".modal-body").scrollTop;
+      view.visibleCount = (view.visibleCount ?? 3) + 3;
+      drawDialog();
+      dialog.querySelector(".modal-body").scrollTop = scroll;
+      break;
+    }
     case "castingMode":
       view.showAll = !view.showAll;
+      view.visibleCount = 3;
       drawDialog();
       break;
     case "auditionShortlist": {

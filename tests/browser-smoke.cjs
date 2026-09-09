@@ -57,6 +57,10 @@ const fs = require("node:fs");
         (await page.locator(".casting-list.shortlist > article").count()) !== 3
       )
         throw Error("Expected three shortlisted actors");
+      const firstThree = await page.locator(".casting-card h3").allTextContents();
+      await click('[data-action="moreCasting"]');
+      const expanded = await page.locator(".casting-card h3").allTextContents();
+      if (expanded.length !== 6 || expanded.slice(0,3).join() !== firstThree.join()) throw Error("More must append three actors and preserve first candidates");
       const cashBefore = await page.evaluate(
         () => JSON.parse(localStorage.getItem("moviesim-save-v1")).cash,
       );

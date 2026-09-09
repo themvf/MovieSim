@@ -149,3 +149,8 @@ The first sequel action rehiring the original actors and director shows exact fe
 ## Outcome indicators (0.7.5)
 
 Comparable result cells show a colored symbol-and-text badge: Exceeded above the saved range, Met within its inclusive bounds, Below under it. No verdict is invented for critics without a forecast or a test screening treated as a guaranteed audience forecast.
+
+
+## More casting candidates (0.7.6)
+
+A More button below the initial three candidates appends three more available matches while retaining the original shortlist and current scroll position. It disappears when all matching candidates are shown. Browse all remains available.
