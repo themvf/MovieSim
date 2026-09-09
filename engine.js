@@ -1,4 +1,4 @@
-import { storyFor } from "./stories.js?v=0.8.1";
+import { storyFor } from "./stories.js?v=0.8.2";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
 export const END = 260;
@@ -276,6 +276,15 @@ export function productionCosts(s, m, b, duration) {
 }
 const DEBT_EPSILON = 1e-10; // Internal thousands: far below one cent; only arithmetic residue.
 function validMovieFinances(m) {
+  if (
+    m.marketingConfirmed !== undefined &&
+    typeof m.marketingConfirmed !== "boolean"
+  )
+    return false;
+  for (const key of ["marketingBudget", "marketingSpendAtRelease"])
+    if (m[key] != null && (!Number.isFinite(m[key]) || m[key] < 0))
+      return false;
+
   const nonnegative = (value) => Number.isFinite(value) && value >= 0;
   const base = [
     "spent",
@@ -605,6 +614,7 @@ export function productionCraft(m, b = m.budget) {
   return clamp(65 * adequacy - 30 * gap, 5, 96);
 }
 export function saveForecast(s, m) {
+  if (m.marketingConfirmed) m.marketingBudget = m.campaignSpend;
   const [low, high] = projection(s, m).map(roundAmount);
   m.expectations = {
     low,
@@ -985,6 +995,9 @@ function addMovie(s, sc, parent = null, developing = false) {
     catalog: 0,
     campaigns: [],
     campaignSpend: 0,
+    marketingConfirmed: false,
+    marketingBudget: null,
+    marketingSpendAtRelease: null,
     awardSpend: 0,
     screen: null,
     budget: { sets: 200, crew: 250, effects: 100 },
@@ -1345,11 +1358,24 @@ export function act(s, type, a = {}) {
       );
       break;
     }
+    case "confirmMarketing": {
+      stage(m, ["ready", "scheduled"]);
+      if (a.none && m.campaignSpend > 0)
+        throw Error("Marketing is already purchased. Confirm that budget.");
+      m.marketingConfirmed = true;
+      m.marketingBudget = m.campaignSpend;
+      saveForecast(s, m);
+      break;
+    }
     case "distribute": {
       stage(m, ["ready"]);
       if (m.release === null) throw Error("Choose a release date first.");
       if (!["secure", "partner", "self"].includes(a.deal))
         throw Error("Choose a distribution deal.");
+      if (!m.marketingConfirmed)
+        throw Error(
+          "Choose a marketing budget, including $0, before distribution.",
+        );
       const deals = distribution(s, m),
         d = deals[a.deal];
       m.deal = a.deal;
@@ -1581,6 +1607,7 @@ function opening(s, m) {
     (0.7 + random(s) * 0.6) *
     sequel *
     (m.distributionReach ?? 1);
+  m.marketingSpendAtRelease = m.campaignSpend;
   m.careerChanges = [];
   m.opening = openingGross;
   m.releaseFactors = { stars, reach, season, rival };

@@ -1,6 +1,6 @@
-import * as E from "./engine.js?v=0.8.1";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.8.1";
-const BUILD = "0.8.1";
+import * as E from "./engine.js?v=0.8.2";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.8.2";
+const BUILD = "0.8.2";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
   dialog = document.querySelector("#dialog");
@@ -162,7 +162,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.8.1 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.8.2 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
   <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : s.movies.some((m) => m.stage === "ready" && m.release == null) ? "Choose release date →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main><div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "ACQUISITIONS & DEVELOPMENT" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Create original", "original", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">Your five-year story is complete. Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
@@ -512,8 +512,18 @@ function projectAction(m) {
   }
   if (m.stage === "ready")
     return {
-      label: m.release == null ? "Choose release week" : "Choose distribution",
-      action: m.release == null ? "release" : "distribution",
+      label:
+        m.release == null
+          ? "Choose release week"
+          : !m.marketingConfirmed
+            ? "Choose marketing budget"
+            : "Choose distribution",
+      action:
+        m.release == null
+          ? "release"
+          : !m.marketingConfirmed
+            ? "marketing"
+            : "distribution",
       text: "Filming wrapped",
     };
   return {
@@ -653,12 +663,19 @@ function expectationsReview(m) {
           ? "Above expectations"
           : "Within expectations";
   add(
-    "Opening ticket sales",
+    `Opening ticket sales${m.marketingBudget != null ? `<small>With the ${E.money(m.marketingBudget)} marketing plan</small>` : ""}`,
     m.expectations
       ? `${E.money(m.expectations.low)}–${E.money(m.expectations.high)}`
       : "Not recorded",
     E.money(m.opening),
     verdict(m.expectations, m.opening),
+  );
+  add(
+    "Marketing budget",
+    m.marketingBudget == null ? "Not recorded" : E.money(m.marketingBudget),
+    m.marketingSpendAtRelease == null
+      ? "Not recorded"
+      : E.money(m.marketingSpendAtRelease),
   );
   for (const [i, c] of m.contracts.entries()) {
     const result = m.performances?.[i];
@@ -687,7 +704,7 @@ function expectationsReview(m) {
     `${E.score(m.fans)}/100<small>Release audience</small>`,
   );
   add("Critics", "Not forecast", `${E.score(m.critics)}/100`);
-  return `<section class="expectations-review talent-review"><h3>Expectations vs. results</h3><table class="comparison-list"><thead><tr><th scope="col">Measure</th><th scope="col">Expected</th><th scope="col">Result</th></tr></thead><tbody>${rows.join("")}</tbody></table><p class="muted small">↑ Exceeded: above the range. ✓ Met: inside the range, including its endpoints. ↓ Below: under the range. Talent expectations are saved at hiring; box office is saved before release. Test screenings are an early signal, not a guarantee. Scores measure performance, not fame.</p>${ratingLegend}</section>`;
+  return `<section class="expectations-review talent-review"><h3>Expectations vs. results</h3><table class="comparison-list"><thead><tr><th scope="col">Measure</th><th scope="col">Expected</th><th scope="col">Result</th></tr></thead><tbody>${rows.join("")}</tbody></table><p class="muted small">↑ Exceeded: above the range. ✓ Met: inside the range, including its endpoints. ↓ Below: under the range. Talent expectations are saved at hiring; box office is saved before release. The opening forecast includes your marketing plan; actual sales also depend on the film, cast, timing and distribution. Marketing spending is measured through opening. Test screenings are an early signal, not a guarantee. Scores measure performance, not fame.</p>${ratingLegend}</section>`;
 }
 function report(m) {
   const f = m.releaseFactors;
@@ -757,6 +774,17 @@ function drawDialog() {
   }
   if (v.kind === "production") return production(m);
   if (v.kind === "release") return releasePlanner(m);
+  if (
+    v.kind === "marketing" ||
+    (v.kind === "distribution" && !m.marketingConfirmed)
+  ) {
+    view.kind = "marketing";
+    return modal(
+      "Choose your marketing budget",
+      `<p>Choose campaigns below, then confirm your total budget. You can also deliberately release without a marketing campaign.</p>${campaigns(m)}${m.campaignSpend > 0 ? button(`Confirm ${E.money(m.campaignSpend)} marketing budget →`, "confirmMarketing", `data-id="${m.id}"`, "primary full") : button("No marketing · $0 →", "confirmMarketing", `data-id="${m.id}" data-none="true"`, "outline full")}<p class="muted small">Paid campaigns launch immediately. Confirming the budget does not charge you again.</p>`,
+      h(m.title),
+    );
+  }
   if (v.kind === "distribution")
     return modal("Choose distribution", distributionOffers(m), h(m.title));
   if (v.kind === "dealReview") {
@@ -1173,6 +1201,19 @@ function handle(e) {
   const a = b.dataset.action,
     id = b.dataset.id;
   switch (a) {
+    case "marketing":
+      open("marketing", { id, back: { kind: "movie", id } });
+      break;
+    case "confirmMarketing":
+      transact(
+        "confirmMarketing",
+        { id, none: b.dataset.none === "true" },
+        () => {
+          view = { kind: "distribution", id, back: { kind: "movie", id } };
+        },
+      );
+      break;
+
     case "viewCareers":
       open("careers", { id, back: { kind: "opening", id } });
       break;
@@ -1537,7 +1578,7 @@ dialog.addEventListener("submit", (e) => {
   if (f.id === "release-form")
     transact("setRelease", { id: v.id, release: Number(d.release) }, () => {
       view = {
-        kind: "distribution",
+        kind: "marketing",
         id: v.id,
         back: { kind: "movie", id: v.id },
       };

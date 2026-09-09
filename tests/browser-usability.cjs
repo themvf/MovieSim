@@ -114,10 +114,14 @@ const fs = require("node:fs");
   await click('[data-action="releaseWeek"][data-week="35"]');
   await page.screenshot({ path: "test-results/v02-release.png" });
   await page.locator("#release-form > button").click();
-  assert.equal(await page.locator(".distribution-card").count(), 3);
+  await click('[data-action="confirmMarketing"]');
+  assert.equal(
+    await page.locator(".distribution-overview tbody tr").count(),
+    3,
+  );
   assert.match(
     await page.locator(".distribution-options").innerText(),
-    /Your share of ticket payments/,
+    /Share/i,
   );
   await page.screenshot({ path: "test-results/v02-distribution.png" });
   await click('[data-action="dealReview"][data-deal="partner"]');

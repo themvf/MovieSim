@@ -134,6 +134,7 @@ test("alpha: final legal shoot reaches a release and awards epilogue without ext
   });
   for (let i = 0; i < 4; i++) tick(s);
   E.act(s, "setRelease", { id: m.id, release: 259 });
+  E.act(s, "confirmMarketing", { id: m.id });
   E.act(s, "distribute", { id: m.id, deal: "secure" });
   while (s.week < 260) tick(s);
   assert.equal(s.epilogue, true);

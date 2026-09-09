@@ -170,3 +170,11 @@ Preserve spending discovery: remove exact pre-release craft and schedule-quality
 Production confirmation shows cash after the current talent fees, current proposed production, and remaining already-filming commitments across the studio. Overhead, debt payments and release costs are explicitly excluded.
 
 Distribution is a compact three-row overview of immediate net cash, share, reach and recoupment, with detailed terms one tap away. Opening night separates the player's forecast from scope-relative popularity and provides a one-tap whole-team career summary. Developing sequels visibly list the attached cast and director, agreed fees and participation, including after reload.
+
+## Required marketing choice and comparison (0.8.2)
+
+After locking a release date, the player must explicitly confirm purchased marketing campaigns or choose No marketing ($0). Distribution is gated in both the UI and engine until this choice is made. Confirmation adds no charge; campaigns retain their existing immediate purchase behavior.
+
+The release comparison includes selected marketing budget versus spending through opening, and identifies the opening forecast as using that plan. Forecasts refresh for subsequent pre-release campaign purchases and signed distribution terms. The actual opening is compared with the whole-film forecast, not mislabeled as an isolated causal effect of advertising. Later campaign spending does not rewrite opening-period actual spending.
+
+Talent age remains present and advances annually. Gender and role age requirements remain unimplemented.

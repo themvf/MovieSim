@@ -158,6 +158,18 @@ const fs = require("node:fs");
     await click('[data-action="releaseMonth"][data-step="1"]');
   await click(`[data-action="releaseWeek"][data-week="${releaseWeek}"]`);
   await page.locator("#release-form > button").click();
+  if (
+    !(await page.locator("dialog").innerText()).includes(
+      "Choose your marketing budget",
+    )
+  )
+    throw Error("Release date must lead to required marketing choice");
+  await page.screenshot({ path: "test-results/required-marketing.png" });
+  await click('[data-action="close"]');
+  await page.locator('[data-action="distribution"]').first().click();
+  if (!(await page.locator('[data-action="confirmMarketing"]').isVisible()))
+    throw Error("Cannot bypass marketing by opening distribution");
+  await click('[data-action="confirmMarketing"]');
   if (!(await page.locator(".distribution-options").isVisible()))
     throw Error("Distribution screen did not open after setting release");
   if (
@@ -201,6 +213,17 @@ const fs = require("node:fs");
   if (!(await page.locator(".comparison-list .rating-range").count()))
     throw Error("Missing colored ranges");
   await page.waitForSelector(".talent-review");
+  if (
+    !(await page.locator(".comparison-list").innerText()).includes(
+      "Marketing budget",
+    )
+  )
+    throw Error("Marketing comparison missing");
+  const marketingState = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0],
+  );
+  if (marketingState.marketingBudget !== marketingState.marketingSpendAtRelease)
+    throw Error("Opening marketing spending differs from selected plan");
   const badgeCount = await page.locator(".expectation-status").count();
   const castCount = await page.evaluate(
     () =>
