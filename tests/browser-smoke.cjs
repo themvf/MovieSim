@@ -99,11 +99,39 @@ const fs = require("node:fs");
   for (let i = 0; i < 3; i++) await click('[data-action="next"]');
   await page.waitForSelector(".opening-reveal");
   await page.waitForSelector(".expectations-review");
+  await page.waitForSelector(".talent-review");
+  const performanceText = await page.locator(".talent-review").innerText();
+  if (
+    !performanceText.includes("Director") ||
+    performanceText.includes("Not recorded")
+  )
+    throw Error("Missing cast or director expectations");
   await page.screenshot({
     path: "test-results/mobile-opening.png",
     fullPage: true,
   });
+  await page.locator(".talent-review").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "test-results/v04-talent-review.png" });
   await click('[data-action="dismissNotice"]');
+  while (await page.locator('[data-action="dismissNotice"]:visible').count())
+    await click('[data-action="dismissNotice"]');
+  if (await page.locator('[data-action="announcements"]:visible').count())
+    throw Error("Stale announcement button after dismissal");
+  await page.waitForSelector('[data-action="next"]:visible');
+  for (const method of ["close", "escape"]) {
+    await page.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem("moviesim-save-v1"));
+      s.notices = [{ kind: "opening", id: s.movies[0].id }];
+      localStorage.setItem("moviesim-save-v1", JSON.stringify(s));
+    });
+    await page.reload();
+    await page.waitForSelector(".opening-reveal");
+    if (method === "close") await click('[data-action="close"]');
+    else await page.keyboard.press("Escape");
+    await page.waitForSelector('[data-action="next"]:visible');
+    if (await page.locator('[data-action="announcements"]:visible').count())
+      throw Error("Stale announcement after " + method);
+  }
   await page.reload();
   await page.waitForSelector("h1");
   state = await page.evaluate(() =>

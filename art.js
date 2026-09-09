@@ -1,3 +1,4 @@
+import { scopeName } from "./engine.js?v=0.4";
 // Original, code-drawn pixel artwork. No external asset downloads or fonts.
 const palettes = [
   ["#27414c", "#7bbaaf", "#efbf88"],
@@ -29,7 +30,7 @@ export function poster(m, large = false) {
         : variant === 2
           ? `<circle cx="70" cy="90" r="60" fill="none" stroke="${light}" stroke-width="18"/><circle cx="70" cy="90" r="31" fill="none" stroke="${warm}" stroke-width="9"/><path d="M65 95h10v55H65z" fill="${warm}"/>`
           : `<path d="m0 110 140-65v34L0 144z" fill="${warm}"/><path d="m0 154 140-65v12L0 166z" fill="${light}"/><circle cx="38" cy="62" r="23" fill="${light}"/>`;
-  return `<div class="poster ${large ? "large" : ""}" style="--poster:${dark}"><svg viewBox="0 0 140 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="140" height="200" fill="${dark}"/>${shapes}<path d="M0 192h140" stroke="${warm}" stroke-width="2"/></svg><span class="poster-top">A SILVER SCREEN ORIGINAL</span><strong>${escapeHtml(m.title)}</strong><span class="poster-bottom">${escapeHtml(m.genre)} • ${escapeHtml(m.scale)}</span></div>`;
+  return `<div class="poster ${large ? "large" : ""}" style="--poster:${dark}"><svg viewBox="0 0 140 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="140" height="200" fill="${dark}"/>${shapes}<path d="M0 192h140" stroke="${warm}" stroke-width="2"/></svg><span class="poster-top">A SILVER SCREEN ORIGINAL</span><strong>${escapeHtml(m.title)}</strong><span class="poster-bottom">${escapeHtml(m.genre)} • ${escapeHtml(scopeName(m.scale))}</span></div>`;
 }
 export function studioArt(s) {
   const level = Object.values(s.facilities).reduce((a, b) => a + b, 0);

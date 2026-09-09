@@ -70,7 +70,7 @@ test("version two saves migrate without changing money or existing contracts", (
   s.version = 2;
   const before = JSON.stringify(s);
   const migrated = E.migrateSave(JSON.parse(before));
-  assert.equal(migrated.version, 3);
+  assert.equal(migrated.version, E.VERSION);
   assert.equal(migrated.cash, s.cash);
   assert.deepEqual(migrated.movies, s.movies);
 });

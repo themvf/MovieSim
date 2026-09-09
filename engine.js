@@ -1,14 +1,110 @@
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
-export const VERSION = 3;
+export const VERSION = 4;
 export const END = 260;
 export const GENRES = {
-  Drama: ["Character study", "Courtroom", "Coming of age"],
-  Thriller: ["Psychological", "Crime", "Conspiracy"],
-  Comedy: ["Romantic", "Workplace", "Satire"],
-  Horror: ["Supernatural", "Survival", "Folk"],
-  Action: ["Espionage", "Adventure", "Heist"],
-  "Sci-fi": ["Space", "Near future", "Time travel"],
+  Drama: [
+    "Character study",
+    "Courtroom",
+    "Coming of age",
+    "Family saga",
+    "Historical",
+    "Biographical",
+    "Sports drama",
+    "Romantic drama",
+    "Social drama",
+    "War drama",
+  ],
+  Thriller: [
+    "Psychological",
+    "Crime",
+    "Conspiracy",
+    "Legal thriller",
+    "Political thriller",
+    "Mystery",
+    "Domestic suspense",
+    "Techno-thriller",
+    "Survival thriller",
+  ],
+  Comedy: [
+    "Romantic",
+    "Workplace",
+    "Satire",
+    "Slapstick",
+    "Dark comedy",
+    "Buddy comedy",
+    "Coming-of-age comedy",
+    "Mockumentary",
+    "Family comedy",
+    "Fish out of water",
+  ],
+  Horror: [
+    "Supernatural",
+    "Survival",
+    "Folk",
+    "Slasher",
+    "Creature feature",
+    "Haunted house",
+    "Found footage",
+    "Body horror",
+    "Psychological horror",
+    "Vampire",
+  ],
+  Action: [
+    "Espionage",
+    "Adventure",
+    "Heist",
+    "Martial arts",
+    "Disaster",
+    "Military action",
+    "Chase thriller",
+    "Swashbuckler",
+    "Superhero",
+  ],
+  "Sci-fi": [
+    "Space",
+    "Near future",
+    "Time travel",
+    "First contact",
+    "Cyberpunk",
+    "Dystopian",
+    "Artificial intelligence",
+    "Post-apocalyptic",
+    "Space opera",
+    "Science fantasy",
+  ],
 };
+export const SCOPES = {
+  Small: {
+    name: "Intimate production",
+    description:
+      "A focused story with a few locations and a lean crew. Lower production needs and a smaller potential audience. A standard production plan is around $650K, before talent and marketing.",
+  },
+  "Mid-budget": {
+    name: "Studio feature",
+    description:
+      "A broader story with more locations and a full crew. Higher production needs and room to reach a wider audience. A standard production plan is around $2.2M, before talent and marketing.",
+  },
+  Blockbuster: {
+    name: "Event spectacle",
+    description:
+      "A large-scale production with three featured roles and ambitious staging. The biggest audience potential and the most money at risk. A standard production plan is around $6.5M, before talent and marketing.",
+  },
+};
+export const scopeName = (scale) => SCOPES[scale]?.name ?? scale;
+export function talentEstimate(s, p, value) {
+  const width = Math.max(
+    5,
+    (1 + ((p.look ?? 0) % 4)) * 5 - (s.departments.Casting - 1) * 5,
+  );
+  const low = Math.max(
+    0,
+    Math.min(100 - width, Math.round((value - width / 2) / 5) * 5),
+  );
+  return { low, high: low + width };
+}
+export const estimateText = (estimate) => `${estimate.low}–${estimate.high}`;
+export const directorAbility = (p, genre) =>
+  p.talent * 0.8 + (p.genres[genre] ?? 50) * 0.2;
 export const SCALES = ["Small", "Mid-budget", "Blockbuster"];
 export const PRESTIGE_LEVELS = [
   {
@@ -138,7 +234,7 @@ export function productionCosts(s, m, b, duration) {
 export function migrateSave(s) {
   if (
     !s ||
-    ![1, 2, VERSION].includes(s.version) ||
+    ![1, 2, 3, VERSION].includes(s.version) ||
     !Array.isArray(s.movies) ||
     !Array.isArray(s.people) ||
     !s.departments ||
@@ -589,6 +685,7 @@ function addMovie(s, sc, parent = null, developing = false) {
     boxWeeks: [],
     resurgences: [],
     expectations: null,
+    directorPerformance: null,
     awards: [],
     cancelled: false,
   };
@@ -736,6 +833,13 @@ export function act(s, type, a = {}) {
         fee: offer,
         option: !!a.option,
         optionCost: a.option ? offer * 0.2 : 0,
+        expectation: talentEstimate(
+          s,
+          p,
+          p.kind === "director"
+            ? directorAbility(p, m.genre)
+            : m.auditions[`${a.role}:${p.id}`],
+        ),
       };
       if (p.kind === "director") m.director = c;
       else {
@@ -757,7 +861,7 @@ export function act(s, type, a = {}) {
       const people = [...m.contracts, m.director].map((c) => person(s, c.id));
       if (people.some((p) => !available(p, s.week, s.week + duration)))
         throw Error(
-          "Someone in your package is booked. Choose available talent or wait until their shoot ends.",
+          "Someone in your cast or directing team is booked. Choose available talent or wait until their shoot ends.",
         );
       const b = {
         sets: amt(a.sets, 25, 15000),
@@ -1007,14 +1111,15 @@ function finish(s, m) {
     clamp(m.auditions[`${c.role}:${c.id}`] + roll(s, -12, 12)),
   );
   m.performances = performances;
+  m.directorPerformance = clamp(
+    directorAbility(person(s, m.director.id), m.genre) + roll(s, -10, 10),
+  );
   m.craft = craft;
   const scriptQuality = m.scriptQuality ?? 60;
   m.quality = clamp(
     scriptQuality * 0.25 +
       (performances.reduce((a, v) => a + v, 0) / performances.length) * 0.3 +
-      (person(s, m.director.id).talent * 0.8 +
-        person(s, m.director.id).genres[m.genre] * 0.2) *
-        0.2 +
+      m.directorPerformance * 0.2 +
       craft * 0.25 +
       scheduleInfo(m.duration).quality +
       (s.departments.Production - 1) * 2 -
@@ -1099,7 +1204,7 @@ function opening(s, m) {
   d.history.push({
     id: m.id,
     title: m.title,
-    score: m.critics,
+    score: m.directorPerformance ?? m.critics,
     year: date(s.week).year,
   });
   d.star = clamp(d.star + Math.max(0, (m.critics - 55) / 9));

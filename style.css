@@ -2957,3 +2957,29 @@ input[type="range"] {
 .expectations-review .scores {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
+.scope-description,
+.scope-guide {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #aabbbb;
+}
+.talent-review {
+  margin: 24px 0;
+  text-align: left;
+}
+.talent-result {
+  padding: 16px 0;
+  border-bottom: 1px solid #38484c;
+}
+.talent-result .scores {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 12px 0;
+}
+.talent-result p {
+  font-size: 13px;
+  margin-bottom: 0;
+}
+.talent-result .person-heading {
+  margin-bottom: 8px;
+}
