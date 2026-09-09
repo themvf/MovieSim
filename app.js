@@ -1,12 +1,13 @@
-import * as E from "./engine.js?v=0.6";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.6";
+import * as E from "./engine.js?v=0.6.1";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.6.1";
+const BUILD = "0.6.1";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
   dialog = document.querySelector("#dialog");
 let s,
   saveError = false;
 try {
-  const raw = localStorage.getItem(KEY);
+  const raw = localStorage.getItem("moviesim-build") === BUILD ? localStorage.getItem(KEY) : null;
   s = raw ? E.migrateSave(JSON.parse(raw)) : E.newGame();
   if (s.version !== E.VERSION || !Array.isArray(s.movies) || !s.departments)
     throw Error("Old save");
@@ -67,6 +68,7 @@ const stat = (name, value, cls = "") =>
 function save() {
   try {
     localStorage.setItem(KEY, JSON.stringify(s));
+    localStorage.setItem("moviesim-build", BUILD);
     saveError = false;
   } catch {
     saveError = true;
@@ -143,8 +145,8 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.6 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
-  <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}${!s.ended && !s.epilogue ? button("Next event »", "nextEvent", "", "outline advance-event") : ""}</header>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.6.1 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+  <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main><div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "ACQUISITIONS & DEVELOPMENT" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Create original", "original", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">Your five-year story is complete. Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
   ${tab === "slate" ? slate() : tab === "scripts" ? scripts() : tab === "talent" ? talents() : tab === "studio" ? studio() : tab === "calendar" ? calendar() : tab === "finance" ? finance() : awards()}
@@ -479,8 +481,8 @@ function projectAction(m) {
       text: "Filming wrapped",
     };
   return {
-    label: "Advance to next event",
-    action: "nextEvent",
+    label: "Next week →",
+    action: "next",
     text:
       m.stage === "scheduled"
         ? `Opening in ${m.release - s.week} weeks`
@@ -1049,33 +1051,6 @@ function handle(e) {
       open("sequelReview", { id, back: { kind: "movie", id } });
       render();
       break;
-    case "nextEvent": {
-      if (s.cash < 0 && !s.ended) {
-        open("bank");
-        break;
-      }
-      if (s.notices.length || s.epilogue) {
-        nextNotice();
-        break;
-      }
-      const ready = s.movies.find((m) => m.stage === "ready" || m.event);
-      if (ready) {
-        open("movie", { id: ready.id });
-        break;
-      }
-      close();
-      transact("nextEvent", {}, (result) =>
-        toast(
-          `${result.weeks} week${result.weeks === 1 ? "" : "s"} passed · Cash change ${E.money(result.cashChange)}`,
-        ),
-      );
-      nextNotice();
-      if (!view) {
-        const changed = s.movies.find((m) => m.event || m.stage === "ready");
-        if (changed) open("movie", { id: changed.id });
-      }
-      break;
-    }
     case "nav":
       close();
       tab = b.dataset.tab;
@@ -1402,6 +1377,9 @@ dialog.addEventListener("submit", (e) => {
     });
   if (f.id === "restart-form") {
     s = E.newGame(Date.now() >>> 0, d.name);
+    productionPlans.clear();
+    castingGenre = talentFilter = budgetFilter = "all";
+    castingSort = "fit";
     tab = "slate";
     filter = "active";
     save();

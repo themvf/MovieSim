@@ -1,4 +1,4 @@
-import { scopeName } from "./engine.js?v=0.6";
+import { scopeName } from "./engine.js?v=0.6.1";
 // Original, code-drawn pixel artwork. No external asset downloads or fonts.
 const palettes = [
   ["#27414c", "#7bbaaf", "#efbf88"],

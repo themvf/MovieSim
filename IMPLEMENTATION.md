@@ -109,3 +109,8 @@ Opening night now leads with studio receipts, unrecovered costs, and an individu
 Next event uses the same weekly simulation and accounting as Next week. It stops for decisions, completed stages, new scripts, openings, notices, resurgences, financial trouble, and the demo end. It does not bypass pending decisions.
 
 All 58 subgenres have story hooks and recognizable lead descriptions. Sequels retain their parent identity with a continuation premise. New creative and rehearsal decisions affect critics, audiences, or individual performances. Additive fields retain compatibility with existing version-5 saves.
+
+
+## Weekly pacing (0.6.1)
+
+The player-facing advance controls move one week at a time, leaving opportunities to start other films between production milestones. Each published build starts a fresh studio; reloads within that build preserve progress. Explicit new-studio starts also clear casting filters and draft production plans.

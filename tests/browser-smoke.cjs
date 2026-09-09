@@ -117,7 +117,7 @@ const fs = require("node:fs");
   await click('[data-action="dealReview"][data-deal="partner"]');
   await click('[data-action="distribute"][data-deal="partner"]');
   await click('[data-action="close"]');
-  await click('[data-action="nextEvent"]');
+  for (let i = 0; i < 3; i++) await click('[data-action="next"]');
   await page.waitForSelector(".opening-reveal");
   await page.locator(".opening-reveal > details > summary").click();
   await page.waitForSelector(".expectations-review");
