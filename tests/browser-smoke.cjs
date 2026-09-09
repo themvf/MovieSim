@@ -61,7 +61,8 @@ const fs = require("node:fs");
     }
     await page.locator(".casting-filter-details > summary").click();
     await page.locator("#casting-budget").selectOption("250");
-    if (await page.locator('[data-action="audition"]').count()) await click('[data-action="audition"]');
+    if (await page.locator('[data-action="audition"]').count())
+      await click('[data-action="audition"]');
     await click('[data-action="offer"]');
     if (role === 0) await page.locator('input[name="option"]').check();
     await page.locator("#offer-form button").click();
@@ -114,8 +115,12 @@ const fs = require("node:fs");
     await click('[data-action="releaseMonth"][data-step="1"]');
   await click(`[data-action="releaseWeek"][data-week="${releaseWeek}"]`);
   await page.locator("#release-form > button").click();
-  if (!(await page.locator('.distribution-options').isVisible())) throw Error('Distribution screen did not open after setting release');
-  if (!(await page.locator('dialog').innerText()).includes('Choose distribution')) throw Error('Missing distribution action heading');
+  if (!(await page.locator(".distribution-options").isVisible()))
+    throw Error("Distribution screen did not open after setting release");
+  if (
+    !(await page.locator("dialog").innerText()).includes("Choose distribution")
+  )
+    throw Error("Missing distribution action heading");
   await click('[data-action="dealReview"][data-deal="partner"]');
   await click('[data-action="distribute"][data-deal="partner"]');
   await click('[data-action="close"]');
@@ -123,6 +128,17 @@ const fs = require("node:fs");
   await page.waitForSelector(".opening-reveal");
   await page.locator(".opening-reveal > details > summary").click();
   await page.waitForSelector(".expectations-review");
+  if ((await page.locator(".comparison-list").count()) !== 1)
+    throw Error("Expected one unified comparison list");
+  if (
+    (await page
+      .locator(".comparison-list thead th")
+      .allTextContents()
+      .then((x) => x.join(","))) !== "Measure,Expected,Result"
+  )
+    throw Error("Comparison columns missing");
+  if (!(await page.locator(".comparison-list .rating-range").count()))
+    throw Error("Missing colored ranges");
   await page.waitForSelector(".talent-review");
   const performanceText = await page.locator(".talent-review").innerText();
   if (

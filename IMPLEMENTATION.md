@@ -126,3 +126,9 @@ Locking the release date opens a dedicated distribution screen. Ready-film cards
 - Directors have Emerging / Established labels based on major credits or three feature-history entries, with fame and awards separate.
 - Opening assessments are provisional. Final theatrical popularity uses gross compared with a scope benchmark: $5,400,000 / $15,000,000 / $43,500,000. Below half the benchmark is Flop; half is Modest turnout; one is Hit; two is Blockbuster; three is Monster hit. These labels never depend on actual spending, salaries or distribution share. Financial results remain separate and include participation costs, excluding general studio overhead.
 - This new build starts a fresh studio as requested; refreshes retain the current build's progress.
+
+## Colored ranges and release comparison (0.7.1)
+
+Numerical talent, audition and script estimates retain their existing intervals. Color uses the displayed midpoint: green 80+, yellow 60–79, orange 40–59, red below 40. The legend and numeric text preserve meaning without relying solely on color. Money ranges are unchanged.
+
+Opening night and the saved release report use one Expected / Result comparison list for opening gross, each actor, director, audience test versus release response, and critics. Saved hiring forecasts are retained; absent forecasts are explicitly identified. The comparison appears directly on opening night rather than inside the detailed report.

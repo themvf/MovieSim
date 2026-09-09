@@ -3137,3 +3137,58 @@ summary {
     height: 40px;
   }
 }
+
+.rating-green {
+  color: #8ee0b4;
+}
+.rating-yellow {
+  color: #f3df78;
+}
+.rating-orange {
+  color: #ffb177;
+}
+.rating-red {
+  color: #ff929b;
+}
+.rating-range {
+  font-weight: 700;
+}
+.rating-legend {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.comparison-list {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 14px 0;
+}
+.comparison-list th,
+.comparison-list td {
+  padding: 12px 6px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #35434a;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.comparison-list th:first-child {
+  width: 36%;
+}
+.comparison-list small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: #acb9bc;
+  margin-top: 4px;
+}
+.comparison-list thead th {
+  color: #acb9bc;
+  font-size: 11px;
+}
+.comparison-list tbody th {
+  text-transform: none;
+  letter-spacing: normal;
+}

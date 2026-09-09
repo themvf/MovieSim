@@ -1,4 +1,4 @@
-import { storyFor } from "./stories.js?v=0.7.0";
+import { storyFor } from "./stories.js?v=0.7.1";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
 export const END = 260;
