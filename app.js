@@ -1,6 +1,6 @@
-import * as E from "./engine.js?v=0.7.4";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.7.4";
-const BUILD = "0.7.4";
+import * as E from "./engine.js?v=0.7.5";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.7.5";
+const BUILD = "0.7.5";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
   dialog = document.querySelector("#dialog");
@@ -162,7 +162,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.7.4 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.7.5 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
   <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : s.movies.some((m) => m.stage === "ready" && m.release == null) ? "Choose release date →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main><div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "ACQUISITIONS & DEVELOPMENT" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Create original", "original", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">Your five-year story is complete. Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
@@ -599,10 +599,10 @@ function weeklyChart(m) {
 }
 function expectationsReview(m) {
   const rows = [];
-  const add = (name, expected, actual, verdict = "") =>
-    rows.push(
-      `<tr><th scope="row">${name}${verdict ? `<small>${verdict}</small>` : ""}</th><td>${expected}</td><td>${actual}</td></tr>`,
-    );
+  const add = (name, expected, actual, verdict = "") => {
+    const status = verdict === "Above expectations" ? ["exceeded","↑ Exceeded"] : verdict === "Within expectations" ? ["met","✓ Met"] : verdict === "Below expectations" ? ["below","↓ Below"] : null;
+    rows.push(`<tr><th scope="row">${name}</th><td>${expected}</td><td>${actual}${status ? `<span class="expectation-status status-${status[0]}" title="${verdict}" aria-label="${verdict}">${status[1]}</span>` : ""}</td></tr>`);
+  };
   const verdict = (f, actual) =>
     !f || actual == null
       ? ""
@@ -646,7 +646,7 @@ function expectationsReview(m) {
     `${E.score(m.fans)}/100<small>Release audience</small>`,
   );
   add("Critics", "Not forecast", `${E.score(m.critics)}/100`);
-  return `<section class="expectations-review talent-review"><h3>Expectations vs. results</h3><table class="comparison-list"><thead><tr><th scope="col">Measure</th><th scope="col">Expected</th><th scope="col">Result</th></tr></thead><tbody>${rows.join("")}</tbody></table><p class="muted small">Talent expectations are saved at hiring; box office is saved before release. Test screenings are an early signal, not a guarantee. Scores measure performance, not fame.</p>${ratingLegend}</section>`;
+  return `<section class="expectations-review talent-review"><h3>Expectations vs. results</h3><table class="comparison-list"><thead><tr><th scope="col">Measure</th><th scope="col">Expected</th><th scope="col">Result</th></tr></thead><tbody>${rows.join("")}</tbody></table><p class="muted small">↑ Exceeded: above the range. ✓ Met: inside the range, including its endpoints. ↓ Below: under the range. Talent expectations are saved at hiring; box office is saved before release. Test screenings are an early signal, not a guarantee. Scores measure performance, not fame.</p>${ratingLegend}</section>`;
 }
 function report(m) {
   const f = m.releaseFactors;

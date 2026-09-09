@@ -144,3 +144,8 @@ Wrapping opens the release calendar. Weekly advancement is blocked in the engine
 ## Returning sequel team (0.7.4)
 
 The first sequel action rehiring the original actors and director shows exact fees, participation terms, and availability for an eight-week shoot after development. Existing actor options preserve fee and share. The upfront fee is still due at greenlight; only development is charged on creation. Individual selection remains available. Unavailable teams cannot be bulk-hired, and greenlight rechecks schedules. New sequels reset prior participation payouts.
+
+
+## Outcome indicators (0.7.5)
+
+Comparable result cells show a colored symbol-and-text badge: Exceeded above the saved range, Met within its inclusive bounds, Below under it. No verdict is invented for critics without a forecast or a test screening treated as a guaranteed audience forecast.

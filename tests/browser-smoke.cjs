@@ -171,6 +171,9 @@ const fs = require("node:fs");
   if (!(await page.locator(".comparison-list .rating-range").count()))
     throw Error("Missing colored ranges");
   await page.waitForSelector(".talent-review");
+  const badgeCount=await page.locator(".expectation-status").count();
+  const castCount=await page.evaluate(()=>JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0].contracts.length);
+  if (badgeCount !== castCount+2) throw Error("Missing opening or talent outcome badge");
   const performanceText = await page.locator(".talent-review").innerText();
   if (
     !performanceText.includes("Director") ||
