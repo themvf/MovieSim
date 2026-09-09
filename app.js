@@ -1,6 +1,6 @@
-import * as E from "./engine.js?v=0.7.2";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.7.2";
-const BUILD = "0.7.2";
+import * as E from "./engine.js?v=0.7.3";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.7.3";
+const BUILD = "0.7.3";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
   dialog = document.querySelector("#dialog");
@@ -106,6 +106,13 @@ function transact(type, args = {}, after) {
     return false;
   }
 }
+function requireReleaseDate() {
+  if (s.ended || s.epilogue || s.cash < 0 || s.notices.length || s.week >= E.END - 1) return false;
+  const m = s.movies.find(m => m.stage === "ready" && m.release == null);
+  if (!m) return false;
+  open("release", {id:m.id, back:{kind:"movie",id:m.id}});
+  return true;
+}
 function close() {
   view = null;
   dialog.close();
@@ -148,8 +155,8 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.7.2 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
-  <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.7.3 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+  <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : s.movies.some(m=>m.stage==="ready" && m.release == null) ? "Choose release date →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main><div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "ACQUISITIONS & DEVELOPMENT" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Create original", "original", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">Your five-year story is complete. Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
   ${tab === "slate" ? slate() : tab === "scripts" ? scripts() : tab === "talent" ? talents() : tab === "studio" ? studio() : tab === "calendar" ? calendar() : tab === "finance" ? finance() : awards()}
@@ -990,7 +997,7 @@ function releasePlanner(m) {
   });
   modal(
     "Release calendar",
-    `<form id="release-form"><input type="hidden" name="release" id="release-select" value="${view.releaseWeek}"><div class="calendar-nav">${button("←", "releaseMonth", `data-step="-1" aria-label="Previous month" ${view.calendarMonth <= E.date(start).year * 12 + E.date(start).month ? "disabled" : ""}`, "outline")}<h3>${title}</h3>${button("→", "releaseMonth", `data-step="1" aria-label="Next month" ${view.calendarMonth >= E.date(E.END - 1).year * 12 + E.date(E.END - 1).month ? "disabled" : ""}`, "outline")}</div><p class="muted small">Choose an opening week. August and December draw larger blockbuster audiences.</p><div class="release-calendar">${weeks.map((w) => `<button type="button" class="release-week ${w === view.releaseWeek ? "selected" : ""}" data-action="releaseWeek" data-week="${w}" aria-pressed="${w === view.releaseWeek}"><strong>Week ${E.date(w).week}</strong><span>${[7, 11].includes(month) ? "Peak audience" : "Normal demand"}</span><small>${s.rivals.filter((r) => Math.abs(r.week - w) <= 2).length} nearby releases</small></button>`).join("")}</div><p><strong>Selected: ${E.date(view.releaseWeek).label} · Week ${E.date(view.releaseWeek).week}</strong></p><div id="release-preview"></div><p class="muted small">The date locks when you confirm. Finish marketing and distribution before opening week.</p><button class="primary full">Lock this release date</button></form>`,
+    `<form id="release-form"><input type="hidden" name="release" id="release-select" value="${view.releaseWeek}"><div class="calendar-nav">${button("←", "releaseMonth", `data-step="-1" aria-label="Previous month" ${view.calendarMonth <= E.date(start).year * 12 + E.date(start).month ? "disabled" : ""}`, "outline")}<h3>${title}</h3>${button("→", "releaseMonth", `data-step="1" aria-label="Next month" ${view.calendarMonth >= E.date(E.END - 1).year * 12 + E.date(E.END - 1).month ? "disabled" : ""}`, "outline")}</div><p class="muted small">Choose an opening week to continue. Time is paused until you lock a date. August and December draw larger blockbuster audiences.</p><div class="release-calendar">${weeks.map((w) => `<button type="button" class="release-week ${w === view.releaseWeek ? "selected" : ""}" data-action="releaseWeek" data-week="${w}" aria-pressed="${w === view.releaseWeek}"><strong>Week ${E.date(w).week}</strong><span>${[7, 11].includes(month) ? "Peak audience" : "Normal demand"}</span><small>${s.rivals.filter((r) => Math.abs(r.week - w) <= 2).length} nearby releases</small></button>`).join("")}</div><p><strong>Selected: ${E.date(view.releaseWeek).label} · Week ${E.date(view.releaseWeek).week}</strong></p><div id="release-preview"></div><p class="muted small">The date locks when you confirm. Finish marketing and distribution before opening week.</p><button class="primary full">Lock this release date</button></form>`,
     "THE FILM HAS WRAPPED",
   );
   releasePreview(m);
@@ -1326,6 +1333,7 @@ function handle(e) {
       break;
     }
     case "next": {
+      if (requireReleaseDate()) break;
       if (s.notices.length || s.epilogue) {
         nextNotice();
         break;
@@ -1336,11 +1344,11 @@ function handle(e) {
           m.stage === "ready" && m.release !== null && m.release <= s.week + 1,
       );
       if (due) {
-        open("movie", { id: due.id });
+        open("distribution", { id: due.id, back: {kind:"movie",id:due.id} });
         toast("Choose a distributor before the release date.");
         break;
       }
-      if (transact("next")) nextNotice();
+      if (transact("next")) { nextNotice(); if (!view) requireReleaseDate(); }
       break;
     }
     case "dismissNotice":
@@ -1497,3 +1505,5 @@ save();
 render();
 checkEmergency();
 if (s.notices.length || s.epilogue) nextNotice();
+
+if (!view) requireReleaseDate();

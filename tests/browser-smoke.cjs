@@ -102,6 +102,15 @@ const fs = require("node:fs");
       await click('[data-action="close"]');
     } else await click('[data-action="next"]');
   }
+  if (!(await page.locator("#release-form").isVisible())) throw Error("Wrap must open the release calendar");
+  const wrapWeek = await page.evaluate(()=>JSON.parse(localStorage.getItem("moviesim-save-v1")).week);
+  await click('[data-action="close"]');
+  await click('[data-action="next"]');
+  if (!(await page.locator("#release-form").isVisible())) throw Error("Next week must require release date");
+  if (await page.evaluate(()=>JSON.parse(localStorage.getItem("moviesim-save-v1")).week) !== wrapWeek) throw Error("Undated film advanced time");
+  await page.reload();
+  await page.waitForSelector("#release-form");
+  if (await page.locator("dialog[open]").count()) await click('[data-action="close"]');
   await click('[data-action="movie"]');
   await click('[data-action="screen"]');
   await click('[data-action="campaign"][data-campaign="0"]');

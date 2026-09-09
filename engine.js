@@ -1,4 +1,4 @@
-import { storyFor } from "./stories.js?v=0.7.2";
+import { storyFor } from "./stories.js?v=0.7.3";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
 export const END = 260;
@@ -1656,6 +1656,8 @@ function nextWeek(s) {
   const pending = s.movies.find((m) => m.event);
   if (pending)
     throw Error(`Resolve the production decision on ${pending.title} first.`);
+  const undated = s.movies.find(m => m.stage === "ready" && m.release == null);
+  if (undated && s.week < END - 1) throw Error(`Choose a release date for ${undated.title} before advancing.`);
   const due = s.movies.find(
     (m) => m.stage === "ready" && m.release !== null && m.release <= s.week + 1,
   );

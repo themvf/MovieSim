@@ -137,3 +137,8 @@ Opening night and the saved release report use one Expected / Result comparison 
 ## Mixed casting shortlist (0.7.2)
 
 Actor shortlists select a fresh face, working actor and established star in that order, choosing within each category using the current sort. Availability and budget filters still apply; missing categories are filled from other available matches. Browse all and director selection remain unchanged.
+
+
+## Required release scheduling (0.7.3)
+
+Wrapping opens the release calendar. Weekly advancement is blocked in the engine while a finished movie has no date; closing the calendar allows planning without advancing time. Reloads restore the calendar and the header calls out the required date. The existing distribution deadline remains enforced. Earlier saves already at week 259 retain the end-of-demo path because no legal release week remains.

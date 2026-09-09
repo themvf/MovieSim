@@ -124,3 +124,14 @@ test("creative and performance choices have distinct effects without hidden cost
   assert.equal(s.cash, cash);
   assert.equal(m.productionDecisions.length, 2);
 });
+
+test("finished undated films cannot advance time or charge cash", () => {
+  const s=E.newGame(123), m=E.act(s,"buy",{script:s.market[0].id});
+  m.stage="ready";m.release=null;
+  const before=structuredClone(s);
+  assert.throws(()=>E.act(s,"next"),/Choose a release date/);
+  assert.deepEqual(s,before);
+  E.act(s,"setRelease",{id:m.id,release:s.week+3});
+  E.act(s,"next");
+  assert.equal(s.week,1);
+});
