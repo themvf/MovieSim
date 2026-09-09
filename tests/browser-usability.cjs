@@ -117,7 +117,7 @@ const fs = require("node:fs");
   );
   await page.screenshot({ path: "test-results/v02-distribution.png" });
   await click('[data-action="dealReview"][data-deal="partner"]');
-  assert.match(await page.locator("dialog").innerText(), /\$10M/);
+  assert.match(await page.locator("dialog").innerText(), /\$10,000,000/);
   await click('[data-action="distribute"]');
   assert.equal((await state()).movies[0].release, 35);
   await fixture(async () => {

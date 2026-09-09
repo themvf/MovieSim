@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import * as E from "../engine.js";
 
 test("money and estimated rating ranges use readable round numbers", () => {
-  assert.equal(E.money(1234), "$1.2M");
-  assert.equal(E.money(247), "$250K");
-  assert.equal(E.money(-1234), "-$1.2M");
+  assert.equal(E.money(1234), "$1,200,000");
+  assert.equal(E.money(247), "$250,000");
+  assert.equal(E.money(-1234), "-$1,200,000");
   assert.equal(E.money(0), "$0");
-  assert.equal(E.money(0.4), "<$1K");
+  assert.equal(E.money(0.4), "$400");
   for (const n of E.range(63, 2).split("–")) assert.equal(Number(n) % 5, 0);
 });
 

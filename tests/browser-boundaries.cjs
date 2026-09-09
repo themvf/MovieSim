@@ -26,7 +26,7 @@ const assert = require("node:assert/strict");
     localStorage.setItem("moviesim-save-v1", JSON.stringify(s));
   });
   await page.waitForSelector("#loan-form");
-  await page.locator('input[name="amount"]').fill("1000");
+  await page.locator('input[name="amount"]').fill("1,000,000");
   await page.locator("#loan-form button").click();
   assert.equal(await page.locator("dialog[open]").count(), 0);
   assert.equal(

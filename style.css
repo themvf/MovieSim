@@ -2983,3 +2983,38 @@ input[type="range"] {
 .talent-result .person-heading {
   margin-bottom: 8px;
 }
+
+.talent-accolades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.budget-impact {
+  margin: 16px 0;
+  padding: 16px;
+  background: #223338;
+  border: 1px solid #446365;
+  border-radius: 10px;
+}
+.budget-impact p,
+.budget-impact small {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.budget-impact small {
+  display: block;
+  color: #b0c5c4;
+}
+.casting-metrics {
+  min-width: 0;
+}
+.casting-metrics b,
+.fee-line strong,
+.scores strong,
+.top-stats strong {
+  overflow-wrap: anywhere;
+}
+.top-stats strong {
+  font-size: clamp(16px, 2vw, 26px);
+}

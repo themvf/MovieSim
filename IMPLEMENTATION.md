@@ -1,4 +1,4 @@
-# Playable demo 0.4
+# Playable demo 0.5
 
 MovieSim is a dependency-free static web game. `engine.js` owns simulation state and decisions; `app.js` renders the interface and persists saves; `art.js` draws original SVG pixel portraits, posters, and the studio lot. No third-party artwork or game assets are used.
 
@@ -81,3 +81,11 @@ See [awards timeline research](AWARDS-RESEARCH.md) for official sources and the 
 - Player-facing package terminology is replaced with cast/director or casting/planning. Facility descriptions use dollar savings examples. Prestige benefits explain better offers in plain language.
 - Closing a notice now rerenders the header; Escape and normal dismissal both clear the stale New announcement action. Regression checks cover all three closing methods.
 - Save version 4 accepts versions 1–3. Existing cash, projects and signed contracts remain intact. Validation includes 33 simulation tests and mobile browser lifecycle, usability, boundaries, and chart checks.
+
+## Demo 0.5 money, production tradeoffs and talent honors
+
+- Full dollar displays replace compact K/M notation, retaining rounded summaries. Offer, loan and repayment inputs show comma-separated dollars and convert to the existing internal unit only on submission. $120,000 is stored as 120 internally, not 120,000. Existing saved finances remain unchanged. Commas are optional; malformed grouped numbers are rejected.
+- Labels are Low-budget film, Mid-budget film and Big-budget film following the dedicated terminology research in FILM-TERMINOLOGY.md. The same internal scale keys and budgets remain.
+- Production previews show approximate production quality. All Shoestring spends about 30% of Standard and produces craft of about 20 versus 65. Craft contributes one-quarter of overall quality, so the difference is about 11 points with other factors held equal. Talent, script, marketing and release choices still matter. Budget tier does not directly change production-event probability. The craft calculation was factored into a shared preview/simulation function without changing its mathematical behavior.
+- Talent and casting cards show nominations and awards won. Profiles list nomination films, categories, years and revealed wins. Totals derive from stored award seasons and existing win counts; hidden ceremony results never appear early and reloading cannot duplicate nominations. Best Picture nominations are not counted as individual talent nominations.
+- Save version 5 accepts versions 1–4. Validation: 36 simulation tests and browser lifecycle, usability, financing, mobile layout, talent honors and announcement checks.

@@ -1,5 +1,5 @@
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
-export const VERSION = 4;
+export const VERSION = 5;
 export const END = 260;
 export const GENRES = {
   Drama: [
@@ -75,19 +75,19 @@ export const GENRES = {
 };
 export const SCOPES = {
   Small: {
-    name: "Intimate production",
+    name: "Low-budget film",
     description:
-      "A focused story with a few locations and a lean crew. Lower production needs and a smaller potential audience. A standard production plan is around $650K, before talent and marketing.",
+      "A focused story with a few locations and a lean crew. Lower production needs and a smaller potential audience. A standard production plan is around $650,000, before talent and marketing.",
   },
   "Mid-budget": {
-    name: "Studio feature",
+    name: "Mid-budget film",
     description:
-      "A broader story with more locations and a full crew. Higher production needs and room to reach a wider audience. A standard production plan is around $2.2M, before talent and marketing.",
+      "A broader story with more locations and a full crew. Higher production needs and room to reach a wider audience. A standard production plan is around $2,200,000, before talent and marketing.",
   },
   Blockbuster: {
-    name: "Event spectacle",
+    name: "Big-budget film",
     description:
-      "A large-scale production with three featured roles and ambitious staging. The biggest audience potential and the most money at risk. A standard production plan is around $6.5M, before talent and marketing.",
+      "A large-scale production with three featured roles and ambitious staging. The biggest audience potential and the most money at risk. A standard production plan is around $6,500,000, before talent and marketing.",
   },
 };
 export const scopeName = (scale) => SCOPES[scale]?.name ?? scale;
@@ -234,7 +234,7 @@ export function productionCosts(s, m, b, duration) {
 export function migrateSave(s) {
   if (
     !s ||
-    ![1, 2, 3, VERSION].includes(s.version) ||
+    ![1, 2, 3, 4, VERSION].includes(s.version) ||
     !Array.isArray(s.movies) ||
     !Array.isArray(s.people) ||
     !s.departments ||
@@ -427,17 +427,46 @@ export const roundAmount = (v) => {
 };
 export const score = (v) => Math.round(v / 5) * 5;
 export const money = (v) =>
-  v && Math.abs(v) < 1
-    ? v < 0
-      ? "-<$1K"
-      : "<$1K"
-    : new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 1,
-        minimumFractionDigits: 0,
-        notation: "compact",
-      }).format(roundAmount(v) * 1000);
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(Math.abs(v) < 1 ? v * 1000 : roundAmount(v) * 1000);
+export const dollarInput = (v) => Math.round(v * 1000).toLocaleString("en-US");
+export const fromDollars = (value) => {
+  const text = String(value).trim().replace(/^\$/, "");
+  if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(text)) return NaN;
+  return Number(text.replaceAll(",", "")) / 1000;
+};
+export function talentHonors(s, p) {
+  const nominations = [];
+  for (const season of s.seasons ?? [])
+    for (const category of season.categories)
+      for (const n of category.nominees) {
+        if (n.person !== p.id) continue;
+        const award = s.awards.find((a) => a.year === season.year);
+        const won = !!award?.results.some(
+          (r, i) =>
+            (award.completed || i < award.revealed) &&
+            r.person === p.id &&
+            r.id === n.id &&
+            r.category === category.category &&
+            r.ours,
+        );
+        nominations.push({
+          year: season.year,
+          category: category.category,
+          title: n.title,
+          won,
+        });
+      }
+  return { nominations, wins: p.awards ?? 0 };
+}
+export function productionCraft(m, b = m.budget) {
+  const needs =
+    m.scale === "Small" ? 650 : m.scale === "Mid-budget" ? 2200 : 6500;
+  return clamp(((b.sets + b.crew + b.effects) / needs) * 65, 15, 96);
+}
 export function saveForecast(s, m) {
   const [low, high] = projection(s, m).map(roundAmount);
   m.expectations = {
@@ -1089,24 +1118,7 @@ export function distribution(s, m) {
   };
 }
 function finish(s, m) {
-  const needs =
-    m.scale === "Small" ? 650 : m.scale === "Mid-budget" ? 2200 : 6500;
-  const effectsWeight = ["Action", "Sci-fi"].includes(m.genre)
-    ? 0.4
-    : m.genre === "Horror"
-      ? 0.2
-      : 0.05;
-  const craft = clamp(
-    ((m.budget.crew / (needs * 0.45)) * 0.45 +
-      (m.budget.sets / (needs * (0.55 - effectsWeight))) *
-        (0.55 - effectsWeight) +
-      (effectsWeight
-        ? (m.budget.effects / (needs * effectsWeight)) * effectsWeight
-        : 0)) *
-      65,
-    15,
-    96,
-  );
+  const craft = productionCraft(m);
   const performances = m.contracts.map((c) =>
     clamp(m.auditions[`${c.role}:${c.id}`] + roll(s, -12, 12)),
   );

@@ -90,6 +90,6 @@ test("expanded subgenres remain valid choices without changing legacy scope keys
       scale: "Small",
     });
   }
-  assert.equal(E.scopeName("Small"), "Intimate production");
+  assert.equal(E.scopeName("Small"), "Low-budget film");
   assert.deepEqual(E.SCALES, ["Small", "Mid-budget", "Blockbuster"]);
 });
