@@ -41,8 +41,17 @@ const fs = require("node:fs");
     if (!(await next.count())) break;
     await next.first().click();
     if (role === 0) {
-      const badges = await page.locator(".casting-list.shortlist .casting-card").allTextContents();
-      if (!badges[0].includes("Fresh face") || !badges[1].includes("Working actor") || !badges[2].includes("Established star")) throw Error("Shortlist must show fresh face, working actor and star in order");
+      const badges = await page
+        .locator(".casting-list.shortlist .casting-card")
+        .allTextContents();
+      if (
+        !badges[0].includes("Fresh face") ||
+        !badges[1].includes("Working actor") ||
+        !badges[2].includes("Established star")
+      )
+        throw Error(
+          "Shortlist must show fresh face, working actor and star in order",
+        );
 
       if (
         (await page.locator(".casting-list.shortlist > article").count()) !== 3
@@ -102,15 +111,25 @@ const fs = require("node:fs");
       await click('[data-action="close"]');
     } else await click('[data-action="next"]');
   }
-  if (!(await page.locator("#release-form").isVisible())) throw Error("Wrap must open the release calendar");
-  const wrapWeek = await page.evaluate(()=>JSON.parse(localStorage.getItem("moviesim-save-v1")).week);
+  if (!(await page.locator("#release-form").isVisible()))
+    throw Error("Wrap must open the release calendar");
+  const wrapWeek = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("moviesim-save-v1")).week,
+  );
   await click('[data-action="close"]');
   await click('[data-action="next"]');
-  if (!(await page.locator("#release-form").isVisible())) throw Error("Next week must require release date");
-  if (await page.evaluate(()=>JSON.parse(localStorage.getItem("moviesim-save-v1")).week) !== wrapWeek) throw Error("Undated film advanced time");
+  if (!(await page.locator("#release-form").isVisible()))
+    throw Error("Next week must require release date");
+  if (
+    (await page.evaluate(
+      () => JSON.parse(localStorage.getItem("moviesim-save-v1")).week,
+    )) !== wrapWeek
+  )
+    throw Error("Undated film advanced time");
   await page.reload();
   await page.waitForSelector("#release-form");
-  if (await page.locator("dialog[open]").count()) await click('[data-action="close"]');
+  if (await page.locator("dialog[open]").count())
+    await click('[data-action="close"]');
   await click('[data-action="movie"]');
   await click('[data-action="screen"]');
   await click('[data-action="campaign"][data-campaign="0"]');
@@ -219,6 +238,23 @@ const fs = require("node:fs");
     path: "test-results/desktop-active.png",
     fullPage: true,
   });
+  await click('[data-action="movie"]');
+  await click('[data-action="sequel"]');
+  const rehire = page.locator('[data-action="confirmSequel"]').first();
+  if ((await rehire.getAttribute("data-rehire")) !== "true")
+    throw Error("Rehire must be first sequel choice");
+  await page.screenshot({ path: "test-results/sequel-rehire.png" });
+  await rehire.click();
+  const sequelState = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("moviesim-save-v1")),
+  );
+  const original = sequelState.movies[0],
+    sequel = sequelState.movies[1];
+  if (
+    sequel.director.id !== original.director.id ||
+    sequel.contracts.length !== original.contracts.length
+  )
+    throw Error("Original team not rehired");
   if (errors.length) throw Error(errors.join("\n"));
   console.log(
     JSON.stringify({

@@ -1,4 +1,4 @@
-import { storyFor } from "./stories.js?v=0.7.3";
+import { storyFor } from "./stories.js?v=0.7.4";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
 export const END = 260;
@@ -843,6 +843,25 @@ export function quote(s, p, m, role = 0) {
     grossShare: participationDemand(p, m),
   };
 }
+export function returningTeam(s, original) {
+  const sequel = { ...original, parent: original.id };
+  return [
+    ...original.contracts,
+    ...(original.director ? [original.director] : []),
+  ].map((c) => {
+    const p = person(s, c.id),
+      q = quote(s, p, sequel, c.role);
+    return {
+      id: p.id,
+      role: c.role,
+      kind: p.kind,
+      fee: q.option ? q.low : Math.ceil((q.low + q.high) / 2 / 10) * 10,
+      grossShare: q.grossShare,
+      option: q.option,
+      available: available(p, s.week + 3, s.week + 11),
+    };
+  });
+}
 export function competition(s, m, week = m.release ?? s.week + 1) {
   return s.rivals
     .filter((r) => Math.abs(r.week - week) <= 2)
@@ -881,6 +900,7 @@ function addMovie(s, sc, parent = null, developing = false) {
     director: null,
     auditions: {},
     spent: sc.price,
+    participationPaid: 0,
     receipts: 0,
     gross: 0,
     catalog: 0,
@@ -993,6 +1013,14 @@ export function act(s, type, a = {}) {
     }
     case "sequel": {
       stage(m, ["theaters", "catalog"]);
+      const team = a.rehire ? returningTeam(s, m) : [];
+      if (
+        a.rehire &&
+        (team.length !== m.roles.length + 1 || team.some((c) => !c.available))
+      )
+        throw Error(
+          "The original team is unavailable for an eight-week shoot after development. Choose your cast individually or try again later.",
+        );
       const n = s.movies.filter((x) => x.parent === m.id).length + 2;
       const sc = {
         ...m,
@@ -1005,6 +1033,31 @@ export function act(s, type, a = {}) {
         art: roll(s, 0, 9999),
       };
       m = addMovie(s, sc, m.id, true);
+      for (const member of team) {
+        const p = person(s, member.id);
+        const ability =
+          p.kind === "director"
+            ? directorAbility(p, m.genre)
+            : clamp(
+                roleAbility(p, m.genre) +
+                  roll(s, -13, 13) -
+                  (m.difficulty > p.talent
+                    ? (m.difficulty - p.talent) * 0.2
+                    : 0),
+              );
+        if (p.kind === "actor") m.auditions[`${member.role}:${p.id}`] = ability;
+        const contract = {
+          id: p.id,
+          role: member.role,
+          fee: member.fee,
+          grossShare: member.grossShare,
+          option: false,
+          optionCost: 0,
+          expectation: talentEstimate(s, p, ability),
+        };
+        if (p.kind === "director") m.director = contract;
+        else m.contracts.push(contract);
+      }
       break;
     }
     case "rename": {
@@ -1656,8 +1709,11 @@ function nextWeek(s) {
   const pending = s.movies.find((m) => m.event);
   if (pending)
     throw Error(`Resolve the production decision on ${pending.title} first.`);
-  const undated = s.movies.find(m => m.stage === "ready" && m.release == null);
-  if (undated && s.week < END - 1) throw Error(`Choose a release date for ${undated.title} before advancing.`);
+  const undated = s.movies.find(
+    (m) => m.stage === "ready" && m.release == null,
+  );
+  if (undated && s.week < END - 1)
+    throw Error(`Choose a release date for ${undated.title} before advancing.`);
   const due = s.movies.find(
     (m) => m.stage === "ready" && m.release !== null && m.release <= s.week + 1,
   );
