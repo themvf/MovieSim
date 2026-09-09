@@ -231,6 +231,62 @@ export function productionCosts(s, m, b, duration) {
     (b.sets + b.crew + b.effects - saving) * scheduleInfo(duration).multiplier;
   return { saving, total, weekly: total / duration };
 }
+const DEBT_EPSILON = 1e-10; // Internal thousands: far below one cent; only arithmetic residue.
+function validMovieFinances(m) {
+  const nonnegative = (value) => Number.isFinite(value) && value >= 0;
+  const base = [
+    "spent",
+    "receipts",
+    "gross",
+    "catalog",
+    "campaignSpend",
+    "awardSpend",
+  ];
+  if (
+    base.some((key) => !nonnegative(m[key])) ||
+    !m.budget ||
+    ["sets", "crew", "effects"].some((key) => !nonnegative(m.budget[key])) ||
+    !Array.isArray(m.boxWeeks) ||
+    m.boxWeeks.some((value) => !nonnegative(value))
+  )
+    return false;
+  for (const contract of [
+    ...(m.contracts ?? []),
+    ...(m.director ? [m.director] : []),
+  ])
+    if (
+      !contract ||
+      !nonnegative(contract.fee) ||
+      !nonnegative(contract.optionCost)
+    )
+      return false;
+  const optional = [
+    "weekly",
+    "productionTotal",
+    "facilitySaving",
+    "advance",
+    "share",
+    "opening",
+  ];
+  if (optional.some((key) => m[key] !== undefined && !nonnegative(m[key])))
+    return false;
+  if (m.stage === "filming" && !nonnegative(m.weekly)) return false;
+  if (
+    ["scheduled", "theaters", "catalog"].includes(m.stage) &&
+    (!nonnegative(m.share) || m.share > 1 || !nonnegative(m.advance))
+  )
+    return false;
+  if (["theaters", "catalog"].includes(m.stage) && !nonnegative(m.opening))
+    return false;
+  if (
+    m.expectations &&
+    (!nonnegative(m.expectations.low) ||
+      !nonnegative(m.expectations.high) ||
+      m.expectations.low > m.expectations.high)
+  )
+    return false;
+  return true;
+}
 export function migrateSave(s) {
   if (
     !s ||
@@ -285,6 +341,7 @@ export function migrateSave(s) {
       (m) =>
         !m ||
         typeof m.title !== "string" ||
+        !validMovieFinances(m) ||
         !SCALES.includes(m.scale) ||
         !GENRES[m.genre] ||
         ["roles", "contracts", "campaigns", "boxWeeks", "awards"].some(
@@ -482,7 +539,7 @@ export const money = (v) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0,
+    maximumFractionDigits: Math.abs(v) > 0 && Math.abs(v) < 0.001 ? 2 : 0,
   }).format(Math.abs(v) < 1 ? v * 1000 : roundAmount(v) * 1000);
 export const dollarInput = (v, decimals = 0) =>
   (v * 1000).toLocaleString("en-US", { maximumFractionDigits: decimals });
@@ -1096,7 +1153,7 @@ export function act(s, type, a = {}) {
         left -= pay;
       }
       s.cash -= amount;
-      s.debt = s.debt.filter((l) => l.balance > 0.01);
+      s.debt = s.debt.filter((l) => l.balance > DEBT_EPSILON);
       break;
     }
     case "upgrade": {
@@ -1470,7 +1527,7 @@ function nextWeek(s) {
     debit(s, principal + (l.balance * 0.12) / 52);
     l.balance -= principal;
   }
-  s.debt = s.debt.filter((l) => l.balance > 0.01);
+  s.debt = s.debt.filter((l) => l.balance > DEBT_EPSILON);
   for (const m of s.movies) {
     if (m.stage === "development" && s.week >= m.ready) m.stage = "packaging";
     if (m.stage === "filming") {

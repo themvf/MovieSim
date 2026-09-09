@@ -49,7 +49,7 @@ test("alpha: full-dollar loan limits and invalid transactions preserve state", (
   assert.equal(E.creditAvailable(s), 0);
   assert.equal(s.cash, 14000);
   E.act(s, "repay", { amount: E.fromDollars("7,999,999") });
-  assert.ok(E.debtTotal(s) <= 0.001001);
+  assert.ok(Math.abs(E.debtTotal(s) - 0.001) < 1e-9);
   assert.equal(s.cash, 6000.001);
 });
 

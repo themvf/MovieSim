@@ -1,4 +1,4 @@
-# Playable demo 0.5.1
+# Playable demo 0.5.2
 
 MovieSim is a dependency-free static web game. `engine.js` owns simulation state and decisions; `app.js` renders the interface and persists saves; `art.js` draws original SVG pixel portraits, posters, and the studio lot. No third-party artwork or game assets are used.
 
@@ -93,3 +93,9 @@ See [awards timeline research](AWARDS-RESEARCH.md) for official sources and the 
 ## Alpha fixes (0.5.1)
 
 Two independent testers found four boundary defects, documented in ALPHA-TEST-REPORT.md. Currency errors now use dollar amounts; cent-level repayment can clear small remaining loans; invalid imports preserve the current studio; the last operating week cannot offer a future release. Save format remains version 5.
+
+## QA-lead follow-up (0.5.2)
+
+Required movie finance values now validate before import, including costs, receipts, gross, catalog earnings, campaign spending, production budgets, contract fees, weekly filming cost, distribution advances/shares and opening gross where applicable. Missing, nonfinite, negative or mistyped values are rejected before replacing a working studio. Browser regressions exercise missing movie accounting fields and preserve playability.
+
+Loan cleanup now discards only floating-point residue far below a cent. Partial repayment and weekly amortization preserve real remaining balances, including $9 and $0.01. Targeted tests reconcile both principal and cash instead of accepting a zero residual by default. All 46 simulation tests pass.

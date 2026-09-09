@@ -172,6 +172,25 @@ const assert = require("node:assert/strict");
     beforeImport,
     "Rejected import preserves existing saved state",
   );
+  for (const field of ["spent", "receipts", "gross", "catalog"]) {
+    const damaged = structuredClone(beforeImport);
+    delete damaged.movies[0][field];
+    await page
+      .locator("#import-save")
+      .setInputFiles({
+        name: `missing-${field}.json`,
+        mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify(damaged)),
+      });
+    await page.waitForTimeout(100);
+    assert.match(await page.locator("#toast").innerText(), /not a supported/);
+    assert.deepEqual(
+      await state(),
+      beforeImport,
+      `Missing ${field} must preserve the working save`,
+    );
+    assert.doesNotMatch(await page.locator("body").innerText(), /\$NaN/);
+  }
   await click('[data-action="close"]');
   await click('[data-action="next"]');
   assert.equal(

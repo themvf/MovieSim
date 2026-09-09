@@ -23,6 +23,7 @@ const assert = require("node:assert/strict");
         opening: 1000,
         fans: 80,
         share: 0.5,
+        advance: 0,
         boxWeeks: [1000, 750],
         gross: 1750,
         receipts: 875,

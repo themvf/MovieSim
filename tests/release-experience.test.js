@@ -20,6 +20,7 @@ test("distribution saves a forecast and theater marketing cannot rewrite it", ()
   assert.ok(saved.high > saved.low);
   assert.equal(m.share * 100, Math.round(m.share * 100));
   m.stage = "theaters";
+  m.opening = 1000;
   E.act(s, "campaign", { id: m.id, campaign: 0 });
   assert.deepEqual(m.expectations, saved);
   assert.deepEqual(
