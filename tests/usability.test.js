@@ -57,10 +57,11 @@ test("legacy save migration preserves cash, people, RNG, and signed distribution
     delete p.presence;
     delete p.majorCredits;
   }
-  s.movies = [
-    { id: "old1", stage: "filming", release: 30 },
-    { id: "old2", stage: "scheduled", release: 40 },
-  ];
+  // Use complete movie records: malformed imports are now rejected.
+  const old1 = E.act(s, "buy", { script: s.market[0].id });
+  const old2 = E.act(s, "buy", { script: s.market[0].id });
+  Object.assign(old1, { id: "old1", stage: "filming", release: 30 });
+  Object.assign(old2, { id: "old2", stage: "scheduled", release: 40 });
   const rng = s.rng,
     cash = s.cash,
     names = s.people.map((p) => p.name);

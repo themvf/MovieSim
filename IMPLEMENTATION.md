@@ -1,4 +1,4 @@
-# Playable demo 0.5
+# Playable demo 0.5.1
 
 MovieSim is a dependency-free static web game. `engine.js` owns simulation state and decisions; `app.js` renders the interface and persists saves; `art.js` draws original SVG pixel portraits, posters, and the studio lot. No third-party artwork or game assets are used.
 
@@ -89,3 +89,7 @@ See [awards timeline research](AWARDS-RESEARCH.md) for official sources and the 
 - Production previews show approximate production quality. All Shoestring spends about 30% of Standard and produces craft of about 20 versus 65. Craft contributes one-quarter of overall quality, so the difference is about 11 points with other factors held equal. Talent, script, marketing and release choices still matter. Budget tier does not directly change production-event probability. The craft calculation was factored into a shared preview/simulation function without changing its mathematical behavior.
 - Talent and casting cards show nominations and awards won. Profiles list nomination films, categories, years and revealed wins. Totals derive from stored award seasons and existing win counts; hidden ceremony results never appear early and reloading cannot duplicate nominations. Best Picture nominations are not counted as individual talent nominations.
 - Save version 5 accepts versions 1–4. Validation: 36 simulation tests and browser lifecycle, usability, financing, mobile layout, talent honors and announcement checks.
+
+## Alpha fixes (0.5.1)
+
+Two independent testers found four boundary defects, documented in ALPHA-TEST-REPORT.md. Currency errors now use dollar amounts; cent-level repayment can clear small remaining loans; invalid imports preserve the current studio; the last operating week cannot offer a future release. Save format remains version 5.

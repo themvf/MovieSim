@@ -244,6 +244,58 @@ export function migrateSave(s) {
     s.week > END
   )
     throw Error("Invalid save");
+  if (
+    ["debt", "market", "rivals", "log", "notices", "awards"].some(
+      (key) => !Array.isArray(s[key]),
+    ) ||
+    (s.seasons != null && !Array.isArray(s.seasons)) ||
+    !s.facilities ||
+    typeof s.name !== "string" ||
+    !Number.isFinite(s.prestige) ||
+    !Number.isFinite(s.invested) ||
+    ["Development", "Casting", "Production", "Marketing", "Research"].some(
+      (key) =>
+        !Number.isInteger(s.departments[key]) ||
+        s.departments[key] < 1 ||
+        s.departments[key] > 4,
+    ) ||
+    ["Soundstage", "Editing suite", "Effects workshop"].some(
+      (key) =>
+        !Number.isInteger(s.facilities[key]) ||
+        s.facilities[key] < 0 ||
+        s.facilities[key] > 4,
+    ) ||
+    s.debt.some(
+      (l) =>
+        !l ||
+        !Number.isFinite(l.balance) ||
+        !Number.isFinite(l.principal) ||
+        l.balance < 0 ||
+        l.principal < 0,
+    ) ||
+    s.people.some(
+      (p) =>
+        !p ||
+        typeof p.id !== "string" ||
+        typeof p.name !== "string" ||
+        !Array.isArray(p.history) ||
+        !Array.isArray(p.bookings),
+    ) ||
+    s.movies.some(
+      (m) =>
+        !m ||
+        typeof m.title !== "string" ||
+        !SCALES.includes(m.scale) ||
+        !GENRES[m.genre] ||
+        ["roles", "contracts", "campaigns", "boxWeeks", "awards"].some(
+          (key) => !Array.isArray(m[key]),
+        ) ||
+        m.contracts.some((c) => !c || !s.people.some((p) => p.id === c.id)) ||
+        (m.director && !s.people.some((p) => p.id === m.director.id)),
+    ) ||
+    s.awards.some((a) => !a || !Array.isArray(a.results))
+  )
+    throw Error("Invalid save");
   for (const p of s.people) enrichTalent(p);
   s.seasons ??= [];
   s.epilogue ??= false;
@@ -432,7 +484,8 @@ export const money = (v) =>
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(Math.abs(v) < 1 ? v * 1000 : roundAmount(v) * 1000);
-export const dollarInput = (v) => Math.round(v * 1000).toLocaleString("en-US");
+export const dollarInput = (v, decimals = 0) =>
+  (v * 1000).toLocaleString("en-US", { maximumFractionDigits: decimals });
 export const fromDollars = (value) => {
   const text = String(value).trim().replace(/^\$/, "");
   if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(text)) return NaN;
@@ -741,10 +794,14 @@ function stage(m, allowed) {
   if (!allowed.includes(m.stage))
     throw Error("That decision is no longer available.");
 }
-function amt(value, min, max) {
+function amt(value, min, max, dollars = true) {
   const n = Number(value);
   if (!Number.isFinite(n) || n < min || n > max)
-    throw Error(`Choose an amount between ${min} and ${max}.`);
+    throw Error(
+      dollars
+        ? `Choose an amount between $${dollarInput(min, 2)} and $${dollarInput(max, 2)}.`
+        : `Choose a value between ${min} and ${max}.`,
+    );
   return n;
 }
 export function act(s, type, a = {}) {
@@ -881,7 +938,7 @@ export function act(s, type, a = {}) {
       stage(m, ["packaging"]);
       if (m.contracts.length !== m.roles.length || !m.director)
         throw Error("Cast every role and hire a director first.");
-      const duration = amt(a.duration, 4, 20);
+      const duration = amt(a.duration, 4, 20, false);
       if (!Number.isInteger(duration)) throw Error("Choose whole weeks.");
       if (s.week + duration + 3 >= END)
         throw Error(
@@ -968,7 +1025,7 @@ export function act(s, type, a = {}) {
       stage(m, ["ready"]);
       if (m.release !== null)
         throw Error("The release date is already locked.");
-      const release = amt(a.release, s.week + 1, END - 1);
+      const release = amt(a.release, s.week + 1, END - 1, false);
       if (!Number.isInteger(release))
         throw Error("Choose a whole release week.");
       m.release = release;
@@ -1022,7 +1079,16 @@ export function act(s, type, a = {}) {
       break;
     }
     case "repay": {
-      const amount = amt(a.amount, 1, Math.min(s.cash, debtTotal(s)));
+      const available = Math.min(s.cash, debtTotal(s));
+      const requested = amt(
+        a.amount,
+        0.00001,
+        Math.ceil(available * 100000 - 1e-6) / 100000,
+      );
+      const amount =
+        Math.abs(requested - available) <= 0.000005 + Number.EPSILON
+          ? available
+          : Math.min(requested, available);
       let left = amount;
       for (const l of s.debt) {
         const pay = Math.min(left, l.balance);

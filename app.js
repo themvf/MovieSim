@@ -1,5 +1,5 @@
-import * as E from "./engine.js?v=0.5";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.5";
+import * as E from "./engine.js?v=0.5.1";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.5.1";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
   dialog = document.querySelector("#dialog");
@@ -143,7 +143,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.5 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.5.1 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
   <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main><div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "ACQUISITIONS & DEVELOPMENT" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Create original", "original", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">Your five-year story is complete. Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
@@ -537,7 +537,7 @@ function drawDialog() {
   if (v.kind === "repay")
     return modal(
       "Reduce your debt",
-      `<form id="repay-form"><label>Repayment ($)<input name="amount" type="text" inputmode="decimal" value="${E.dollarInput(Math.min(1000, Math.floor(E.debtTotal(s)), Math.floor(s.cash)))}" required></label><p>No early repayment penalty. Keep enough cash for upcoming weekly commitments.</p><button class="primary full">Repay principal</button></form>`,
+      `<form id="repay-form"><label>Repayment ($)<input name="amount" type="text" inputmode="decimal" value="${E.dollarInput(Math.min(1000, E.debtTotal(s), s.cash), 2)}" required></label><p>No early repayment penalty. Keep enough cash for upcoming weekly commitments.</p><button class="primary full">Repay principal</button></form>`,
       "FIRST PICTURE BANK",
     );
   if (v.kind === "person") {
@@ -766,6 +766,12 @@ function releaseAndDistribution(m) {
     .join("")}</div></section>`;
 }
 function releasePlanner(m) {
+  if (s.week >= E.END - 1)
+    return modal(
+      "No release weeks remain",
+      `<p>Your five-year run has no future opening weeks left. This film can no longer reach theaters during this run.</p><p class="muted">You can return to the film or continue to your final studio recap.</p>${button("Back to the film", "back", "", "primary full")}`,
+      "RELEASE CALENDAR",
+    );
   const start = s.week + 1;
   view.releaseWeek ??= start;
   view.calendarMonth ??=
@@ -1210,6 +1216,7 @@ dialog.addEventListener("change", async (e) => {
     drawDialog();
   }
   if (e.target.id === "import-save") {
+    const previousState = s;
     try {
       const file = e.target.files[0];
       if (!file) return;
@@ -1227,13 +1234,17 @@ dialog.addEventListener("change", async (e) => {
       )
         throw Error("Invalid save");
       s = E.migrateSave(data);
-      save();
-      close();
       render();
+      close();
       checkEmergency();
+      save();
       toast("Studio save restored.");
     } catch {
-      toast("This file is not a supported MovieSim save.");
+      s = previousState;
+      render();
+      toast(
+        "This file is not a supported MovieSim save. Your current studio has been kept.",
+      );
     }
   }
 });
