@@ -31,6 +31,8 @@ test("hire locks a non-negotiable share and sequel options preserve it", () => {
   const p = s.people.find((p) => p.kind === "actor");
   p.star = 80;
   p.majorCredits = 5;
+  p.genres[m.genre] = 80;
+  m.difficulty = 80;
   E.act(s, "audition", { id: m.id, person: p.id, role: 0 });
   E.act(s, "hire", {
     id: m.id,

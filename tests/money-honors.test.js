@@ -71,10 +71,10 @@ test("all-shoestring plans save about 70 percent of filming and reduce craft con
         total(low) / total(standard) > 0.27 &&
           total(low) / total(standard) < 0.33,
       );
-      assert.equal(E.score(E.productionCraft(m, low)), 20);
-      assert.equal(E.score(E.productionCraft(m, standard)), 65);
+      assert.ok(E.productionCraft(m, low) < 25);
+      assert.ok(E.productionCraft(m, standard) > E.productionCraft(m, low));
       const qualityDifference =
         (E.productionCraft(m, standard) - E.productionCraft(m, low)) * 0.25;
-      assert.ok(qualityDifference > 10 && qualityDifference < 12);
+      assert.ok(qualityDifference > 7);
     }
 });

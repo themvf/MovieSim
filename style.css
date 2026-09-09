@@ -3197,3 +3197,8 @@ summary {
 .status-exceeded { color:#8ee0b4; background:#203d32; }
 .status-met { color:#f3df78; background:#37351f; }
 .status-below { color:#ff929b; background:#42262d; }
+@media (max-width: 560px) {
+  .deal-numbers { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .deal-numbers > div:last-child { grid-column: 1 / -1; }
+  .deal-numbers strong { font-size: 20px; overflow-wrap: anywhere; }
+}

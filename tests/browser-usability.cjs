@@ -103,6 +103,8 @@ const fs = require("node:fs");
     s.notices = [];
     localStorage.setItem("moviesim-save-v1", JSON.stringify(s));
   });
+  if (await page.locator("#release-form").count())
+    await click('[data-action="close"]');
   await click('[data-action="movie"]');
   await click('[data-action="release"]');
   while (

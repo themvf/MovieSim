@@ -5,6 +5,10 @@ import * as E from "../engine.js";
 const copy = (s) => E.migrateSave(JSON.parse(JSON.stringify(s)));
 function film(s, offset = 0) {
   const m = E.act(s, "buy", { script: s.market[0].id });
+  for (const p of s.people) {
+    p.genres[m.genre] = 80;
+    p.look = 1;
+  }
   const actors = s.people
     .filter((p) => p.kind === "actor")
     .slice(offset, offset + m.roles.length);

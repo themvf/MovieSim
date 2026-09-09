@@ -1,4 +1,4 @@
-import { storyFor } from "./stories.js?v=0.7.6";
+import { storyFor } from "./stories.js?v=0.8.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
 export const END = 260;
@@ -193,33 +193,75 @@ export const BUDGET_DETAILS = {
     "Extensive custom effects work",
   ],
 };
-export function budgetCost(m, key, tier) {
-  const needs =
-    m.scale === "Small" ? 650 : m.scale === "Mid-budget" ? 2200 : 6500;
-  const effects = ["Action", "Sci-fi"].includes(m.genre)
+export function productionWeights(m) {
+  let effects = ["Action", "Sci-fi"].includes(m.genre)
     ? 0.4
     : m.genre === "Horror"
       ? 0.2
       : 0.05;
-  const weight =
-    key === "crew" ? 0.45 : key === "sets" ? 0.55 - effects : effects;
+  if (m.genre === "Horror")
+    effects = /creature|monster|supernatural|body/i.test(m.subgenre)
+      ? 0.35
+      : /psychological|found footage/i.test(m.subgenre)
+        ? 0.1
+        : 0.2;
+  if (/period|historical|fantasy/i.test(m.subgenre))
+    effects = Math.max(effects, 0.15);
+  return { sets: 0.55 - effects, crew: 0.45, effects };
+}
+export function budgetCost(m, key, tier) {
+  const needs =
+    m.scale === "Small" ? 650 : m.scale === "Mid-budget" ? 2200 : 6500;
   return Math.max(
     key === "effects" ? 0 : 25,
-    roundAmount(needs * weight * [0.3, 0.65, 1, 1.5, 2.2][tier]),
+    roundAmount(
+      needs * productionWeights(m)[key] * [0.3, 0.65, 1, 1.5, 2.2][tier],
+    ),
   );
 }
-export function scheduleInfo(duration) {
+export const recommendedWeeks = (m) =>
+  Math.min(
+    14,
+    (m.scale === "Blockbuster" ? 12 : m.scale === "Mid-budget" ? 10 : 8) +
+      (m.difficulty >= 75 ? 2 : 0),
+  );
+export function productionNeeds(m, b = m.budget) {
+  const tier = m.scale === "Blockbuster" ? 3 : 2;
+  return Object.entries(productionWeights(m)).map(([key, weight]) => {
+    const target = budgetCost(m, key, tier),
+      ratio = b[key] / target;
+    return {
+      key,
+      weight,
+      target,
+      ratio,
+      status:
+        ratio < 0.8
+          ? "Underfunded"
+          : ratio < 1
+            ? "Lean"
+            : ratio <= 1.25
+              ? "Meets needs"
+              : "Above needs",
+    };
+  });
+}
+export function scheduleInfo(duration, m) {
+  const target = m ? recommendedWeeks(m) : 8;
+  const difference = duration - target;
   return {
     label:
-      duration < 8
+      duration < target
         ? "Rushed"
-        : duration === 8
-          ? "Standard"
-          : duration <= 12
-            ? "Room to rehearse"
-            : "Extended shoot",
+        : duration === target
+          ? "Recommended"
+          : "Extra rehearsal",
     multiplier: (duration / 8) ** 0.6,
-    quality: (duration - 8) * 1.1,
+    quality:
+      difference < 0
+        ? Math.max(-16, difference * 2)
+        : Math.min(3, difference * 0.75),
+    target,
     risk: clamp(0.3 * (8 / duration) ** 1.5, 0.08, 0.6),
   };
 }
@@ -266,6 +308,10 @@ function validMovieFinances(m) {
     )
       return false;
   const optional = [
+    "recoupRemaining",
+    "recouped",
+    "releaseSupport",
+    "distributionReach",
     "participationPaid",
     "weekly",
     "productionTotal",
@@ -547,9 +593,16 @@ export function talentHonors(s, p) {
   return { nominations, wins: p.awards ?? 0 };
 }
 export function productionCraft(m, b = m.budget) {
-  const needs =
-    m.scale === "Small" ? 650 : m.scale === "Mid-budget" ? 2200 : 6500;
-  return clamp(((b.sets + b.crew + b.effects) / needs) * 65, 15, 96);
+  const needs = productionNeeds(m, b);
+  const adequacy = needs.reduce(
+    (v, n) => v + Math.min(1.45, Math.max(0, n.ratio)) * n.weight,
+    0,
+  );
+  const gap = needs.reduce(
+    (v, n) => v + Math.max(0, 0.8 - n.ratio) * n.weight,
+    0,
+  );
+  return clamp(65 * adequacy - 30 * gap, 5, 96);
 }
 export function saveForecast(s, m) {
   const [low, high] = projection(s, m).map(roundAmount);
@@ -767,6 +820,22 @@ export const burn = (s) =>
 export function available(p, start, end) {
   return !p.retired && !p.bookings.some((b) => start < b.end && end > b.start);
 }
+export function projectInterest(p, m) {
+  if (p.star < 60 || freshFace(p)) return null;
+  if ((p.genres[m.genre] ?? 50) < 45)
+    return "Declines: this genre is outside their strengths.";
+  if (p.look % 3 === 0 && m.difficulty < 50)
+    return "Declines: they want a more challenging project.";
+  return null;
+}
+export function fameChange(p, performance, openingGross, scale) {
+  const market =
+    scale === "Small" ? 1800 : scale === "Mid-budget" ? 5000 : 14500;
+  const exposure = clamp(openingGross / market, 0.3, 2);
+  const delivery = (performance - 60) / 7;
+  const delta = Math.round(delivery * (0.6 + exposure * 0.4));
+  return clamp(delta, -8, 10);
+}
 export function participationDemand(p, m) {
   if (freshFace(p) || p.star < 60) return 0;
   if (m.scale === "Small" && m.difficulty >= 75) return 0;
@@ -841,6 +910,7 @@ export function quote(s, p, m, role = 0) {
     high: roundAmount(base * 1.12),
     option: false,
     grossShare: participationDemand(p, m),
+    refusal: projectInterest(p, m),
   };
 }
 export function returningTeam(s, original) {
@@ -858,7 +928,9 @@ export function returningTeam(s, original) {
       fee: q.option ? q.low : Math.ceil((q.low + q.high) / 2 / 10) * 10,
       grossShare: q.grossShare,
       option: q.option,
-      available: available(p, s.week + 3, s.week + 11),
+      available:
+        available(p, s.week + 3, s.week + 3 + recommendedWeeks(original)) &&
+        !q.refusal,
     };
   });
 }
@@ -887,7 +959,10 @@ export function projection(s, m) {
       (1 + competition(s, m))) *
     (0.55 + (m.screen ?? 60) / 145);
   const spread = Math.max(0.25, 0.95 - s.departments.Research * 0.12);
-  return [base * (1 - spread), base * (1 + spread)];
+  return [
+    base * (m.distributionReach ?? 1) * (1 - spread),
+    base * (m.distributionReach ?? 1) * (1 + spread),
+  ];
 }
 function addMovie(s, sc, parent = null, developing = false) {
   const m = {
@@ -900,6 +975,10 @@ function addMovie(s, sc, parent = null, developing = false) {
     director: null,
     auditions: {},
     spent: sc.price,
+    recoupRemaining: 0,
+    recouped: 0,
+    distributionReach: 1,
+    releaseSupport: 0,
     participationPaid: 0,
     receipts: 0,
     gross: 0,
@@ -1019,7 +1098,7 @@ export function act(s, type, a = {}) {
         (team.length !== m.roles.length + 1 || team.some((c) => !c.available))
       )
         throw Error(
-          "The original team is unavailable for an eight-week shoot after development. Choose your cast individually or try again later.",
+          "The original team is unavailable for the recommended shoot after development. Choose your cast individually or try again later.",
         );
       const n = s.movies.filter((x) => x.parent === m.id).length + 2;
       const sc = {
@@ -1097,6 +1176,7 @@ export function act(s, type, a = {}) {
       if (p.kind === "actor" && m.auditions[`${a.role}:${p.id}`] === undefined)
         throw Error("Audition the actor first.");
       const q = quote(s, p, m, a.role);
+      if (q.refusal) throw Error(q.refusal);
       const offer = amt(a.offer, 0, 100000);
       const threshold = q.option ? q.low : Math.round((q.low + q.high) / 2);
       if (offer < threshold)
@@ -1275,6 +1355,10 @@ export function act(s, type, a = {}) {
       m.deal = a.deal;
       m.share = d.share;
       m.advance = d.advance;
+      m.recoupRemaining = d.recoup;
+      m.recouped = 0;
+      m.distributionReach = d.reach;
+      m.releaseSupport = d.support;
       m.receipts += d.advance;
       s.cash += d.advance;
       debit(s, d.cost, m);
@@ -1390,28 +1474,43 @@ export function upgradeCost(s, name) {
     : 700 * (s.facilities[name] + 1) ** 1.5;
 }
 export function distribution(s, m) {
-  const prestige = 1 + s.prestige / 200;
+  const market =
+    m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
+  const demand = clamp(0.7 + castDraw(s, m) / 100, 0.7, 1.7);
+  const price = market * demand;
   return {
     secure: {
       name: "Harbor Distribution",
-      advance: Math.round(m.spent * 0.4 * prestige),
-      share: Math.round((0.13 + s.prestige / 2000) * 100) / 100,
+      advance: roundAmount(price * 0.2),
+      share: 0.12,
       cost: 0,
-      desc: "A larger guaranteed payment. A smaller share of ticket sales.",
+      support: roundAmount(market * 0.12),
+      recoup: 0,
+      reach: 1.05,
+      desc: "Guaranteed rights payment. Distributor funds the release; you keep a smaller ticket share.",
     },
     partner: {
       name: "Meridian Pictures",
-      advance: Math.round(m.spent * 0.15 * prestige),
-      share: Math.round((0.31 + s.prestige / 2000) * 100) / 100,
+      advance: roundAmount(price * 0.12),
+      share: 0.4,
       cost: 80,
-      desc: "A modest advance with more long-term upside.",
+      support: roundAmount(market * 0.12),
+      recoup: roundAmount(price * 0.12) + roundAmount(market * 0.12),
+      reach: 1.15,
+      desc: "Advance and release support are recovered from your ticket share before further payments.",
     },
     self: {
       name: "Independent release",
       advance: 0,
       share: 0.5,
-      cost: 240 * (SCALES.indexOf(m.scale) + 1),
-      desc: "Fund the booking and delivery yourself. Keep 50% after theaters.",
+      cost: [400, 1500, 4500][SCALES.indexOf(m.scale)],
+      support: 0,
+      recoup: 0,
+      reach: Math.min(
+        1.1,
+        0.65 + (s.departments.Marketing - 1) * 0.1 + s.prestige / 500,
+      ),
+      desc: "You fund booking, publicity and delivery. Reach improves with your Marketing department and studio reputation.",
     },
   };
 }
@@ -1431,7 +1530,7 @@ function finish(s, m) {
       (performances.reduce((a, v) => a + v, 0) / performances.length) * 0.3 +
       m.directorPerformance * 0.2 +
       craft * 0.25 +
-      scheduleInfo(m.duration).quality +
+      scheduleInfo(m.duration, m).quality +
       (s.departments.Production - 1) * 2 -
       m.penalty,
     10,
@@ -1480,7 +1579,8 @@ function opening(s, m) {
     ((market * appeal * season) / (1 + rival)) *
     (0.55 + m.fans / 145) *
     (0.7 + random(s) * 0.6) *
-    sequel;
+    sequel *
+    (m.distributionReach ?? 1);
   m.careerChanges = [];
   m.opening = openingGross;
   m.releaseFactors = { stars, reach, season, rival };
@@ -1489,15 +1589,9 @@ function opening(s, m) {
   s.notices.push({ kind: "opening", id: m.id });
   for (const [i, c] of m.contracts.entries()) {
     const p = person(s, c.id),
-      before = p.star;
-    const rise = Math.max(
-      -3,
-      Math.round(
-        (m.performances[i] - 48) / 6 +
-          Math.log2(Math.max(0.5, openingGross / 900)) * 2,
-      ),
-    );
-    p.star = clamp(p.star + rise);
+      before = Math.round(p.star);
+    const rise = fameChange(p, m.performances[i], openingGross, m.scale);
+    p.star = clamp(Math.round(p.star) + rise);
     p.fee = Math.round(35 + p.star * p.star * 0.35);
     m.careerChanges.push({
       id: p.id,
@@ -1523,7 +1617,7 @@ function opening(s, m) {
       );
   }
   const d = person(s, m.director.id);
-  const directorBefore = d.star;
+  const directorBefore = Math.round(d.star);
   if (m.scale !== "Small" || openingGross >= 3000) d.majorCredits++;
   d.history.push({
     id: m.id,
@@ -1531,7 +1625,10 @@ function opening(s, m) {
     score: m.directorPerformance ?? m.critics,
     year: date(s.week).year,
   });
-  d.star = clamp(d.star + Math.max(0, (m.critics - 55) / 9));
+  d.star = clamp(
+    directorBefore +
+      fameChange(d, m.directorPerformance ?? m.critics, openingGross, m.scale),
+  );
   d.fee = Math.round(35 + d.star * d.star * 0.35);
   m.careerChanges.push({
     id: d.id,
@@ -1834,7 +1931,11 @@ function nextWeek(s) {
       }
       m.boxWeeks.push(gross);
       m.gross += gross;
-      const receipts = gross * m.share;
+      const entitlement = gross * m.share;
+      const recovered = Math.min(m.recoupRemaining ?? 0, entitlement);
+      m.recoupRemaining = Math.max(0, (m.recoupRemaining ?? 0) - recovered);
+      m.recouped = (m.recouped ?? 0) + recovered;
+      const receipts = entitlement - recovered;
       m.receipts += receipts;
       s.cash += receipts;
       const payout = receipts * participationRate(m);

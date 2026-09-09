@@ -145,12 +145,20 @@ Wrapping opens the release calendar. Weekly advancement is blocked in the engine
 
 The first sequel action rehiring the original actors and director shows exact fees, participation terms, and availability for an eight-week shoot after development. Existing actor options preserve fee and share. The upfront fee is still due at greenlight; only development is charged on creation. Individual selection remains available. Unavailable teams cannot be bulk-hired, and greenlight rechecks schedules. New sequels reset prior participation payouts.
 
-
 ## Outcome indicators (0.7.5)
 
 Comparable result cells show a colored symbol-and-text badge: Exceeded above the saved range, Met within its inclusive bounds, Below under it. No verdict is invented for critics without a forecast or a test screening treated as a guaranteed audience forecast.
 
-
 ## More casting candidates (0.7.6)
 
 A More button below the initial three candidates appends three more available matches while retaining the original shortlist and current scroll position. It disappears when all matching candidates are shown. Browse all remains available.
+
+## Production, distribution and careers (0.8.0)
+
+Big-budget plans default to Premium with a 12-week shoot, or 14 for difficulty 75+. Mid-budget starts at 10/12 weeks; low-budget at 8/10. Department requirements depend on genre and subgenre. Creature/body/supernatural horror gives effects more weight than psychological/found-footage horror; other genre baselines remain distinct. Each department's adequacy is capped separately and severe shortages carry an extra penalty. Sliders show required spending and underfunded/lean/meets/above needs. Short schedules lose two execution points per missing week (capped at 16); extra time adds at most three. These are game balance rules.
+
+Distribution offers use scope and drawing power rather than money spent. Guaranteed rights payments are nonrecoupable with a small ticket share; partners fund release support and recover that plus their advance from the studio's ticket entitlement before additional payments. Self-distribution costs $400,000 / $1,500,000 / $4,500,000 and starts with limited reach; Marketing and prestige improve it. Contract reach is saved when signed. Optional marketing remains separate. Recovery never reduces gross ticket sales; movie receipts reflect actual cash received. Participation uses those actual ticket receipts after recovery, excluding advances/catalog as before. Old signed deals retain their stored shares and default to no recovery. Recovery is theatrical only.
+
+All actors and directors now get whole-number fame changes driven by individual performance and exposure. Weak performances can reduce fame even in successful films; studio losses do not automatically damage fame. Career results list everyone with before/after values and signed change. Stars decline genres below 45 aptitude; a stable subset (look modulo 3) also declines roles below difficulty 50. Newcomers remain open. Existing sequel options are honored; free choice hires enforce refusal before money changes. Returning-team availability also respects interest and the recommended schedule.
+
+Validation includes department substitution, schedule penalties, fame gains/losses, refusal reasons, accounting after save/reload, and scenarios where each distribution option wins. This is a transparent game model, not a claim of standard Hollywood contract rates.

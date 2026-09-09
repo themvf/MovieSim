@@ -119,13 +119,19 @@ test("complete film lifecycle reconciles advance, ticket share, catalog and cost
   release(s, m);
   assert.equal(m.stage, "theaters");
   assert.equal(m.gross, m.opening);
-  assert.ok(Math.abs(m.receipts - (m.advance + m.gross * m.share)) < 0.001);
+  assert.ok(
+    Math.abs(m.receipts - (m.advance + m.gross * m.share - (m.recouped ?? 0))) <
+      0.001,
+  );
   while (m.stage === "theaters") tick(s);
   const old = m.receipts;
   tick(s);
   assert.ok(m.receipts > old);
   assert.ok(
-    Math.abs(m.receipts - (m.advance + m.gross * m.share + m.catalog)) < 0.001,
+    Math.abs(
+      m.receipts -
+        (m.advance + m.gross * m.share - (m.recouped ?? 0) + m.catalog),
+    ) < 0.001,
   );
   assert.ok(m.spent > m.price);
 });
