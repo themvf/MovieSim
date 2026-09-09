@@ -81,21 +81,24 @@ const fs = require("node:fs");
   await click('[data-action="screen"]');
   await click('[data-action="campaign"][data-campaign="0"]');
   await click('[data-action="release"]');
-  await page
-    .locator("#release-select")
-    .selectOption(
-      String(
-        (await page.evaluate(
-          () => JSON.parse(localStorage.getItem("moviesim-save-v1")).week,
-        )) + 3,
-      ),
-    );
-  await page.locator("#release-form button").click();
+  const releaseWeek =
+    (await page.evaluate(
+      () => JSON.parse(localStorage.getItem("moviesim-save-v1")).week,
+    )) + 3;
+  while (
+    !(await page
+      .locator(`[data-action="releaseWeek"][data-week="${releaseWeek}"]`)
+      .count())
+  )
+    await click('[data-action="releaseMonth"][data-step="1"]');
+  await click(`[data-action="releaseWeek"][data-week="${releaseWeek}"]`);
+  await page.locator("#release-form > button").click();
   await click('[data-action="dealReview"][data-deal="partner"]');
   await click('[data-action="distribute"][data-deal="partner"]');
   await click('[data-action="close"]');
   for (let i = 0; i < 3; i++) await click('[data-action="next"]');
   await page.waitForSelector(".opening-reveal");
+  await page.waitForSelector(".expectations-review");
   await page.screenshot({
     path: "test-results/mobile-opening.png",
     fullPage: true,

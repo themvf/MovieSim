@@ -16,6 +16,8 @@ Run `npm start` with Node.js 22+, then open http://127.0.0.1:4173. No package in
 
 ## Status
 
-Playable five-year web demo, version 0.2. Acquire scripts, audition talent, run productions, market and release movies, create sequels, pursue awards, and manage cash and debt. Progress saves on your device.
+Playable five-year web demo, version 0.3. Acquire scripts, audition talent, run productions, market and release movies, create sequels, pursue awards, and manage cash and debt. Progress saves on your device.
 
 See [implementation and balance notes](IMPLEMENTATION.md) for the shipped systems, tests, and current limitations. Run `npm test` for simulation checks.
+
+The 0.3 update adds rounded money displays, a monthly release calendar, percentage-based distribution comparisons, weekly movie-card charts with occasional seasonal resurgences, and saved expectations-versus-reality opening reports. Existing saves remain compatible.

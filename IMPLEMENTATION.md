@@ -1,4 +1,4 @@
-# Playable demo 0.2
+# Playable demo 0.3
 
 MovieSim is a dependency-free static web game. `engine.js` owns simulation state and decisions; `app.js` renders the interface and persists saves; `art.js` draws original SVG pixel portraits, posters, and the studio lot. No third-party artwork or game assets are used.
 
@@ -60,3 +60,14 @@ Prestige milestones occur at 15, 35, 60, and 85 points. Announcements explain th
 The persistent browser storage key stays unchanged. Version 1 saves migrate in place without rerolling talent identities, changing cash, or consuming RNG state. New attributes are deterministic. Existing signed release/distribution agreements stay fixed; unfinished or undistributed films get the new post-wrap date selection. Old completed awards are preserved and not awarded twice.
 
 See [awards timeline research](AWARDS-RESEARCH.md) for official sources and the simplified game cadence.
+
+## Demo 0.3 release experience
+
+- Currency displays use rounded thousands and at most one decimal for millions; accounting retains its precision. New budget tiers and salary quote ranges use rounded amounts. Estimated rating ranges use five-point boundaries; dates, ages, durations and counts remain exact.
+- The release calendar shows a month at a time with selectable opening weeks, August/December demand labels and nearby competition. It follows the existing 52-week game calendar. Navigation does not commit a date; confirmation locks it.
+- Distribution cards show the studio percentage of ticket payments. New contracts use whole percentages; existing signed contracts are preserved.
+- Movie cards keep weekly theatrical bars, updated on every simulated week and retained in the catalog. Gold bars mark resurgences.
+- After the first two theatrical weeks, eligible months have a 25% weekly resurgence chance: Horror in October; Action/Sci-fi in July/August; Comedy/Action/Sci-fi in December; Drama in January/February. These are game balancing rules. At most one resurgence per month and two per film; the 12-week theatrical cap remains. Boosted ticket payments flow through the signed studio share. Saved RNG prevents reload rerolls.
+- Distribution confirmation saves the displayed opening forecast. Further pre-release campaigns refresh it; theater campaigns never rewrite it. The opening popup compares actual gross with that range. Older releases without a saved forecast say so.
+- Save version 3 accepts versions 1 and 2, including imported backups, without resetting progress.
+- Validation: 30 simulation tests plus browser lifecycle, usability, boundaries and movie-card chart tests, including mobile widths 320–768px.

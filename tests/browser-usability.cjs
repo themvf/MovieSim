@@ -103,13 +103,17 @@ const fs = require("node:fs");
   });
   await click('[data-action="movie"]');
   await click('[data-action="release"]');
-  await page.locator("#release-select").selectOption("35");
+  while (
+    !(await page.locator('[data-action="releaseWeek"][data-week="35"]').count())
+  )
+    await click('[data-action="releaseMonth"][data-step="1"]');
+  await click('[data-action="releaseWeek"][data-week="35"]');
   await page.screenshot({ path: "test-results/v02-release.png" });
-  await page.locator("#release-form button").click();
+  await page.locator("#release-form > button").click();
   assert.equal(await page.locator(".distribution-card").count(), 3);
   assert.match(
     await page.locator(".distribution-options").innerText(),
-    /per \$100/,
+    /Your share of ticket payments/,
   );
   await page.screenshot({ path: "test-results/v02-distribution.png" });
   await click('[data-action="dealReview"][data-deal="partner"]');

@@ -1,6 +1,6 @@
 # Movie Studio Game — Five-Year Demo Design
 
-Status: playable demo, revised through the 0.2 usability update. Concrete implementation choices are documented in IMPLEMENTATION.md.
+Status: playable demo, revised through the 0.3 release experience update. Concrete implementation choices are documented in IMPLEMENTATION.md.
 
 This is a new game, separate from all previous game projects. This document records the agreed design. MovieSim now has a playable GitHub Pages demo; numerical balance remains iterative.
 

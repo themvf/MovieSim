@@ -1,5 +1,5 @@
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
-export const VERSION = 2;
+export const VERSION = 3;
 export const END = 260;
 export const GENRES = {
   Drama: ["Character study", "Courtroom", "Coming of age"],
@@ -108,7 +108,7 @@ export function budgetCost(m, key, tier) {
     key === "crew" ? 0.45 : key === "sets" ? 0.55 - effects : effects;
   return Math.max(
     key === "effects" ? 0 : 25,
-    Math.round((needs * weight * [0.3, 0.65, 1, 1.5, 2.2][tier]) / 5) * 5,
+    roundAmount(needs * weight * [0.3, 0.65, 1, 1.5, 2.2][tier]),
   );
 }
 export function scheduleInfo(duration) {
@@ -138,7 +138,7 @@ export function productionCosts(s, m, b, duration) {
 export function migrateSave(s) {
   if (
     !s ||
-    ![1, VERSION].includes(s.version) ||
+    ![1, 2, VERSION].includes(s.version) ||
     !Array.isArray(s.movies) ||
     !Array.isArray(s.people) ||
     !s.departments ||
@@ -323,13 +323,44 @@ export function random(s) {
 }
 const roll = (s, a, b) => Math.floor(a + random(s) * (b - a + 1));
 const pick = (s, a) => a[roll(s, 0, a.length - 1)];
+export const roundAmount = (v) => {
+  const n = Math.abs(v),
+    step =
+      n >= 10000 ? 1000 : n >= 1000 ? 100 : n >= 100 ? 10 : n >= 10 ? 5 : 1;
+  return Math.round(v / step) * step;
+};
+export const score = (v) => Math.round(v / 5) * 5;
 export const money = (v) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: Math.abs(v) >= 1000 ? 2 : 0,
-    notation: "compact",
-  }).format(v * 1000);
+  v && Math.abs(v) < 1
+    ? v < 0
+      ? "-<$1K"
+      : "<$1K"
+    : new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 1,
+        minimumFractionDigits: 0,
+        notation: "compact",
+      }).format(roundAmount(v) * 1000);
+export function saveForecast(s, m) {
+  const [low, high] = projection(s, m).map(roundAmount);
+  m.expectations = {
+    low,
+    high,
+    week: s.week,
+    research: s.departments.Research,
+  };
+}
+export function resurgenceReason(genre, month) {
+  if (genre === "Horror" && month === 9) return "Halloween interest";
+  if (["Action", "Sci-fi"].includes(genre) && [6, 7].includes(month))
+    return "Summer audiences";
+  if (["Comedy", "Action", "Sci-fi"].includes(genre) && month === 11)
+    return "Holiday audiences";
+  if (genre === "Drama" && [0, 1].includes(month))
+    return "Awards-season interest";
+  return null;
+}
 export function date(week) {
   const year = 2026 + Math.floor(week / 52);
   const month = Math.min(11, Math.floor(((week % 52) * 12) / 52));
@@ -342,7 +373,7 @@ export function date(week) {
 }
 export const range = (value, level = 1, history = 0) => {
   const width = Math.max(4, 21 - level * 3 - history);
-  return `${Math.max(1, Math.round((value + 3) / 5) * 5 - width)}–${Math.min(99, Math.round((value + 3) / 5) * 5 + width)}`;
+  return `${Math.max(0, Math.floor((value - width) / 5) * 5)}–${Math.min(100, Math.ceil((value + width) / 5) * 5)}`;
 };
 export const person = (s, id) => s.people.find((p) => p.id === id);
 export const movie = (s, id) => s.movies.find((p) => p.id === id);
@@ -494,8 +525,8 @@ export function quote(s, p, m, role = 0) {
     p.kind === "actor" && m.difficulty >= 75 && p.talent >= 65 ? 0.76 : 1;
   const base = p.fee * discount * (1 - s.prestige / 500);
   return {
-    low: Math.round(base * 0.85),
-    high: Math.round(base * 1.12),
+    low: roundAmount(base * 0.85),
+    high: roundAmount(base * 1.12),
     option: false,
   };
 }
@@ -556,6 +587,8 @@ function addMovie(s, sc, parent = null, developing = false) {
     event: null,
     eventCount: 0,
     boxWeeks: [],
+    resurgences: [],
+    expectations: null,
     awards: [],
     cancelled: false,
   };
@@ -795,6 +828,7 @@ export function act(s, type, a = {}) {
       debit(s, c.cost, m);
       m.campaignSpend += c.cost;
       m.campaigns.push(Number(a.campaign));
+      if (m.stage !== "theaters") saveForecast(s, m);
       break;
     }
     case "setRelease": {
@@ -825,6 +859,7 @@ export function act(s, type, a = {}) {
       s.cash += d.advance;
       debit(s, d.cost, m);
       m.stage = "scheduled";
+      saveForecast(s, m);
       log(
         s,
         `${m.title}: ${d.name} selected. Your share is ${Math.round(d.share * 100)}% of gross box office.`,
@@ -929,14 +964,14 @@ export function distribution(s, m) {
     secure: {
       name: "Harbor Distribution",
       advance: Math.round(m.spent * 0.4 * prestige),
-      share: 0.13 + s.prestige / 2000,
+      share: Math.round((0.13 + s.prestige / 2000) * 100) / 100,
       cost: 0,
       desc: "A larger guaranteed payment. A smaller share of ticket sales.",
     },
     partner: {
       name: "Meridian Pictures",
       advance: Math.round(m.spent * 0.15 * prestige),
-      share: 0.31 + s.prestige / 2000,
+      share: Math.round((0.31 + s.prestige / 2000) * 100) / 100,
       cost: 80,
       desc: "A modest advance with more long-term upside.",
     },
@@ -1072,7 +1107,7 @@ function opening(s, m) {
   s.prestige = clamp(s.prestige + Math.max(0, m.critics - 60) / 9);
   log(
     s,
-    `${m.title} opens to ${money(openingGross)}. Critics ${m.critics} · Fans ${m.fans}.`,
+    `${m.title} opens to ${money(openingGross)}. Critics ${score(m.critics)} · Fans ${score(m.fans)}.`,
     "release",
   );
 }
@@ -1310,10 +1345,39 @@ function nextWeek(s) {
     if (m.stage === "theaters") {
       const age = s.week - m.theaterStart,
         hold = 0.35 + m.fans / 200;
-      const gross =
+      let gross =
         age === 0
           ? m.opening
           : m.opening * hold ** age * (1 + m.campaigns.length * 0.015);
+      m.resurgences ??= [];
+      const d = date(s.week),
+        monthKey = `${d.year}-${d.month}`,
+        reason = resurgenceReason(m.genre, d.month);
+      if (
+        age >= 2 &&
+        reason &&
+        m.resurgences.length < 2 &&
+        !m.resurgences.some((r) => r.month === monthKey) &&
+        random(s) < 0.25
+      ) {
+        const baseline = gross;
+        gross = Math.min(
+          m.opening * 1.25,
+          Math.max(gross * 1.65, m.boxWeeks.at(-1) * 1.15),
+        );
+        m.resurgences.push({
+          index: age,
+          week: s.week,
+          month: monthKey,
+          reason,
+          bonus: gross - baseline,
+        });
+        log(
+          s,
+          `${m.title}: ${reason} brings a box-office resurgence this week.`,
+          "success",
+        );
+      }
       m.boxWeeks.push(gross);
       m.gross += gross;
       const receipts = gross * m.share;

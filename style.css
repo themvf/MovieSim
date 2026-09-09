@@ -2875,3 +2875,85 @@ input[type="range"] {
   min-height: 38px;
   accent-color: var(--peach);
 }
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.calendar-nav h3 {
+  margin: 0;
+}
+.release-calendar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.release-week {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  padding: 16px;
+  border: 1px solid #3b4353;
+  border-radius: 10px;
+  background: #182131;
+  color: #f5efdf;
+}
+.release-week.selected {
+  border: 2px solid #a8ddc9;
+  background: #243d3d;
+}
+.release-week span,
+.release-week small {
+  font-size: 12px;
+}
+.card-box-office {
+  margin: 16px 0;
+}
+.card-box-office .section-title {
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.mini-box-chart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 4px;
+  align-items: end;
+  height: 68px;
+}
+.mini-box-chart > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  text-align: center;
+  gap: 4px;
+}
+.mini-box-chart i {
+  display: block;
+  background: #a8ddc9;
+  border-radius: 3px 3px 0 0;
+}
+.mini-box-chart i.resurgence {
+  background: #e9be69;
+}
+.mini-box-chart small {
+  font-size: 9px;
+  color: #a5aebe;
+}
+.expectations-review {
+  padding: 18px;
+  margin: 18px 0;
+  border: 1px solid #455264;
+  border-radius: 12px;
+  background: #182131;
+}
+.expectations-review h3 {
+  margin: 10px 0;
+}
+.expectations-review .scores {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
