@@ -41,6 +41,9 @@ const fs = require("node:fs");
     if (!(await next.count())) break;
     await next.first().click();
     if (role === 0) {
+      const badges = await page.locator(".casting-list.shortlist .casting-card").allTextContents();
+      if (!badges[0].includes("Fresh face") || !badges[1].includes("Working actor") || !badges[2].includes("Established star")) throw Error("Shortlist must show fresh face, working actor and star in order");
+
       if (
         (await page.locator(".casting-list.shortlist > article").count()) !== 3
       )

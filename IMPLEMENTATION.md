@@ -132,3 +132,8 @@ Locking the release date opens a dedicated distribution screen. Ready-film cards
 Numerical talent, audition and script estimates retain their existing intervals. Color uses the displayed midpoint: green 80+, yellow 60–79, orange 40–59, red below 40. The legend and numeric text preserve meaning without relying solely on color. Money ranges are unchanged.
 
 Opening night and the saved release report use one Expected / Result comparison list for opening gross, each actor, director, audience test versus release response, and critics. Saved hiring forecasts are retained; absent forecasts are explicitly identified. The comparison appears directly on opening night rather than inside the detailed report.
+
+
+## Mixed casting shortlist (0.7.2)
+
+Actor shortlists select a fresh face, working actor and established star in that order, choosing within each category using the current sort. Availability and budget filters still apply; missing categories are filled from other available matches. Browse all and director selection remain unchanged.
