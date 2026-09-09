@@ -114,3 +114,8 @@ All 58 subgenres have story hooks and recognizable lead descriptions. Sequels re
 ## Weekly pacing (0.6.1)
 
 The player-facing advance controls move one week at a time, leaving opportunities to start other films between production milestones. Each published build starts a fresh studio; reloads within that build preserve progress. Explicit new-studio starts also clear casting filters and draft production plans.
+
+
+## Distribution action (0.6.2)
+
+Locking the release date opens a dedicated distribution screen. Ready-film cards and the fixed project action also open it directly. Offer review returns to the distribution screen, while marketing remains on the project desk.

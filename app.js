@@ -1,6 +1,6 @@
-import * as E from "./engine.js?v=0.6.1";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.6.1";
-const BUILD = "0.6.1";
+import * as E from "./engine.js?v=0.6.2";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.6.2";
+const BUILD = "0.6.2";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
   dialog = document.querySelector("#dialog");
@@ -145,7 +145,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.6.1 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.6.2 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
   <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.money(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main><div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "ACQUISITIONS & DEVELOPMENT" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Create original", "original", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">Your five-year story is complete. Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
@@ -214,11 +214,11 @@ function movieCard(m) {
   const needs = m.event
     ? "Decision needed"
     : m.stage === "ready"
-      ? "Choose distribution"
+      ? m.release == null ? "Choose release date" : "Choose distribution"
       : m.stage === "packaging"
         ? "Choose cast & director"
         : null;
-  return `<article class="movie-card" data-action="movie" data-id="${m.id}" tabindex="0" role="button" aria-label="Manage ${h(m.title)}">${poster(m)}<div class="movie-info"><div class="movie-meta">${pill(labels[m.stage], m.stage === "theaters" ? "mint-pill" : "")}${m.parent ? pill("SEQUEL", "gold-pill") : ""}</div><h3>${h(m.title)}</h3><p>${h(m.genre)} / ${h(m.subgenre)} <span>·</span> ${E.scopeName(m.scale)}</p><div class="cast-mini">${cast.map((p) => portrait(p, 28)).join("")}<span>${cast.length ? cast.map((p) => h(p.name.split(" ")[0])).join(", ") : "Your cast is waiting to be discovered"}</span></div>${m.stage === "filming" ? `<div class="production-progress"><span>Filming</span><span>${m.progress} / ${m.duration} weeks</span><div class="bar"><i style="width:${(m.progress / m.duration) * 100}%"></i></div></div>` : ""}${m.boxWeeks.length ? weeklyChart(m) : ""}<div class="movie-bottom"><span>${["theaters", "catalog"].includes(m.stage) ? `Box office <strong>${E.money(m.gross)}</strong>` : `Spent <strong>${E.money(m.spent)}</strong>`}</span><span class="${needs ? "peach" : "muted"}">${needs ? `${needs} →` : m.release ? `${E.date(m.release).label} →` : "View project →"}</span></div></div></article>`;
+  return `<article class="movie-card" data-action="${m.stage === "ready" && m.release != null ? "distribution" : "movie"}" data-id="${m.id}" tabindex="0" role="button" aria-label="Manage ${h(m.title)}">${poster(m)}<div class="movie-info"><div class="movie-meta">${pill(labels[m.stage], m.stage === "theaters" ? "mint-pill" : "")}${m.parent ? pill("SEQUEL", "gold-pill") : ""}</div><h3>${h(m.title)}</h3><p>${h(m.genre)} / ${h(m.subgenre)} <span>·</span> ${E.scopeName(m.scale)}</p><div class="cast-mini">${cast.map((p) => portrait(p, 28)).join("")}<span>${cast.length ? cast.map((p) => h(p.name.split(" ")[0])).join(", ") : "Your cast is waiting to be discovered"}</span></div>${m.stage === "filming" ? `<div class="production-progress"><span>Filming</span><span>${m.progress} / ${m.duration} weeks</span><div class="bar"><i style="width:${(m.progress / m.duration) * 100}%"></i></div></div>` : ""}${m.boxWeeks.length ? weeklyChart(m) : ""}<div class="movie-bottom"><span>${["theaters", "catalog"].includes(m.stage) ? `Box office <strong>${E.money(m.gross)}</strong>` : `Spent <strong>${E.money(m.spent)}</strong>`}</span><span class="${needs ? "peach" : "muted"}">${needs ? `${needs} →` : m.release ? `${E.date(m.release).label} →` : "View project →"}</span></div></div></article>`;
 }
 function scripts() {
   return `<div class="section-title"><h2>Available screenplays <span>${s.market.length}</span></h2><span class="muted small">New scripts every 13 weeks</span></div><div class="script-grid">${s.market.map((m) => `<article class="script-card"><div class="script-top">${poster(m)}<div>${pill(E.scopeName(m.scale))}<span class="eyebrow">${h(m.genre)} / ${h(m.subgenre)}</span><h3>${h(m.title)}</h3><p>${h(m.premise)}</p></div></div><div class="script-stats">${stat("QUALITY ESTIMATE", E.range(m.quality, s.departments.Development))}${stat("ROLE DIFFICULTY", `${E.score(m.difficulty)}/100`)}${stat("CAST", `${m.roles.length} roles`)}</div><div class="card-bottom"><strong>${E.money(m.price)} <small>incl. sequel rights</small></strong>${button("Read & acquire →", "script", `data-script="${m.id}"`, "outline")}</div></article>`).join("")}</div><p class="muted small">Quality is an estimate. There is no prescribed production budget—your choices and your results will teach you the economics.</p>`;
@@ -477,7 +477,7 @@ function projectAction(m) {
   if (m.stage === "ready")
     return {
       label: m.release == null ? "Choose release week" : "Choose distribution",
-      action: m.release == null ? "release" : "jumpDistribution",
+      action: m.release == null ? "release" : "distribution",
       text: "Filming wrapped",
     };
   return {
@@ -651,6 +651,7 @@ function drawDialog() {
   }
   if (v.kind === "production") return production(m);
   if (v.kind === "release") return releasePlanner(m);
+  if (v.kind === "distribution") return modal("Choose distribution", distributionOffers(m), h(m.title));
   if (v.kind === "dealReview") {
     const d = E.distribution(s, m)[v.deal],
       example = 10000 * d.share;
@@ -909,6 +910,9 @@ function productionPreview(m) {
 function releaseAndDistribution(m) {
   if (m.release === null)
     return `<section class="panel"><span class="eyebrow">THE FILM IS FINISHED</span><h3>Find its opening weekend.</h3><p>Compare audience demand and competing releases, then lock your date.</p>${button("Choose release date →", "release", `data-id="${m.id}"`, "primary full")}</section>`;
+  return `<section class="panel"><span class="eyebrow">NEXT ACTION</span><h3>Choose your distribution deal</h3><p>Your release date is set. Choose who releases the film and how much of each ticket payment your studio receives.</p>${button("Choose distribution →", "distribution", `data-id="${m.id}"`, "primary full")}</section>`;
+}
+function distributionOffers(m) {
   return `<section><div class="section-title"><h3>How will you release it?</h3></div><p class="muted small">You pay for marketing. The distributor pays you upfront and shares ticket income.</p><div class="distribution-options">${Object.entries(
     E.distribution(s, m),
   )
@@ -1035,10 +1039,8 @@ function handle(e) {
         .querySelector(".decision-box")
         ?.scrollIntoView({ block: "center" });
       break;
-    case "jumpDistribution":
-      dialog
-        .querySelector(".distribution-options")
-        ?.scrollIntoView({ block: "start" });
+    case "distribution":
+      open("distribution", { id, back: { kind: "movie", id } });
       break;
     case "openingCareer":
       open("person", {
@@ -1102,7 +1104,7 @@ function handle(e) {
       open("dealReview", {
         id,
         deal: b.dataset.deal,
-        back: { kind: "movie", id },
+        back: { kind: "distribution", id, back: { kind: "movie", id } },
       });
       break;
     case "nominations":
@@ -1363,7 +1365,7 @@ dialog.addEventListener("submit", (e) => {
     );
   if (f.id === "release-form")
     transact("setRelease", { id: v.id, release: Number(d.release) }, () => {
-      view = { kind: "movie", id: v.id };
+      view = { kind: "distribution", id: v.id, back: { kind: "movie", id: v.id } };
     });
   if (f.id === "loan-form")
     transact("loan", { amount: E.fromDollars(d.amount) }, () => {

@@ -114,6 +114,8 @@ const fs = require("node:fs");
     await click('[data-action="releaseMonth"][data-step="1"]');
   await click(`[data-action="releaseWeek"][data-week="${releaseWeek}"]`);
   await page.locator("#release-form > button").click();
+  if (!(await page.locator('.distribution-options').isVisible())) throw Error('Distribution screen did not open after setting release');
+  if (!(await page.locator('dialog').innerText()).includes('Choose distribution')) throw Error('Missing distribution action heading');
   await click('[data-action="dealReview"][data-deal="partner"]');
   await click('[data-action="distribute"][data-deal="partner"]');
   await click('[data-action="close"]');
