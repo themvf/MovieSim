@@ -3390,3 +3390,5 @@ summary {
 .deal-footer {display:flex!important;flex-direction:column!important;gap:8px;align-items:stretch!important;}
 .deal-footer > * {width:100%;min-width:0;}
 .deal-footer #offer-total {color:var(--text);}
+
+.distribution-card {padding:14px;margin:10px 0;}.distribution-card .finance-lines {margin:6px 0;}.distribution-card .finance-lines>div {padding:8px 0;}.distribution-card p {margin:10px 0;font-size:12px;}.distribution-card h3 {margin:6px 0;}.distribution-card .outline {min-height:42px;padding:10px;}.winner-card>svg,.winner-card>img {display:block;margin:14px auto;}

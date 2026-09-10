@@ -192,7 +192,7 @@ export function streamingTotals(s,m,offer) {
 export function admirationOffer(s,m) {
  if(Math.max(m.fans,m.critics)<75 || (s.talentOffers??[]).some(o=>!o.usedBy&&o.end>s.week) || random(s)>.5)return;
  const cast=new Set(m.contracts.map(c=>c.id));
- const choices=s.people.filter(p=>p.kind==='actor'&&p.star>=50&&!p.retired&&!cast.has(p.id));
+ const choices=s.people.filter(p=>p.star>=50&&!p.retired&&!cast.has(p.id)&&p.id!==m.director?.id);
  if(!choices.length)return;
  const p=pick(s,choices);s.talentOffers??=[];
  s.talentOffers.push({person:p.id,film:m.title,start:s.week,end:s.week+26,usedBy:null});

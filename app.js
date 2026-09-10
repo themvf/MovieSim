@@ -1,5 +1,5 @@
-import * as E from "./engine.js?v=0.15.0";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.15.0";
+import * as E from "./engine.js?v=0.16.0";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.16.0";
 const BUILD = "0.10.0";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
@@ -413,7 +413,7 @@ function nominationsDialog(year) {
   );
   modal(
     `${year} nominations`,
-    `${season.epilogue ? '<div class="notice-banner">Final awards-season epilogue. Your five operating years are complete; no cash or production time advances here.</div>' : ""}<div class="ceremony-mark">♜</div><h3>${total ? `${total} nomination${total === 1 ? "" : "s"} for ${h(s.name)}` : "No nominations for your studio this season"}</h3><p>These are the nominees. Winners are announced in March.</p>${season.categories.map((c) => `<section class="nomination-category"><span class="eyebrow gold">${c.category}</span>${nomineeRows(c.nominees)}</section>`).join("")}${season.acknowledged ? button("Back to awards", "nominationBack", "", "outline full") : button(season.epilogue ? "Continue to the March ceremony →" : "Back to the lot · ceremony in March", "ackNominations", `data-year="${year}"`, "primary full")}`,
+    `${season.epilogue ? '<div class="notice-banner">Final awards-season epilogue. Your five operating years are complete; no cash or production time advances here.</div>' : ""}<div class="ceremony-mark" aria-label="Award">🏆</div><h3>${total ? `${total} nomination${total === 1 ? "" : "s"} for ${h(s.name)}` : "No nominations for your studio this season"}</h3><p>These are the nominees. Winners are announced in March.</p>${season.categories.map((c) => `<section class="nomination-category"><span class="eyebrow gold">${c.category}</span>${nomineeRows(c.nominees)}</section>`).join("")}${season.acknowledged ? button("Back to awards", "nominationBack", "", "outline full") : button(season.epilogue ? "Continue to the March ceremony →" : "Back to the lot · ceremony in March", "ackNominations", `data-year="${year}"`, "primary full")}`,
     "JANUARY / THE NOMINATIONS",
   );
 }
@@ -438,7 +438,7 @@ function ceremonyDialog(year) {
     revealed = index < a.revealed;
   modal(
     `${r.category}`,
-    `<div class="ceremony-mark">♜</div><div class="ceremony-progress">CATEGORY ${index + 1} OF ${a.results.length}</div>${revealed ? `<section class="winner-card"><span class="eyebrow gold">AND THE WINNER IS</span>${r.winnerName ? `<h2>${h(r.winnerName)}</h2>` : ""}<h3>${h(r.winner)}</h3><p>${r.ours ? "Your studio wins · +8 prestige" : h(E.rivalStudio(r).name)}</p></section>${button(index === a.results.length - 1 ? "See the ceremony recap →" : "Next category →", "nextAward", `data-year="${year}" data-category="${index}"`, "primary full")}` : `<h3>The nominees</h3>${nomineeRows(r.entries || r.nominees.map((title) => ({ title })))}${button("Open the envelope · reveal winner", "revealAward", `data-year="${year}" data-category="${index}"`, "primary full")}`}`,
+    `<div class="ceremony-mark" aria-label="Award">🏆</div><div class="ceremony-progress">CATEGORY ${index + 1} OF ${a.results.length}</div>${revealed ? `<section class="winner-card"><span class="eyebrow gold">${r.ours?"YOUR STUDIO WINS":"AND THE WINNER IS"}</span>${r.person ? portrait(E.person(s,r.person),72):""}${r.winnerName ? `<h2>${h(r.winnerName)}</h2>` : ""}<h3>${h(r.winner)}</h3><p>${r.ours ? "Your studio wins · +8 prestige" : h(E.rivalStudio(r).name)}</p></section>${button(index === a.results.length - 1 ? "See the ceremony recap →" : `Next: ${a.results[index+1]?.category ?? "Recap"} →`, "nextAward", `data-year="${year}" data-category="${index}"`, "primary full")}` : `<h3>The nominees</h3>${nomineeRows(r.entries || r.nominees.map((title) => ({ title })))}${button("Open the envelope · reveal winner", "revealAward", `data-year="${year}" data-category="${index}"`, "primary full")}`}`,
     "MARCH / THE CEREMONY",
   );
 }
@@ -764,7 +764,7 @@ function drawDialog() {
     return modal("Cast & director careers", careerResults(m), h(m.title));
   if(v.kind==="personalOffer"){
     const actor=E.person(s,v.person),offer=(s.talentOffers??[]).find(o=>o.person===actor.id&&!o.usedBy&&s.week<o.end);
-    return modal(h(actor.name),offer?`<p>🌟 Half their usual fee for one role. Audition before agreeing terms.</p>${s.movies.filter(x=>x.stage==="packaging").map(x=>`<section><h3>${h(x.title)}</h3>${x.roles.map((r,i)=>button(`Audition for ${r}`,"auditionInterest",`data-id="${x.id}" data-person="${actor.id}" data-role="${i}"`,"outline")).join("")}</section>`).join("")||`<p>Acquire or develop a screenplay to give them a role.</p>${button('Find a screenplay','nav','data-tab="scripts"','primary full')}`}`:'<p>This opportunity is no longer available.</p>',"TALENT OPPORTUNITY");
+    return modal(h(actor.name),offer?`<p>🌟 Half their usual fee for one role. Audition before agreeing terms.</p>${s.movies.filter(x=>x.stage==="packaging").map(x=>`<section><h3>${h(x.title)}</h3>${(actor.kind==='director'?['Director']:x.roles).map((r,i)=>button(`Audition for ${r}`,"auditionInterest",`data-id="${x.id}" data-person="${actor.id}" data-role="${i}"`,"outline")).join("")}</section>`).join("")||`<p>Acquire or develop a screenplay to give them a role.</p>${button('Find a screenplay','nav','data-tab="scripts"','primary full')}`}`:'<p>This opportunity is no longer available.</p>',"TALENT OPPORTUNITY");
   }
   if (v.kind === "sequelReview") return sequelReview(m);
   if (v.kind === "script") {
@@ -888,7 +888,7 @@ function drawDialog() {
   if (v.kind === "awardsHeadsUp")
     return modal(
       "Awards season is approaching",
-      `<div class="ceremony-mark">♜</div><h3>Your ${v.year} releases are in the running.</h3><p>Nominations arrive in January. Winners are announced in March. Release by the end of December to qualify.</p><p class="muted">You can fund a campaign from the Awards screen. A nomination is never guaranteed.</p>${button("Got it · back to the lot", "dismissNotice", "", "primary full")}`,
+      `<div class="ceremony-mark" aria-label="Award">🏆</div><h3>Your ${v.year} releases are in the running.</h3><p>Nominations arrive in January. Winners are announced in March. Release by the end of December to qualify.</p><p class="muted">You can fund a campaign from the Awards screen. A nomination is never guaranteed.</p>${button("Got it · back to the lot", "dismissNotice", "", "primary full")}`,
       "SAVE THE DATES",
     );
   if (v.kind === "prestige") {
@@ -935,16 +935,17 @@ function castingShortlist(people, director, count = 3) {
     count,
   );
 }
+function interestedIn(p,m,role) {const q=E.quote(s,p,m,role);return !q.refusal && !!(q.personal||q.passion);}
 function casting(m, director) {
   const role = view.role ?? 0,
     plan = getProductionPlan(m),
     genre = castingGenre === "all" ? m.genre : castingGenre;
   const people = s.people.filter(
-    (p) => p.kind === (director ? "director" : "actor") && !p.retired,
+    (p) => p.kind === (director ? "director" : "actor") && !p.retired && (!view.interestedOnly || interestedIn(p,m,role)),
   );
   modal(
     director ? "Find your director" : `Casting: ${m.roles[role]}`,
-    `<div class="casting-context"><strong>${h(m.title)}</strong><small>${h(director ? "Lead the creative team" : m.roleDescriptions?.[role] ?? m.roles[role])}</small><span>${director ? "" : roleGuidance(m,role)+"<br>"}${m.genre} · ${plan.duration}-week shoot${view.returnTo === "production" ? " · Returning to your production plan" : ""}</span></div><p class="audition-limit">🎬 ${E.auditionAllowance(s,m,director ? "director" : role).remaining} of ${E.auditionAllowance(s,m,director ? "director" : role).limit} auditions left this week · ${director ? "Director" : h(m.roles[role])}<small class="block">Resets next week. Higher studio prestige unlocks more auditions.</small></p><div class="casting-mode">${button(view.showAll ? "Show shortlist" : "Browse all", "castingMode", "", "outline")}${!director ? button(view.showAll ? "Audition shown" : "Audition shortlist", "auditionShortlist", `data-id="${m.id}"`, "outline") : ""}</div><details class="casting-filter-details"><summary>Budget, genre & sorting</summary><div class="casting-filters"><label>Fee range<select id="casting-budget">${[
+    `<div class="casting-context"><strong>${h(m.title)}</strong><small>${h(director ? "Lead the creative team" : m.roleDescriptions?.[role] ?? m.roles[role])}</small><span>${director ? "" : roleGuidance(m,role)+"<br>"}${m.genre} · ${plan.duration}-week shoot${view.returnTo === "production" ? " · Returning to your production plan" : ""}</span></div><p class="audition-limit">🎬 ${E.auditionAllowance(s,m,director ? "director" : role).remaining} of ${E.auditionAllowance(s,m,director ? "director" : role).limit} auditions left this week · ${director ? "Director" : h(m.roles[role])}<small class="block">Resets next week. Higher studio prestige unlocks more auditions.</small></p><div class="casting-mode">${button(view.interestedOnly ? "✓ Interested only · Show everyone" : "🌟 Interested talent", "interestedCasting", "", "outline")}${button(view.showAll ? "Show shortlist" : "Browse all", "castingMode", "", "outline")}${!director ? button(view.showAll ? "Audition shown" : "Audition shortlist", "auditionShortlist", `data-id="${m.id}"`, "outline") : ""}</div><details class="casting-filter-details"><summary>Budget, genre & sorting</summary><div class="casting-filters"><label>Fee range<select id="casting-budget">${[
       ["all", "All budgets"],
       ["250", "Under $250,000"],
       ["750", "Under $750,000"],
@@ -1042,7 +1043,7 @@ function casting(m, director) {
       );
   if (!dialog.querySelector(".casting-card"))
     dialog.querySelector(".casting-list").innerHTML =
-      `<p>No available candidates match. Adjust the budget or browse all to inspect schedules.</p>`;
+      `<p>No candidates match these filters. Try Show everyone or adjust the budget.</p>`;
 }
 function getProductionPlan(m) {
   if (!productionPlans.has(m.id))
@@ -1132,7 +1133,7 @@ function releaseAndDistribution(m) {
   return `<section class="panel"><span class="eyebrow">NEXT ACTION</span><h3>Choose your distribution deal</h3><p>Your release date is set. Choose who releases the film and how much of each ticket payment your studio receives.</p>${button("Choose distribution →", "distribution", `data-id="${m.id}"`, "primary full")}</section>`;
 }
 function distributionOffers(m) {
- return `<section class="distribution-cards"><p class="muted small">Select a deal to review it before signing.</p>${Object.entries(E.distribution(s,m)).map(([key,d])=>`<article class="distribution-card"><h3>${key==='secure'?'Guaranteed payment':key==='partner'?'Distribution partner':'Self-distribute'}</h3><div class="finance-lines"><div><span>${d.advance-d.cost>=0?'💵 Receive now':'💸 Pay now'}</span><strong>${E.accountMoney(Math.abs(d.advance-d.cost))}</strong></div><div><span>🎟 Your ticket share</span><strong>${Math.round(d.share*100)}%</strong></div><div><span>Reach</span><strong>${d.reach>=1.1?'Wide':d.reach>=1?'Established':'Limited'}</strong></div></div>${d.recoup?`<p>Your ticket payments begin after the distributor recovers ${E.accountMoney(d.recoup)}.</p>`:'<p>No distributor recovery before ticket payments.</p>'}${button('Review this deal →','dealReview',`data-id="${m.id}" data-deal="${key}"`,'outline full')}</article>`).join('')}<small>Ticket shares are before talent payouts.</small></section>`;
+ return `<section class="distribution-cards"><p class="muted small">Select a deal to review it before signing.</p>${Object.entries(E.distribution(s,m)).map(([key,d])=>`<article class="distribution-card"><span class="eyebrow">${h(key==='self'?s.name:d.name)}</span><h3>${key==='secure'?'Guaranteed payment':key==='partner'?'Distribution partner':'Self-distribute'}</h3><div class="finance-lines"><div><span>${d.advance-d.cost>=0?'💵 Receive now':'💸 Pay now'}</span><strong>${E.accountMoney(Math.abs(d.advance-d.cost))}</strong></div><div><span>🎟 Your ticket share</span><strong>${Math.round(d.share*100)}%</strong></div><div><span>Reach</span><strong>${d.reach>=1.1?'Wide':d.reach>=1?'Established':'Limited'}</strong></div></div>${d.recoup?`<p>Your ticket payments begin after the distributor recovers ${E.accountMoney(d.recoup)}.</p>`:'<p>Ticket payments start with the first sale.</p>'}${button('Review this deal →','dealReview',`data-id="${m.id}" data-deal="${key}"`,'outline full')}</article>`).join('')}<small>Ticket shares are before talent payouts.</small></section>`;
 }
 
 function releasePlanner(m) {
@@ -1158,7 +1159,7 @@ function releasePlanner(m) {
   });
   modal(
     "Release calendar",
-    `<section class="screening-option">${m.screen == null ? `<p class="muted small">Optional: hear from a test audience before choosing your release and marketing.</p>${button("Hold test screening · $45,000", "screen", `data-id="${m.id}"`, "outline full")}` : `<p><strong>Test audience: ${E.score(m.screen)}/100</strong><small class="block muted">One audience, not a guarantee of ticket sales.</small></p>`}</section><form id="release-form"><input type="hidden" name="release" id="release-select" value="${view.releaseWeek}"><div class="calendar-nav">${button("←", "releaseMonth", `data-step="-1" aria-label="Previous month" ${view.calendarMonth <= E.date(start).year * 12 + E.date(start).month ? "disabled" : ""}`, "outline")}<h3>${title}</h3>${button("→", "releaseMonth", `data-step="1" aria-label="Next month" ${view.calendarMonth >= E.date(E.END - 1).year * 12 + E.date(E.END - 1).month ? "disabled" : ""}`, "outline")}</div><p class="muted small">Choose an opening week to continue. Time is paused until you lock a date. Look for seasonal matches: February romance, summer action and sci-fi, October horror, and November–December family films. Crowded dates still split audiences.</p><div class="release-calendar">${weeks.map((w) => `<button type="button" class="release-week ${w === view.releaseWeek ? "selected" : ""}" data-action="releaseWeek" data-week="${w}" aria-pressed="${w === view.releaseWeek}"><strong>Week ${E.date(w).week}</strong><span>${E.seasonOpportunity(m,month).label}</span><small>${s.rivals.filter((r) => Math.abs(r.week - w) <= 2).length} nearby releases</small></button>`).join("")}</div><p><strong>Selected: ${E.date(view.releaseWeek).label} · Week ${E.date(view.releaseWeek).week}</strong></p><div id="release-preview"></div><p class="muted small">The date locks when you confirm. Finish marketing and distribution before opening week.</p><button class="primary full">Lock this release date</button></form>`,
+    `<section class="screening-option">${m.screen == null ? `<p class="muted small">Optional: hear from a test audience before choosing your release and marketing.</p>${button("Hold test screening · $45,000", "screen", `data-id="${m.id}"`, "outline full")}` : `<p><strong>Test audience: ${E.score(m.screen)}/100</strong><small class="block muted">One audience, not a guarantee of ticket sales.</small></p>`}</section><form id="release-form"><input type="hidden" name="release" id="release-select" value="${view.releaseWeek}"><div class="calendar-nav">${button("←", "releaseMonth", `data-step="-1" aria-label="Previous month" ${view.calendarMonth <= E.date(start).year * 12 + E.date(start).month ? "disabled" : ""}`, "outline")}<h3>${title}</h3>${button("→", "releaseMonth", `data-step="1" aria-label="Next month" ${view.calendarMonth >= E.date(E.END - 1).year * 12 + E.date(E.END - 1).month ? "disabled" : ""}`, "outline")}</div><p class="muted small">Choose an opening week. Time stays paused until you confirm. Only remaining release weeks are shown.</p><div class="release-calendar">${weeks.map((w) => `<button type="button" class="release-week ${w === view.releaseWeek ? "selected" : ""}" data-action="releaseWeek" data-week="${w}" aria-pressed="${w === view.releaseWeek}"><strong>Week ${E.date(w).week}</strong><span>${E.seasonOpportunity(m,month).label}</span><small>${s.rivals.filter((r) => Math.abs(r.week - w) <= 2).length} competing release(s) within 2 weeks</small></button>`).join("")}</div><p><strong>Selected: ${E.date(view.releaseWeek).label} · Week ${E.date(view.releaseWeek).week}</strong></p><div id="release-preview"></div><p class="muted small">The date locks when you confirm. Finish marketing and distribution before opening week.</p><button class="primary full">Lock this release date</button></form>`,
     "THE FILM HAS WRAPPED",
   );
   releasePreview(m);
@@ -1166,9 +1167,9 @@ function releasePlanner(m) {
 function releasePreview(m) {
   const week = Number($("release-select").value),
     rivals = s.rivals.filter((r) => Math.abs(r.week - week) <= 2),
-    peak = [7, 11].includes(E.date(week).month);
+    season = E.seasonOpportunity(m,E.date(week).month);
   $("release-preview").innerHTML =
-    `<div class="notice-banner"><strong>${peak ? "Larger blockbuster audience" : "Normal audience demand"} · ${rivals.length > 2 ? "Crowded" : rivals.length ? "Some competition" : "Quiet window"}</strong></div>${rivals.map((r) => `<div class="award-row"><span>${h(r.title)}<small class="block">${h(E.rivalStudio(r).name)} · ${r.genre} · Week ${E.date(r.week).week}</small></span>${pill(r.genre === m.genre ? "Similar audience" : "Different audience", r.genre === m.genre ? "gold-pill" : "")}</div>`).join("") || "<p>No competing releases announced nearby.</p>"}`;
+    `<div class="notice-banner"><strong>${season.multiplier>1 ? "Seasonal boost for your film" : "No seasonal boost for this genre"} · ${rivals.length > 2 ? "Crowded" : rivals.length ? "Some competition" : "Quiet window"}</strong></div>${rivals.map((r) => `<div class="award-row"><span>${h(r.title)}<small class="block">${h(E.rivalStudio(r).name)} · ${r.genre} · Week ${E.date(r.week).week}</small></span>${pill(r.genre === m.genre ? "Similar audience" : "Different audience", r.genre === m.genre ? "gold-pill" : "")}</div>`).join("") || "<p>No competing releases announced nearby.</p>"}`;
 }
 function moneyPreview() {
  const form=$('offer-form')||$('loan-form');if(!form)return;
@@ -1316,6 +1317,8 @@ function handle(e) {
       view.visibleCount = 3;
       drawDialog();
       break;
+    case "interestedCasting":
+      view.interestedOnly=!view.interestedOnly;view.showAll=true;budgetFilter="all";drawDialog();break;
     case "loanShortcut": {
       const f=$('loan-form'),max=E.bankAvailable(s,f.elements.bankId.value);
       f.elements.amount.value=E.dollarInput(b.dataset.size==='max'?Math.floor(max):Math.min(Math.floor(max),Math.max(1,Math.ceil(-s.cash))));moneyPreview();break;
@@ -1512,7 +1515,7 @@ function handle(e) {
         id,
         person: personId,
         role: Number(b.dataset.role),
-      }) && view?.kind === "casting") {
+      }) && ["casting", "director"].includes(view?.kind)) {
         // Rendering replaces the dialog body. Restore this actor's place, then
         // move keyboard focus to the negotiation action without jumping up.
         const offer = [...dialog.querySelectorAll('[data-action="offer"]')]
