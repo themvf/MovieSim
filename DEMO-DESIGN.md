@@ -41,7 +41,7 @@ Rival studios remain in the background, supplying competing releases and awards 
 6. Optionally purchase a test screening before committing most marketing spending.
 7. After filming, compare distribution deals or fund the release yourself. Plan specific marketing campaigns.
 8. Experience the opening-weekend reveal, then weekly theatrical results and possible marketing adjustments.
-9. Receive automatic streaming and licensing income after the theatrical run, pursue annual awards, and reinvest.
+9. Choose a streaming agreement after the theatrical run, pursue annual awards, and reinvest.
 
 Players can run multiple movies. There is no fixed simultaneous-project cap; budget and talent scheduling govern what is feasible. The player chooses a release date after filming wraps. Once confirmed, it cannot be moved in the demo.
 
@@ -109,7 +109,7 @@ Release dates cannot be changed after commitment in the demo. Present rough fore
 
 Opening weekend receives a dramatic results reveal. Weekly results then show theatrical revenue, audience response, and staying power while other projects continue. Strong performers remain in theaters longer; weaker performers transition to subsequent income sooner.
 
-Streaming and licensing income is automatic in the demo. Individual deal negotiations are planned for the fuller game. The catalog remains a valuable asset that helps finance new projects.
+After theaters, compare a guaranteed exclusive streaming payment against a smaller payment with weekly royalties. Agreements last 52 weeks, then automatic catalog licensing resumes. The catalog remains a valuable asset that helps finance new projects.
 
 Release reports provide a strong explanation of costs, income, performances, production quality, marketing, and competition. Even entry-level reporting must be useful. Department upgrades add precision and insight rather than withholding all reasons for failure. Reports should distinguish observed results from uncertain causal estimates.
 
@@ -148,7 +148,7 @@ Initial funding, loan limits, repayment timing, emergency terms, and eligibility
 - Actor personalities, loyalty advantages, and working chemistry.
 - Named screenwriters and individual department employees.
 - Studio decoration and personalization.
-- Negotiated streaming and licensing deals per movie.
+- More streaming platforms, negotiated contract terms, and renewals beyond the initial two fixed offers.
 
 Moving release dates is excluded from the demo; whether to add it later is not yet decided.
 

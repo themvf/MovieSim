@@ -3279,3 +3279,8 @@ summary {
   text-transform: none;
   letter-spacing: normal;
 }
+
+.critic-review + .critic-review { border-top: 1px solid #34444b; padding-top: 16px; margin-top: 16px; }
+.critic-review .section-title { margin-bottom: 4px; }
+.streaming-comparison { min-width: 0; width: 100%; }
+.streaming-comparison td, .streaming-comparison th { padding: 10px 6px; white-space: normal; }

@@ -1,4 +1,4 @@
-import { storyFor } from "./stories.js?v=0.9.0";
+import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
 export const END = 260;
@@ -287,6 +287,7 @@ function validMovieFinances(m) {
       return false;
 
   const nonnegative = (value) => Number.isFinite(value) && value >= 0;
+  if (m.streamingDeal && (!['exclusive','royalty'].includes(m.streamingDeal.id) || ['upfront','weekly','signedWeek','endWeek','term'].some(k=>!nonnegative(m.streamingDeal[k])) || m.streamingDeal.endWeek !== m.streamingDeal.signedWeek+52)) return false;
   const base = [
     "spent",
     "receipts",
@@ -977,6 +978,44 @@ export function competition(s, m, week = m.release ?? s.week + 1) {
       0,
     );
 }
+export const CRITICS = [
+  { name: "Anita Rewrite", taste: "Writing & demanding performances" },
+  { name: "Rick O’Shea", taste: "Spectacle, craft & crowd appeal" },
+  { name: "Paige Turner", taste: "Characters, performances & emotional payoff" },
+];
+export function criticReviews(m) {
+  if (m.reviews) return m.reviews;
+  const base = m.criticBaseline ?? m.critics ?? 60;
+  const acting = m.performances?.length ? m.performances.reduce((v,x)=>v+x,0)/m.performances.length : m.quality ?? 60;
+  const script = m.scriptQuality ?? 60, craft = m.craft ?? 60, fans = m.fans ?? 60;
+  const scores = [
+    base + (script-base)*.3 + (acting-base)*.15 + ((m.difficulty ?? 60)-60)*.1,
+    base + (craft-base)*.35 + (fans-base)*.2 + (["Action","Sci-fi","Horror"].includes(m.genre)?4:-2),
+    base + (acting-base)*.3 + (script-base)*.15 + (fans-base)*.15 + (["Drama","Comedy"].includes(m.genre)?3:0),
+  ];
+  const quotes = [
+    script < 55 ? "The cast brought their pencils. The screenplay still needed an eraser." : acting > 75 ? "The performances do the heavy lifting—and make it look effortless." : script > 75 ? "Someone actually finished the screenplay before turning on the cameras. A novel idea." : "A serviceable script. I have notes. Naturally.",
+    craft < 50 ? "Big-screen ambitions, small-screen execution. I wanted more from the craft." : fans > 75 ? "The crowd came for a movie and got a very good night out." : craft > 75 ? "The craft earns its close-up. Somebody put that production budget on the screen." : "A respectable ride. My popcorn showed more dramatic range.",
+    acting > 75 ? "The performances stayed with me after the credits. That is the part you cannot buy with a trailer." : script < 55 ? "I kept turning the page, hoping the story would catch up." : fans < 50 ? "There is a story here. Finding a reason to care proved harder." : "Enough character to keep me watching. Not quite enough to haunt the journey home.",
+  ];
+  return CRITICS.map((c,i)=>({...c,score:Math.round(clamp(scores[i],5,99)),quote:quotes[i]}));
+}
+export function streamingOffers(m) {
+  const weekly = Math.max(2,m.gross*.0017) * (.7+(m.fans ?? 60)/200);
+  return [
+    { id: "exclusive", name: "BingeBox", label: "Exclusive streaming license", upfront: roundAmount(weekly*32), weekly: 0, term: 52 },
+    { id: "royalty", name: "PictureHouse", label: "Smaller payment + weekly royalties", upfront: roundAmount(weekly*5), weekly: weekly*1.1, term: 52 },
+  ];
+}
+export function catalogIncome(s,m) {
+  if (m.streamingDeal === null) return 0;
+  const deal=m.streamingDeal;
+  if (deal && s.week <= deal.endWeek) {
+    const age=Math.max(0,s.week-deal.signedWeek-1);
+    return deal.weekly * (1+age/52)**-1.2;
+  }
+  return Math.max(2,m.gross*.0017)*(1+(s.week-m.catalogStart)/52)**-1.2;
+}
 export function projection(s, m) {
   const market =
     m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
@@ -1015,6 +1054,9 @@ function addMovie(s, sc, parent = null, developing = false) {
     receipts: 0,
     gross: 0,
     catalog: 0,
+    streamingDeal: null,
+    reviews: null,
+    criticBaseline: null,
     campaigns: [],
     campaignSpend: 0,
     marketingConfirmed: false,
@@ -1083,7 +1125,7 @@ export function act(s, type, a = {}) {
     throw Error("Finish the final awards season to see your retrospective.");
   if (
     s.cash < 0 &&
-    !["loan", "sharkLoan", "end", "awardReveal", "awardSummary", "ackNominations"].includes(
+    !["loan", "sharkLoan", "streamingDeal", "end", "awardReveal", "awardSummary", "ackNominations"].includes(
       type,
     )
   )
@@ -1440,6 +1482,17 @@ export function act(s, type, a = {}) {
       log(s, `${m.title} is shelved. Total write-off: ${money(m.spent)}.`);
       break;
     }
+    case "streamingDeal": {
+      stage(m,["catalog"]);
+      if (m.streamingDeal !== null) throw Error("This film already has a streaming arrangement.");
+      const offer=streamingOffers(m).find(o=>o.id===a.deal);
+      if (!offer) throw Error("Choose a streaming offer.");
+      m.streamingDeal={...offer,signedWeek:s.week,endWeek:s.week+offer.term};
+      s.cash+=offer.upfront; m.receipts+=offer.upfront; m.catalog+=offer.upfront;
+      s.notices=s.notices.filter(n=>!(n.kind==="streaming" && n.id===m.id));
+      log(s,`${m.title}: ${offer.name} pays ${money(offer.upfront)} for a 52-week streaming agreement.`);
+      break;
+    }
     case "loan": {
       const bank = BANKS.find(b => b.id === (a.bankId ?? "meridian"));
       if (!bank) throw Error("Choose a bank.");
@@ -1616,6 +1669,9 @@ function finish(s, m) {
     5,
     99,
   );
+  m.criticBaseline = m.critics;
+  m.reviews = criticReviews(m);
+  m.critics = Math.round(m.reviews.reduce((v,r)=>v+r.score,0)/m.reviews.length);
   m.stage = "ready";
   log(
     s,
@@ -2011,15 +2067,14 @@ function nextWeek(s) {
       if (age >= 3 && (gross < m.opening * 0.1 || age >= 11)) {
         m.stage = "catalog";
         m.catalogStart = s.week;
+        if (m.streamingDeal === null && s.week < END) s.notices.push({kind:"streaming",id:m.id});
         log(
           s,
-          `${m.title} finishes its theatrical run at ${money(m.gross)}. Streaming and licensing begin next week.`,
+          `${m.title} finishes its theatrical run at ${money(m.gross)}. Review streaming offers for its next chapter.`,
         );
       }
     } else if (m.stage === "catalog") {
-      const income =
-        Math.max(2, m.gross * 0.0017) *
-        (1 + (s.week - m.catalogStart) / 52) ** -1.2;
+      const income = catalogIncome(s,m);
       m.catalog += income;
       m.receipts += income;
       s.cash += income;

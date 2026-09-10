@@ -125,6 +125,7 @@ test("complete film lifecycle reconciles advance, ticket share, catalog and cost
       0.001,
   );
   while (m.stage === "theaters") tick(s);
+  E.act(s,"streamingDeal",{id:m.id,deal:"royalty"});
   const old = m.receipts;
   tick(s);
   assert.ok(m.receipts > old);
