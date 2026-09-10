@@ -225,3 +225,6 @@ Added four supplied photo posters and one-time featured script injection, mobile
 
 ## September 10 — UI 0.12.0 and fresh playtests
 Separated Streaming from Active, added compact result rows and forecast markers, revised new-film production/marketing/delivery economics, and closed scope-only distributor advance arbitrage. Preserved existing projects. Ran 311,040 controlled film scenarios and 1,200 five-year strategy runs; three new agents with no prior history completed independent UI playtests. Their findings drove accounting precision, empty-state, optional-screening and score consistency fixes. Evidence and limitations: docs/economy-0.12.0/REPORT.md.
+
+## September 10 — UI 0.13.0: opportunities and production choices
+Added hidden-duration audience trends, one-use half-rate talent offers, location/effects choices, social backlash and fan-driven demand events, compact release signals and clearer streaming totals without changing streaming payouts. Revised new-film delivery and category-specific awards scoring while retaining old saves and Next Week. Three fresh UI-only agent playtests drove exact monetary displays, empty-offer next actions, nonrepeating backlash and full loan repayment. 98 simulation tests pass. Research, 38,880 controlled film scenarios, 1,200 studio runs and independent agent evidence: docs/iteration-0.13.0/REPORT.md.

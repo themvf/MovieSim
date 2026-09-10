@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 function instrument(source) {return source.replace('./stories.js','../stories.js').replace('function finish(s, m) {','function finish(s, m) { s.rng=m.auditQualitySeed;').replace('function opening(s, m) {','function opening(s, m) { s.rng=m.auditOpeningSeed;');}
 fs.mkdirSync('test-results',{recursive:true});
-fs.writeFileSync('test-results/baseline-engine.mjs',instrument(execFileSync('git',['show','9441a8d:engine.js'],{encoding:'utf8'})));
+fs.writeFileSync('test-results/baseline-engine.mjs',instrument(execFileSync('git',['show',(process.env.BASELINE || '9441a8d')+':engine.js'],{encoding:'utf8'})));
 fs.writeFileSync('test-results/current-engine.mjs',instrument(fs.readFileSync('engine.js','utf8')));
 const current=await import('../test-results/current-engine.mjs');
 const baseline=await import('../test-results/baseline-engine.mjs');

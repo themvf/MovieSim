@@ -142,6 +142,62 @@ export function upgradeUnlock(s,name) {
   };
   return { level:next,title:UPGRADE_MILESTONES[name][next-1],prestige:prestige ?? 0,cost:upgradeCost(s,name),benefit:benefits[name],complete:level>=4 };
 }
+export const LOCATION_PLANS = [
+ {name:"Mixed locations",cost:1,desc:"A mix of interiors and nearby exteriors."},
+ {name:"Mostly interiors",cost:.8,desc:"Contained sets, fewer moves, controlled conditions."},
+ {name:"Local exteriors",cost:1.1,desc:"Real streets and landscapes; weather exposure."},
+ {name:"Exotic locations",cost:1.35,desc:"Travel and distinctive scenery; expensive logistics."},
+];
+export const EFFECTS_PLANS = [
+ {name:"Balanced effects",cost:1,desc:"Use practical and digital work as needed."},
+ {name:"Practical effects",cost:1.05,desc:"Build and photograph physical effects."},
+ {name:"Digital spectacle",cost:1.25,desc:"More digital work and post-production."},
+ {name:"Imply rather than show",cost:.75,desc:"Use sound, editing and performances to suggest the action."},
+];
+const TREND_TYPES=[
+ {name:"Low-budget horror",genre:"Horror",scale:"Small",icon:"👻"},
+ {name:"Historical blockbusters",scale:"Blockbuster",historical:true,icon:"🏛"},
+ {name:"Feel-good comedies",genre:"Comedy",icon:"🎭"},
+ {name:"Space adventures",genre:"Sci-fi",icon:"🚀"},
+];
+export function ensureOpportunities(s) {
+ if(s.marketTrends)return;
+ const t=TREND_TYPES[(s.rng>>>0)%TREND_TYPES.length];
+ s.marketTrends=[{...t,start:s.week,end:s.week+130+((s.rng>>>8)%53),strength:.45}];
+ s.talentOffers=[];
+}
+export function activeTrends(s){return (s.marketTrends??[]).filter(t=>s.week<t.end);}
+export function trendMultiplier(s,m,week=s.week) {
+ return (s.marketTrends??[]).reduce((v,t)=>{
+ const matches=(!t.genre||t.genre===m.genre)&&(!t.scale||t.scale===m.scale)&&(!t.historical||/historical|period/i.test(m.subgenre));
+ return matches&&week>=t.start&&week<t.end ? v*(1+t.strength*Math.min(1,(t.end-week)/26)):v;
+ },1);
+}
+export function productionFit(m) {
+ const location=m.location??0,effects=m.effectsApproach??0;
+ let value=0;
+ if(location===1)value+=['Drama','Thriller','Horror','Comedy'].includes(m.genre)?4:-3;
+ if(location===2)value+=['Action','Thriller'].includes(m.genre)?4:0;
+ if(location===3)value+=/adventure|historical|period|fantasy/i.test(m.subgenre)?5:0;
+ if(effects===1)value+=['Horror','Action'].includes(m.genre)?4:0;
+ if(effects===2)value+=['Sci-fi','Action'].includes(m.genre)?4:-2;
+ if(effects===3)value+=['Drama','Thriller','Comedy'].includes(m.genre)?4:m.genre==='Horror'?2:-5;
+ return value;
+}
+export function streamingTotals(s,m,offer) {
+ const weeks=Math.min(offer.term,Math.max(0,END-s.week));
+ const sum=n=>offer.upfront+Array.from({length:n},(_,i)=>offer.weekly*(1+i/52)**-1.2).reduce((a,v)=>a+v,0);
+ return {full:sum(offer.term),remaining:sum(weeks),weeks};
+}
+export function admirationOffer(s,m) {
+ if(Math.max(m.fans,m.critics)<75 || (s.talentOffers??[]).some(o=>!o.usedBy&&o.end>s.week) || random(s)>.5)return;
+ const cast=new Set(m.contracts.map(c=>c.id));
+ const choices=s.people.filter(p=>p.kind==='actor'&&p.star>=50&&!p.retired&&!cast.has(p.id));
+ if(!choices.length)return;
+ const p=pick(s,choices);s.talentOffers??=[];
+ s.talentOffers.push({person:p.id,film:m.title,start:s.week,end:s.week+26,usedBy:null});
+ log(s,`${p.name} loved ${m.title}: offering half their usual fee for one new role.`,"success");
+}
 export const POSTER_FILMS = [
  {photoPoster:"beyond-the-pines",title:"Beyond the Pines",genre:"Thriller",subgenre:"Mystery",scale:"Small"},
  {photoPoster:"red-horizon",title:"Red Horizon",genre:"Action",subgenre:"Adventure",scale:"Blockbuster"},
@@ -332,7 +388,7 @@ export function productionCosts(s, m, b, duration) {
     s.facilities["Effects workshop"] * 0.09 * b.effects +
     s.facilities["Editing suite"] * 0.04 * b.crew;
   const total =
-    (b.sets + b.crew + b.effects - saving) * scheduleInfo(duration).multiplier;
+    (b.sets * (LOCATION_PLANS[m.location??0]?.cost??1) + b.crew + b.effects * (EFFECTS_PLANS[m.effectsApproach??0]?.cost??1) - saving) * scheduleInfo(duration).multiplier;
   return { saving, total, weekly: total / duration };
 }
 const DEBT_EPSILON = 1e-10; // Internal thousands: far below one cent; only arithmetic residue.
@@ -877,6 +933,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
       });
   }
   addPosterFilms(s);
+  ensureOpportunities(s);
   for (const r of s.rivals) r.studioId=rivalStudio(r).id;
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
   return s;
@@ -1009,12 +1066,14 @@ export function quote(s, p, m, role = 0) {
       option: true,
       grossShare: option.grossShare ?? 0,
     };
+  const personal=(s.talentOffers??[]).find(o=>o.person===p.id&&!o.usedBy&&s.week<o.end);
   const passion = passionProject(p,m);
-  const discount = passion ? 0.6 :
+  const discount = personal ? .5 : passion ? 0.6 :
     p.kind === "actor" && m.difficulty >= 75 && p.talent >= 65 ? 0.76 : 1;
   const base = p.fee * discount * (1 - s.prestige / 500);
   return {
     passion,
+    personal: personal?.film??null,
     normalLow: roundAmount(p.fee * (1-s.prestige/500) * .85),
     normalHigh: roundAmount(p.fee * (1-s.prestige/500) * 1.12),
     low: roundAmount(base * 0.85),
@@ -1093,10 +1152,11 @@ export function catalogIncome(s,m) {
 }
 // New films use the revised economy; existing projects retain their signed economics.
 export function campaignCost(m,i) {
-  return CAMPAIGNS[i].cost * (m.economyVersion === 2 ? (m.scale === "Blockbuster" ? 4 : m.scale === "Mid-budget" ? 2 : 1) : 1);
+  return CAMPAIGNS[i].cost * (m.economyVersion >= 2 ? (m.scale === "Blockbuster" ? 4 : m.scale === "Mid-budget" ? 2 : 1) : 1);
 }
 export function deliveryFactor(m) {
-  if(m.economyVersion !== 2) return 1;
+  if(!m.economyVersion || m.economyVersion < 2) return 1;
+  if(m.economyVersion>=3)return (.4+.6*Math.min(1,Math.max(0,productionCraft(m)+productionFit(m))/65)**1.2)*(.65+.35*Math.min(1,m.duration/recommendedWeeks(m)));
   const craft = productionCraft(m);
   const execution = .2 + .8 * Math.min(1,craft/65)**1.5;
   const schedule = .45 + .55 * Math.min(1,m.duration/recommendedWeeks(m));
@@ -1104,7 +1164,7 @@ export function deliveryFactor(m) {
 }
 export function campaignReach(s,m) {
   const raw=m.campaigns.reduce((v,i)=>v+CAMPAIGNS[i].reach,0)*(1+(s.departments.Marketing-1)*.09);
-  return m.economyVersion === 2 ? 95*(1-Math.exp(-raw/70)) : raw;
+  return m.economyVersion >= 2 ? 95*(1-Math.exp(-raw/70)) : raw;
 }
 export function projection(s, m) {
   const market =
@@ -1116,7 +1176,7 @@ export function projection(s, m) {
   const base =
     ((market * (0.36 + stars / 100 + reach / 95) * season) /
       (1 + competition(s, m))) *
-    (0.55 + (m.screen ?? 60) / 145) * deliveryFactor(m);
+    (0.55 + (m.screen ?? 60) / 145) * deliveryFactor(m) * (m.economyVersion>=3?trendMultiplier(s,m,m.release??s.week):1);
   const spread = Math.max(0.10, 0.30 - s.departments.Research * 0.05);
   return [
     base * (m.distributionReach ?? 1) * (1 - spread),
@@ -1127,7 +1187,9 @@ function addMovie(s, sc, parent = null, developing = false) {
   const m = {
     ...structuredClone(sc),
     id: `m${s.next++}`,
-    economyVersion: 2,
+    economyVersion: 3,
+    location: 0,
+    effectsApproach: 0,
     parent,
     stage: developing ? "development" : "packaging",
     castingDirections: sc.roles.map((_,i) => castingGuidance(sc,i)),
@@ -1351,6 +1413,7 @@ export function act(s, type, a = {}) {
         throw Error(
           `${p.name} is asking for ${money(threshold)}. Increase the offer or try someone else.`,
         );
+      if(q.personal){const personal=s.talentOffers.find(o=>o.person===p.id&&!o.usedBy&&s.week<o.end);personal.usedBy=m.id;}
       const c = {
         id: p.id,
         role: a.role ?? null,
@@ -1388,11 +1451,14 @@ export function act(s, type, a = {}) {
         throw Error(
           "Someone in your cast or directing team is booked. Choose available talent or wait until their shoot ends.",
         );
+      const location=a.location??m.location??0,effectsApproach=a.effectsApproach??m.effectsApproach??0;
+      if(!Number.isInteger(location)||!LOCATION_PLANS[location]||!Number.isInteger(effectsApproach)||!EFFECTS_PLANS[effectsApproach])throw Error("Choose a valid location and effects approach.");
       const b = {
         sets: amt(a.sets, 25, 15000),
         crew: amt(a.crew, 25, 15000),
         effects: amt(a.effects, 0, 20000),
       };
+      m.location=location;m.effectsApproach=effectsApproach;
       m.budget = b;
       m.duration = duration;
       m.progress = 0;
@@ -1420,6 +1486,14 @@ export function act(s, type, a = {}) {
       if (!m.event) throw Error("There is no production decision pending.");
       if (!["pay", "cut", "split"].includes(a.choice))
         throw Error("Choose a response.");
+      if(m.event.kind === "social"){
+        if(a.choice==="pay")debit(s,50,m);
+        const change=a.choice==="pay"?roll(s,-2,2):a.choice==="split"?roll(s,-5,5):roll(s,-9,1);
+        m.audienceBias=(m.audienceBias??0)+change;
+        m.productionDecisions??=[];m.productionDecisions.push({week:s.week,kind:"social",choice:a.choice,change});
+        log(s,`${m.title}: ${a.choice==="pay"?"a public response and publicity support":a.choice==="split"?"the actor's own response":"no studio response"}. Audience reaction ${change>0?"improved":change<0?"weakened":"was unchanged"}.`);
+        m.event=null;break;
+      }
       if (m.event.kind === "creative" || m.event.kind === "performance") {
         const event = m.event;
         m.productionDecisions ??= [];
@@ -1689,7 +1763,7 @@ export function distribution(s, m) {
   const market =
     m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
   const demand = clamp(0.7 + castDraw(s, m) / 100, 0.7, 1.7);
-  const price = market * demand * (m.economyVersion === 2 ? Math.sqrt(deliveryFactor(m)) : 1);
+  const price = market * demand * (m.economyVersion >= 2 ? Math.sqrt(deliveryFactor(m)) : 1);
   return {
     secure: {
       name: "Harbor Distribution",
@@ -1729,7 +1803,7 @@ export function distribution(s, m) {
 function finish(s, m) {
   const craft = productionCraft(m);
   const performances = m.contracts.map((c) =>
-    clamp(m.auditions[`${c.role}:${c.id}`] + roll(s, -12, 12)),
+    clamp(m.auditions[`${c.role}:${c.id}`] + (()=>{const credits=person(s,c.id).majorCredits??0;const spread=m.economyVersion>=3?(credits>=4?8:credits?12:18):12;return roll(s,-spread,spread);})()),
   );
   m.performances = performances;
   m.directorPerformance = clamp(
@@ -1742,6 +1816,7 @@ function finish(s, m) {
       (performances.reduce((a, v) => a + v, 0) / performances.length) * 0.3 +
       m.directorPerformance * 0.2 +
       craft * 0.25 +
+      productionFit(m) +
       scheduleInfo(m.duration, m).quality +
       (s.departments.Production - 1) * 2 -
       m.penalty,
@@ -1789,13 +1864,15 @@ function opening(s, m) {
     ((market * appeal * season) / (1 + rival)) *
     (0.55 + m.fans / 145) *
     deliveryFactor(m) *
+    (m.economyVersion>=3?trendMultiplier(s,m):1) *
     (0.7 + random(s) * 0.6) *
     sequel *
     (m.distributionReach ?? 1);
   m.marketingSpendAtRelease = m.campaignSpend;
   m.careerChanges = [];
   m.opening = openingGross;
-  m.releaseFactors = { stars, reach, season, rival };
+  m.releaseFactors = { stars, reach, season, rival,trend:m.economyVersion>=3?trendMultiplier(s,m):1 };
+  if(m.economyVersion>=3)admirationOffer(s,m);
   m.stage = "theaters";
   m.theaterStart = s.week;
   s.notices.push({ kind: "opening", id: m.id });
@@ -1873,7 +1950,7 @@ export function canCampaign(s, m) {
       !s.awards.some((a) => a.year === year))
   );
 }
-function candidate(s, m, category) {
+export function candidate(s, m, category) {
   const role = category === "Supporting Acting" ? m.roles.length - 1 : 0;
   const idx = m.contracts.findIndex((c) => c.role === role);
   const personId =
@@ -1882,9 +1959,12 @@ function candidate(s, m, category) {
       : category.includes("Acting")
         ? m.contracts[idx]?.id
         : null;
-  const score = category.includes("Acting")
-    ? (m.performances[idx] || m.critics) * 0.8 + m.difficulty * 0.2
-    : m.critics;
+  const performance=m.performances?.[idx]??m.critics;
+  const score = m.economyVersion>=3
+    ? category.includes("Acting") ? performance
+      : category==="Director" ? (m.directorPerformance??m.critics)*.6+(m.quality??m.critics)*.25+m.critics*.15
+      : m.critics*.5+(m.quality??m.critics)*.3+(m.scriptQuality??m.critics)*.2
+    : category.includes("Acting") ? performance*.8+m.difficulty*.2 : m.critics;
   return {
     id: m.id,
     title: m.title,
@@ -1959,7 +2039,7 @@ export function ceremony(s, year) {
         ...n,
         finalScore:
           n.score +
-          (n.id && movie(s, n.id).awardSpend ? 5 : 0) +
+          (n.id && movie(s, n.id).awardSpend ? (movie(s,n.id).economyVersion>=3?1:5) : 0) +
           roll(s, -8, 8),
       }))
       .sort((a, b) => b.finalScore - a.finalScore);
@@ -2033,6 +2113,8 @@ function nextWeek(s) {
       `Choose distribution for ${due.title} before its locked release date.`,
     );
   s.week++;
+  ensureOpportunities(s);
+  if(s.week%52===0 && activeTrends(s).length<2){const available=TREND_TYPES.filter(t=>!activeTrends(s).some(x=>x.name===t.name));if(available.length){const t=pick(s,available);s.marketTrends.push({...t,start:s.week,end:s.week+104+roll(s,0,78),strength:.45});log(s,`Moviegoers are craving ${t.name.toLowerCase()}.`,"action");}}
   debit(s, overhead(s));
   for (const l of s.debt) {
     if (l.shark) continue;
@@ -2051,7 +2133,7 @@ function nextWeek(s) {
         m.progress > 1 &&
         m.progress < m.duration - 1 &&
         m.eventCount < SCALES.indexOf(m.scale) + 1 &&
-        random(s) < scheduleInfo(m.duration).risk
+        random(s) < Math.min(.8,scheduleInfo(m.duration).risk+(m.location===2?.1:m.location===3?.06:m.location===1?-.04:0))
       ) {
         m.eventCount++;
         const action = ["Action", "Sci-fi"].includes(m.genre);
@@ -2091,7 +2173,7 @@ function nextWeek(s) {
           cost: Math.round(m.weekly * 0.8 + 35),
           damage: roll(s, 6, 12),
         };
-        const kind = roll(s, 0, 2);
+        const kind = roll(s, 0, m.economyVersion>=3?3:2);
         if (kind === 1)
           m.event = {
             kind: "creative",
@@ -2104,6 +2186,7 @@ function nextWeek(s) {
             title: "Who gets the final rehearsal?",
             text: "There is time for one more rehearsal within the existing schedule. Choose which performance receives the attention.",
           };
+        if(kind===3 && !(m.productionDecisions??[]).some(d=>d.kind==="social")){const actor=person(s,m.contracts[0].id);m.event={kind:"social",title:`${actor.name} sparks a backlash`,text:"An offensive social-media post is drawing attention. Decide how the studio responds.",cost:50};}
         log(s, `${m.title} needs a production decision.`, "action");
       }
     }
@@ -2115,6 +2198,8 @@ function nextWeek(s) {
         age === 0
           ? m.opening
           : m.opening * hold ** age * (1 + m.campaigns.length * 0.015);
+      if(m.economyVersion>=3 && age>=1 && !m.fanLore && m.fans>=65 && random(s)<.12){m.fanLore={week:s.week,kind:["Horror","Thriller","Sci-fi"].includes(m.genre)?"lore":"buzz"};log(s,`${m.title}: fans are sharing ${m.fanLore.kind==="lore"?"theories and lore":"fan edits and favorite moments"}; new viewers are joining the conversation.`,"success");}
+      if(m.fanLore&&age>0)gross*=1.2;
       m.resurgences ??= [];
       const d = date(s.week),
         monthKey = `${d.year}-${d.month}`,

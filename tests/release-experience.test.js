@@ -37,6 +37,7 @@ test("seasonal resurgence is occasional, saved, and included in actual receipts"
       m = E.act(s, "buy", { script: s.market[0].id });
     s.week = 40;
     Object.assign(m, {
+      economyVersion: 2, // Isolate seasonal resurgence from the newer fan-lore event.
       genre: "Horror",
       stage: "theaters",
       theaterStart: 39,

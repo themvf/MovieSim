@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import * as current from '../engine.js';
-fs.writeFileSync('test-results/studio-baseline.mjs',execFileSync('git',['show','9441a8d:engine.js'],{encoding:'utf8'}).replace('./stories.js','../stories.js'));
+fs.writeFileSync('test-results/studio-baseline.mjs',execFileSync('git',['show',(process.env.BASELINE || '9441a8d')+':engine.js'],{encoding:'utf8'}).replace('./stories.js','../stories.js'));
 const baseline=await import('../test-results/studio-baseline.mjs');
 function studio(E,seed,strategy,deal){
  const s=E.newGame(seed);let started=0;

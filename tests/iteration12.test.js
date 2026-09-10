@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as E from '../engine.js';
 test('new film marketing prices scale with scope; old films keep original prices',()=>{
  const s=E.newGame(115),m=E.act(s,'buy',{script:s.market[0].id});
- assert.equal(m.economyVersion,2);
+ assert.equal(m.economyVersion,3);
  for(const [scale,factor] of [['Small',1],['Mid-budget',2],['Blockbuster',4]])for(let i=0;i<4;i++){
   assert.equal(E.campaignCost({...m,scale},i),E.CAMPAIGNS[i].cost*factor);
   assert.equal(E.campaignCost({...m,scale,economyVersion:undefined},i),E.CAMPAIGNS[i].cost);
