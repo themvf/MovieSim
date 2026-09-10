@@ -1,4 +1,4 @@
-import { scopeName } from "./engine.js?v=0.8.2";
+import { scopeName } from "./engine.js?v=0.11.0";
 // Original, code-drawn pixel artwork. No external asset downloads or fonts.
 const palettes = [
   ["#27414c", "#7bbaaf", "#efbf88"],
@@ -19,6 +19,9 @@ export function portrait(p, size = 56) {
   return `<svg class="portrait" width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="Pixel portrait" shape-rendering="crispEdges"><rect width="32" height="32" fill="${palettes[n % 6][0]}"/><path d="M4 32v-7h5v-3h14v3h5v7" fill="${shirt}"/><path d="M13 20h6v6h-6" fill="${skin}"/><path d="M8 7h16v14H8z" fill="${hair}"/>${long ? `<path d="M6 10h4v16H6m16-16h4v16h-4" fill="${hair}"/>` : ""}<path d="M10 9h12v12h-3v2h-6v-2h-3" fill="${skin}"/><path d="M8 7h16v4H8m2-6h12v3H10m-2 3h4v6H8" fill="${hair}"/><path d="M12 14h2v2h-2m6-2h2v2h-2" fill="#28262a"/><path d="M14 19h4v1h-4" fill="#92554b"/><path d="M12 25l4 3 4-3v7h-8" fill="#eee5d2"/></svg>`;
 }
 export function poster(m, large = false) {
+  const photos=["beyond-the-pines","red-horizon","between-worlds","lights-off"];
+  if (photos.includes(m.photoPoster)) return `<div class="poster photo-poster ${large ? "large" : ""}"><img src="./assets/posters/${m.photoPoster}.jpg" alt="${escapeHtml(m.title)} movie poster" loading="lazy"></div>`;
+
   const n = m.art || 0,
     [dark, light, warm] = palettes[n % 6];
   const variant = n % 4;

@@ -3321,3 +3321,11 @@ summary {
 .unlock-roadmap { margin-top: 16px; }
 .unlock-roadmap p { margin: 10px 0; font-size: 13px; }
 .rival-roster small { color: #acb9bc; margin-top: 4px; }
+
+.photo-poster { background: #10191e; padding: 0; overflow: hidden; }
+.photo-poster img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.poster-preview { margin-bottom: 24px; }
+.poster-preview-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 16px; }
+.poster-preview-grid figure { margin: 0; }
+.poster-preview-grid .poster { width: 100%; height: auto; aspect-ratio: 1; }
+.poster-preview-grid figcaption { padding-top: 8px; font-weight: 700; }

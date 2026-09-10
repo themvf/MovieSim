@@ -230,7 +230,7 @@ const fs = require("node:fs");
       JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0].contracts
         .length,
   );
-  if (badgeCount !== castCount + 2)
+  if (badgeCount !== castCount + 5)
     throw Error("Missing opening or talent outcome badge");
   const performanceText = await page.locator(".talent-review").innerText();
   if (

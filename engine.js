@@ -142,6 +142,31 @@ export function upgradeUnlock(s,name) {
   };
   return { level:next,title:UPGRADE_MILESTONES[name][next-1],prestige:prestige ?? 0,cost:upgradeCost(s,name),benefit:benefits[name],complete:level>=4 };
 }
+export const POSTER_FILMS = [
+ {photoPoster:"beyond-the-pines",title:"Beyond the Pines",genre:"Thriller",subgenre:"Mystery",scale:"Small"},
+ {photoPoster:"red-horizon",title:"Red Horizon",genre:"Action",subgenre:"Adventure",scale:"Blockbuster"},
+ {photoPoster:"between-worlds",title:"Between Worlds",genre:"Sci-fi",subgenre:"Space",scale:"Mid-budget",difficulty:90,quality:85},
+ {photoPoster:"lights-off",title:"Lights Off",genre:"Horror",subgenre:"Haunted house",scale:"Small"},
+];
+export function addPosterFilms(s) {
+  if (s.posterFilmsAdded) return;
+  s.posterFilmsAdded=true;
+  s.market.unshift(...POSTER_FILMS.map(f=>{
+    const sc=script(s);
+    return {...sc,...f,...freshStory(s,f.subgenre),roles:f.scale==="Blockbuster"?["Lead","Co-lead","Supporting"]:["Lead","Supporting"]};
+  }));
+}
+export function rangePosition(f,value) {
+  if (!f || !Number.isFinite(value)) return null;
+  if (value<f.low) return "Below";
+  if (value>f.high) return "Exceeded";
+  if (f.high===f.low) return "On target";
+  const position=(value-f.low)/(f.high-f.low);
+  return position<1/3 ? "Low end" : position>2/3 ? "High end" : "Mid-range";
+}
+export function passionProject(p,m) {
+  return p.kind==="actor" && !freshFace(p) && p.star>=75 && m.difficulty>=80 && (m.scriptQuality ?? m.quality ?? 0)>=75 && (p.genres[m.genre] ?? 50)>=65;
+}
 export const PRESTIGE_LEVELS = [
   {
     at: 0,
@@ -322,6 +347,7 @@ function validMovieFinances(m) {
       return false;
 
   const nonnegative = (value) => Number.isFinite(value) && value >= 0;
+  if (m.responseExpectations && ["audience","critics"].some(k=>!m.responseExpectations[k] || !nonnegative(m.responseExpectations[k].low) || !nonnegative(m.responseExpectations[k].high) || m.responseExpectations[k].high>100 || m.responseExpectations[k].low>m.responseExpectations[k].high)) return false;
   if (m.streamingDeal && (!['exclusive','royalty'].includes(m.streamingDeal.id) || ['upfront','weekly','signedWeek','endWeek','term'].some(k=>!nonnegative(m.streamingDeal[k])) || m.streamingDeal.endWeek !== m.streamingDeal.signedWeek+52)) return false;
   const base = [
     "spent",
@@ -655,6 +681,12 @@ export function productionCraft(m, b = m.budget) {
 export function saveForecast(s, m) {
   if (m.marketingConfirmed) m.marketingBudget = m.campaignSpend;
   const [low, high] = projection(s, m).map(roundAmount);
+  const talent = [...m.contracts,...(m.director ? [m.director] : [])].map(c=>c.expectation).filter(Boolean);
+  const expectedTalent=talent.length ? talent.reduce((v,f)=>v+(f.low+f.high)/2,0)/talent.length : 60;
+  const [scriptLow,scriptHigh]=range(m.scriptQuality ?? 60,s.departments.Development).split("–").map(Number);
+  const center=(scriptLow+scriptHigh)/2*.45+expectedTalent*.55;
+  const band=value=>{const width=Math.max(10,25-s.departments.Research*5);const lo=Math.max(0,Math.min(100-width,Math.round((value-width/2)/5)*5));return {low:lo,high:lo+width};};
+  m.responseExpectations={audience:band(m.screen ?? center),critics:band(center),week:s.week};
   m.expectations = {
     low,
     high,
@@ -842,6 +874,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
         strength: roll(s, 70, 95),
       });
   }
+  addPosterFilms(s);
   for (const r of s.rivals) r.studioId=rivalStudio(r).id;
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
   return s;
@@ -974,10 +1007,14 @@ export function quote(s, p, m, role = 0) {
       option: true,
       grossShare: option.grossShare ?? 0,
     };
-  const discount =
+  const passion = passionProject(p,m);
+  const discount = passion ? 0.6 :
     p.kind === "actor" && m.difficulty >= 75 && p.talent >= 65 ? 0.76 : 1;
   const base = p.fee * discount * (1 - s.prestige / 500);
   return {
+    passion,
+    normalLow: roundAmount(p.fee * (1-s.prestige/500) * .85),
+    normalHigh: roundAmount(p.fee * (1-s.prestige/500) * 1.12),
     low: roundAmount(base * 0.85),
     high: roundAmount(base * 1.12),
     option: false,
@@ -1114,6 +1151,7 @@ function addMovie(s, sc, parent = null, developing = false) {
     boxWeeks: [],
     resurgences: [],
     expectations: null,
+    responseExpectations: null,
     directorPerformance: null,
     awards: [],
     cancelled: false,
