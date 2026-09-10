@@ -107,6 +107,14 @@ const fs = require("node:fs");
     await click('[data-action="close"]');
   await click('[data-action="movie"]');
   await click('[data-action="release"]');
+  const beforeScreen=await page.evaluate(()=>JSON.parse(localStorage.getItem('moviesim-save-v1')));
+  await page.locator('.screening-option [data-action="screen"]').click();
+  const afterScreen=await page.evaluate(()=>JSON.parse(localStorage.getItem('moviesim-save-v1')));
+  assert.equal(beforeScreen.cash-afterScreen.cash,45);
+  assert.equal(beforeScreen.week,afterScreen.week);
+  assert.ok(await page.locator('#release-form').isVisible());
+  assert.ok((await page.locator('.screening-option').innerText()).includes('Test audience'));
+
   while (
     !(await page.locator('[data-action="releaseWeek"][data-week="35"]').count())
   )

@@ -203,22 +203,9 @@ const fs = require("node:fs");
   await page.waitForSelector(".expectations-review");
   if ((await page.locator(".comparison-list").count()) !== 1)
     throw Error("Expected one unified comparison list");
-  if (
-    (await page
-      .locator(".comparison-list thead th")
-      .allTextContents()
-      .then((x) => x.join(","))) !== "Measure,Expected,Result"
-  )
-    throw Error("Comparison columns missing");
-  if (!(await page.locator(".comparison-list .rating-range").count()))
-    throw Error("Missing colored ranges");
-  await page.waitForSelector(".talent-review");
-  if (
-    !(await page.locator(".comparison-list").innerText()).includes(
-      "Marketing budget",
-    )
-  )
-    throw Error("Marketing comparison missing");
+  if (!(await page.locator(".comparison-values small").allTextContents()).includes("Expected")) throw Error("Expected labels missing");
+  if (!(await page.locator(".result-track").count())) throw Error("Range markers missing");
+  if (!(await page.locator(".comparison-list .rating-range").count())) throw Error("Missing colored ranges");
   const marketingState = await page.evaluate(
     () => JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0],
   );
@@ -230,7 +217,7 @@ const fs = require("node:fs");
       JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0].contracts
         .length,
   );
-  if (badgeCount !== castCount + 5)
+  if (badgeCount !== castCount + 4)
     throw Error("Missing opening or talent outcome badge");
   const performanceText = await page.locator(".talent-review").innerText();
   if (

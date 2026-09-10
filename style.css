@@ -3329,3 +3329,13 @@ summary {
 .poster-preview-grid figure { margin: 0; }
 .poster-preview-grid .poster { width: 100%; height: auto; aspect-ratio: 1; }
 .poster-preview-grid figcaption { padding-top: 8px; font-weight: 700; }
+/* Compact, labeled result comparisons retain readable numbers on small screens. */
+.comparison-row{padding:16px 0;border-bottom:1px solid #35454d;text-align:left}
+.comparison-name{font-weight:700;margin-bottom:10px}.comparison-name small{display:block;font-weight:400;color:#aab8bf;font-size:12px;margin-top:3px}
+.comparison-values{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:16px}.comparison-values small{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#aab8bf;margin-bottom:4px}.comparison-values strong{text-align:right}
+.result-track{height:6px;background:#0b1419;position:relative;margin:14px 5px 10px;border-radius:4px}.expected-zone{position:absolute;left:15%;width:70%;height:6px;background:#516d77;border-radius:3px}.result-track i{position:absolute;top:-4px;width:4px;height:14px;background:#fff;transform:translateX(-50%)}
+.comparison-row .expectation-status{display:block;border:0;padding:0;background:none;font-size:12px;margin:0;text-align:right;line-height:1.3}.comparison-row .status-met{color:#cad6db}.comparison-row .status-exceeded{color:#93dfbb}.comparison-row .status-below{color:#ffa0ac}
+.release-spending{font-size:14px;color:#b7c3c8}.slate-layout .segmented{flex-wrap:wrap}
+@media(max-width:600px){dialog:has(.opening-report) .modal-head{padding:14px 20px}dialog:has(.opening-report) .modal-head h2{font-size:27px}.opening-nav{padding:8px 14px;gap:4px}.opening-nav button{padding:10px 8px;font-size:13px}.opening-footer{padding:12px 20px}.opening-footer button{min-height:44px;padding:10px}.comparison-row{padding:13px 0}.expectations-review{padding:0!important}}
+
+.opening-report .opening-context p{line-height:1.35;margin:6px 0}.opening-report .opening-context{margin-bottom:8px}.opening-report .release-spending{margin:8px 0 16px}

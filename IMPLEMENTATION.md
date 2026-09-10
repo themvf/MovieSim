@@ -222,3 +222,6 @@ Holding an individual audition restores the casting dialog scroll offsets after 
 
 ## September 10 — poster and economics iteration (UI 0.11.0)
 Added four supplied photo posters and one-time featured script injection, mobile preview, expectation range thirds and pre-release audience/critic snapshots, and eligible superstar passion-project fee quotes. Preserved build marker 0.10.0 and existing studios. Audited production, advertising, streaming and awards; see ECONOMICS-AUDIT.md. Added range/casting/poster and 30-scenario streaming accounting tests plus endgame coverage. Mobile smoke, critics/streaming and poster-loading browser checks pass.
+
+## September 10 — UI 0.12.0 and fresh playtests
+Separated Streaming from Active, added compact result rows and forecast markers, revised new-film production/marketing/delivery economics, and closed scope-only distributor advance arbitrage. Preserved existing projects. Ran 311,040 controlled film scenarios and 1,200 five-year strategy runs; three new agents with no prior history completed independent UI playtests. Their findings drove accounting precision, empty-state, optional-screening and score consistency fixes. Evidence and limitations: docs/economy-0.12.0/REPORT.md.

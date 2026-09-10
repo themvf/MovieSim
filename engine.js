@@ -635,6 +635,8 @@ export const money = (v) =>
     currency: "USD",
     maximumFractionDigits: Math.abs(v) > 0 && Math.abs(v) < 0.001 ? 2 : 0,
   }).format(Math.abs(v) < 1 ? v * 1000 : roundAmount(v) * 1000);
+// Account balances and committed payments use whole dollars, without coarse display rounding.
+export const accountMoney = v => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:Math.abs(v)>0&&Math.abs(v)<.001?2:0}).format(v*1000);
 export const dollarInput = (v, decimals = 0) =>
   (v * 1000).toLocaleString("en-US", { maximumFractionDigits: decimals });
 export const fromDollars = (value) => {
@@ -1089,18 +1091,32 @@ export function catalogIncome(s,m) {
   }
   return Math.max(2,m.gross*.0017)*(1+(s.week-m.catalogStart)/52)**-1.2;
 }
+// New films use the revised economy; existing projects retain their signed economics.
+export function campaignCost(m,i) {
+  return CAMPAIGNS[i].cost * (m.economyVersion === 2 ? (m.scale === "Blockbuster" ? 4 : m.scale === "Mid-budget" ? 2 : 1) : 1);
+}
+export function deliveryFactor(m) {
+  if(m.economyVersion !== 2) return 1;
+  const craft = productionCraft(m);
+  const execution = .2 + .8 * Math.min(1,craft/65)**1.5;
+  const schedule = .45 + .55 * Math.min(1,m.duration/recommendedWeeks(m));
+  return execution * schedule;
+}
+export function campaignReach(s,m) {
+  const raw=m.campaigns.reduce((v,i)=>v+CAMPAIGNS[i].reach,0)*(1+(s.departments.Marketing-1)*.09);
+  return m.economyVersion === 2 ? 95*(1-Math.exp(-raw/70)) : raw;
+}
 export function projection(s, m) {
   const market =
     m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
   const stars = castDraw(s, m);
   const reach =
-    m.campaigns.reduce((v, c) => v + CAMPAIGNS[c].reach, 0) *
-    (1 + (s.departments.Marketing - 1) * 0.09);
+    campaignReach(s,m);
   const season = seasonOpportunity(m, date(m.release ?? s.week).month).multiplier;
   const base =
     ((market * (0.36 + stars / 100 + reach / 95) * season) /
       (1 + competition(s, m))) *
-    (0.55 + (m.screen ?? 60) / 145);
+    (0.55 + (m.screen ?? 60) / 145) * deliveryFactor(m);
   const spread = Math.max(0.10, 0.30 - s.departments.Research * 0.05);
   return [
     base * (m.distributionReach ?? 1) * (1 - spread),
@@ -1111,6 +1127,7 @@ function addMovie(s, sc, parent = null, developing = false) {
   const m = {
     ...structuredClone(sc),
     id: `m${s.next++}`,
+    economyVersion: 2,
     parent,
     stage: developing ? "development" : "packaging",
     castingDirections: sc.roles.map((_,i) => castingGuidance(sc,i)),
@@ -1476,8 +1493,8 @@ export function act(s, type, a = {}) {
       const c = CAMPAIGNS[a.campaign];
       if (!c || m.campaigns.includes(Number(a.campaign)))
         throw Error("That campaign is already running.");
-      debit(s, c.cost, m);
-      m.campaignSpend += c.cost;
+      debit(s, campaignCost(m,Number(a.campaign)), m);
+      m.campaignSpend += campaignCost(m,Number(a.campaign));
       m.campaigns.push(Number(a.campaign));
       if (m.stage !== "theaters") saveForecast(s, m);
       break;
@@ -1506,8 +1523,8 @@ export function act(s, type, a = {}) {
       if (a.none && chosen.length) throw Error("Choose either no marketing or paid campaigns.");
       if (!a.none && !chosen.length && !m.campaignSpend) throw Error("Select a marketing option, including $0, before confirming.");
       for (const i of chosen) {
-        debit(s, CAMPAIGNS[i].cost, m);
-        m.campaignSpend += CAMPAIGNS[i].cost;
+        debit(s, campaignCost(m,i), m);
+        m.campaignSpend += campaignCost(m,i);
         m.campaigns.push(i);
       }
       m.marketingConfirmed = true;
@@ -1672,7 +1689,7 @@ export function distribution(s, m) {
   const market =
     m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
   const demand = clamp(0.7 + castDraw(s, m) / 100, 0.7, 1.7);
-  const price = market * demand;
+  const price = market * demand * (m.economyVersion === 2 ? Math.sqrt(deliveryFactor(m)) : 1);
   return {
     secure: {
       name: "Harbor Distribution",
@@ -1761,8 +1778,7 @@ function opening(s, m) {
     m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
   const stars = castDraw(s, m);
   const reach =
-    m.campaigns.reduce((v, c) => v + CAMPAIGNS[c].reach, 0) *
-    (1 + (s.departments.Marketing - 1) * 0.09);
+    campaignReach(s,m);
   const season = seasonOpportunity(m, date(s.week).month).multiplier;
   const rival = competition(s, m);
   const appeal = 0.36 + stars / 100 + reach / 95;
@@ -1772,6 +1788,7 @@ function opening(s, m) {
   const openingGross =
     ((market * appeal * season) / (1 + rival)) *
     (0.55 + m.fans / 145) *
+    deliveryFactor(m) *
     (0.7 + random(s) * 0.6) *
     sequel *
     (m.distributionReach ?? 1);

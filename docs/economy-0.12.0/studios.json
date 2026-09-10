@@ -1,0 +1,170 @@
+{
+  "before/cheap-big/secure": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 186381.88877381588,
+    "started": 29,
+    "released": 29
+  },
+  "before/cheap-big/partner": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 378621.47186259745,
+    "started": 29,
+    "released": 29
+  },
+  "before/cheap-big/self": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 137354.00305334042,
+    "started": 29.34,
+    "released": 29.34
+  },
+  "before/cheap-big-no-ads/secure": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 74734.17235666541,
+    "started": 29.28,
+    "released": 29.28
+  },
+  "before/cheap-big-no-ads/partner": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 50753.829491157645,
+    "started": 29.28,
+    "released": 29.28
+  },
+  "before/cheap-big-no-ads/self": {
+    "week": 255.18,
+    "bankrupt": 0.02,
+    "net": -849.4865711448094,
+    "started": 28.66,
+    "released": 28.64
+  },
+  "before/funded-big/secure": {
+    "week": 19.54,
+    "bankrupt": 1,
+    "net": -8403.802859769616,
+    "started": 1.68,
+    "released": 0.68
+  },
+  "before/funded-big/partner": {
+    "week": 55.9,
+    "bankrupt": 0.88,
+    "net": -3327.9648316094895,
+    "started": 3.6,
+    "released": 2.72
+  },
+  "before/funded-big/self": {
+    "week": 18.46,
+    "bankrupt": 1,
+    "net": -8391.961865635436,
+    "started": 1.68,
+    "released": 0.68
+  },
+  "before/funded-small/secure": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 3732.3127626563255,
+    "started": 24.64,
+    "released": 24.64
+  },
+  "before/funded-small/partner": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 20013.059513700267,
+    "started": 24.64,
+    "released": 24.64
+  },
+  "before/funded-small/self": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 1699.839898570055,
+    "started": 24.66,
+    "released": 24.66
+  },
+  "after/cheap-big/secure": {
+    "week": 36.38,
+    "bankrupt": 1,
+    "net": -8153.398275688928,
+    "started": 5.2,
+    "released": 4.2
+  },
+  "after/cheap-big/partner": {
+    "week": 23.66,
+    "bankrupt": 1,
+    "net": -8142.97573186752,
+    "started": 3.7,
+    "released": 2.7
+  },
+  "after/cheap-big/self": {
+    "week": 34.24,
+    "bankrupt": 1,
+    "net": -8154.182841802935,
+    "started": 5.02,
+    "released": 4.02
+  },
+  "after/cheap-big-no-ads/secure": {
+    "week": 125.48,
+    "bankrupt": 1,
+    "net": -8158.182391079933,
+    "started": 16.04,
+    "released": 15.04
+  },
+  "after/cheap-big-no-ads/partner": {
+    "week": 74.1,
+    "bankrupt": 1,
+    "net": -8155.04584851152,
+    "started": 10.08,
+    "released": 9.08
+  },
+  "after/cheap-big-no-ads/self": {
+    "week": 25.72,
+    "bankrupt": 1,
+    "net": -8151.100159499261,
+    "started": 3.96,
+    "released": 2.96
+  },
+  "after/funded-big/secure": {
+    "week": 19.04,
+    "bankrupt": 1,
+    "net": -8396.60666311848,
+    "started": 1.68,
+    "released": 0.68
+  },
+  "after/funded-big/partner": {
+    "week": 43.18,
+    "bankrupt": 0.92,
+    "net": -4738.605760466123,
+    "started": 3.08,
+    "released": 2.16
+  },
+  "after/funded-big/self": {
+    "week": 18.46,
+    "bankrupt": 1,
+    "net": -8391.961865635436,
+    "started": 1.68,
+    "released": 0.68
+  },
+  "after/funded-small/secure": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 4633.401779134315,
+    "started": 24.64,
+    "released": 24.64
+  },
+  "after/funded-small/partner": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 22156.125444923448,
+    "started": 24.66,
+    "released": 24.66
+  },
+  "after/funded-small/self": {
+    "week": 260,
+    "bankrupt": 0,
+    "net": 3310.3356232504284,
+    "started": 24.66,
+    "released": 24.66
+  }
+}

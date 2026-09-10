@@ -1,3 +1,5 @@
+> Historical 0.11.0 audit. See [the 0.12.0 balance report](docs/economy-0.12.0/REPORT.md) for current new-film economics.
+
 # MovieSim economics audit — September 10, 2026
 
 ## Production spending and box office
