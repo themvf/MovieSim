@@ -3354,3 +3354,39 @@ summary {
 .comparison-row .expectation-status { display:inline-block; padding:3px 6px; border:1px solid currentColor; border-radius:4px; }
 .audition-limit { padding:12px; border:1px solid #7bb8e4; border-radius:6px; background:#18354c; color:#e5f3ff; }
 :focus-visible { outline:3px solid #a9d9ff; outline-offset:3px; }
+
+/* 0.15 mobile decision layouts */
+.upgrade-card {display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px;}
+.upgrade-card > * {grid-column:auto!important;grid-row:auto!important;min-width:0;margin:0;}
+.upgrade-card .outline {width:100%;min-height:48px;margin:0;}
+.unlock-requirements {display:flex;flex-direction:column;gap:8px;}
+.unlock-roadmap summary {white-space:normal;}
+.forecast .rating-range {display:inline-block!important;width:auto!important;letter-spacing:normal!important;font-size:inherit!important;}
+.comparison-heading {display:flex;justify-content:space-between;gap:12px;align-items:baseline;}
+.comparison-name small {display:inline!important;margin-left:6px;font-size:12px;color:var(--muted);font-weight:400;}
+.comparison-actual {white-space:nowrap;font-size:17px;}
+.comparison-row {padding:14px 0!important;}
+.comparison-row .comparison-values {display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.comparison-values>span {font-size:12px;}
+.comparison-row .result-track {margin:10px 4px 4px;}
+.scale-labels {display:flex;justify-content:space-between;color:var(--muted);font-size:10px;}
+.recovery-progress {width:100%;height:12px;accent-color:var(--mint);}
+.opening-context details {font-size:12px;margin:12px 0;}
+.opening-context .finance-lines {margin:12px 0 6px;}
+.career-dot {color:var(--gold);font-size:10px;}
+.bank-options {display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:18px;}
+.bank-options .campaign {min-height:0;padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;}
+.bank-options .campaign b {color:var(--text);}
+.bank-options .campaign.purchased {background:#18354c;border:2px solid #a9d9ff;color:var(--text);}
+.loan-shortcuts {display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;}
+.distribution-card {border:1px solid var(--line);border-radius:8px;padding:16px;margin:12px 0;background:var(--panel);}
+.distribution-card h3 {margin:0 0 10px;}.distribution-card p {font-size:13px;}
+.deal-footer {flex-shrink:0;padding:14px 20px;background:var(--bg);border-top:1px solid var(--line);}
+.deal-footer strong {font-size:14px;}.deal-footer small {margin:5px 0 10px;font-size:12px;}
+.offer-opportunity {padding:12px;border-left:3px solid var(--mint);background:var(--panel);margin:12px 0;}
+.offer-opportunity p {margin:6px 0;}.offer-share {padding:14px 0;margin:12px 0;border-block:1px solid var(--line);}.offer-share p {font-size:13px;}
+#offer-form details,#offer-form small {font-size:12px;}#offer-form .checkbox {align-items:flex-start;}#offer-form .checkbox input{flex-shrink:0;}
+
+.deal-footer {display:flex!important;flex-direction:column!important;gap:8px;align-items:stretch!important;}
+.deal-footer > * {width:100%;min-width:0;}
+.deal-footer #offer-total {color:var(--text);}

@@ -89,14 +89,14 @@ const fs = require("node:fs");
       await click('[data-action="audition"]');
     await click('[data-action="offer"]');
     if (role === 0) await page.locator('input[name="option"]').check();
-    await page.locator("#offer-form button").click();
+    await page.locator("button[form=offer-form]").click();
   }
   await click('[data-action="director"]');
   await page.locator(".casting-filter-details > summary").click();
   await page.locator("#casting-budget").selectOption("750");
   await click('[data-action="audition"]');
   await click('[data-action="offer"]');
-  await page.locator("#offer-form button").click();
+  await page.locator("button[form=offer-form]").click();
   await click('[data-action="production"]');
   await page.screenshot({
     path: "test-results/mobile-production.png",
@@ -172,7 +172,7 @@ const fs = require("node:fs");
     throw Error("Cannot bypass marketing by opening distribution");
   if (await page.locator('[data-action="selectNoMarketing"]').isEnabled()) await click('[data-action="selectNoMarketing"]');
   await click('[data-action="confirmMarketing"]');
-  if (!(await page.locator(".distribution-options").isVisible()))
+  if (!(await page.locator(".distribution-cards").isVisible()))
     throw Error("Distribution screen did not open after setting release");
   if (
     !(await page.locator("dialog").innerText()).includes("Choose distribution")
@@ -194,17 +194,13 @@ const fs = require("node:fs");
     teamCount
   )
     throw Error("Every cast member and director must have a career result");
-  const careerButton = page.locator('[data-action="viewCareers"]');
-  if (!(await careerButton.isVisible()))
-    throw Error("Missing opening career entry point");
-  await careerButton.click();
-  if ((await page.locator(".career-headline").count()) !== teamCount)
-    throw Error("Career summary must open whole team");
-  await click('[data-action="back"]');
+  await click('[data-action="openingSection"][data-section="team"]');
+  if ((await page.locator('[data-opening-panel="team"] .career-headline').count()) !== teamCount) throw Error("Career tab must show whole team");
+  await click('[data-action="openingSection"][data-section="results"]');
   await page.waitForSelector(".expectations-review");
   if ((await page.locator(".comparison-list").count()) !== 1)
     throw Error("Expected one unified comparison list");
-  if (!(await page.locator(".comparison-values small").allTextContents()).includes("Expected")) throw Error("Expected labels missing");
+  if (!(await page.locator(".comparison-values").first().innerText()).includes("Expected")) throw Error("Expected labels missing");
   if (!(await page.locator(".result-track").count())) throw Error("Range markers missing");
   if (!(await page.locator(".comparison-list .rating-range").count())) throw Error("Missing colored ranges");
   const marketingState = await page.evaluate(

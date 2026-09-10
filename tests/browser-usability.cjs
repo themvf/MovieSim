@@ -83,7 +83,7 @@ const fs = require("node:fs");
   await page.screenshot({ path: "test-results/v02-casting.png" });
   await click('[data-action="audition"]');
   await click('[data-action="offer"]');
-  await page.locator("#offer-form button").click();
+  await page.locator("button[form=offer-form]").click();
   await page.waitForSelector("#production-form");
   assert.equal(await page.locator('input[name="sets"]').inputValue(), "3");
   assert.equal(await page.locator('input[name="duration"]').inputValue(), "10");
@@ -126,11 +126,11 @@ const fs = require("node:fs");
   if (await page.locator('[data-action="selectNoMarketing"]').isEnabled()) await click('[data-action="selectNoMarketing"]');
   await click('[data-action="confirmMarketing"]');
   assert.equal(
-    await page.locator(".distribution-overview tbody tr").count(),
+    await page.locator(".distribution-card").count(),
     3,
   );
   assert.match(
-    await page.locator(".distribution-options").innerText(),
+    await page.locator(".distribution-cards").innerText(),
     /Share/i,
   );
   await page.screenshot({ path: "test-results/v02-distribution.png" });

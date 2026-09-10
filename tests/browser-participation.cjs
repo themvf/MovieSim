@@ -28,14 +28,14 @@ const {
   await p.locator('[data-action="offer"][data-person="' + id + '"]').click();
   if (
     !(await p.locator("dialog").innerText()).includes(
-      "Required revenue share: 5%",
+      "Requires 5% of studio ticket income",
     )
   )
     throw Error("Missing demand");
   await p.screenshot({ path: "test-results/participation-offer.png" });
   if (await p.evaluate(() => document.documentElement.scrollWidth > innerWidth))
     throw Error("Mobile overflow");
-  await p.locator("#offer-form button").click();
+  await p.locator("button[form=offer-form]").click();
   const s = await p.evaluate(() =>
     JSON.parse(localStorage.getItem("moviesim-save-v1")),
   );

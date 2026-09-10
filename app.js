@@ -1,5 +1,5 @@
-import * as E from "./engine.js?v=0.14.0";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.14.0";
+import * as E from "./engine.js?v=0.15.0";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.15.0";
 const BUILD = "0.10.0";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
@@ -66,7 +66,7 @@ const labels = {
 };
 const $ = (id) => document.getElementById(id);
 const button = (text, action, data = "", cls = "") =>
-  `<button class="${cls}" data-action="${action}" ${data}>${text}</button>`;
+  `<button type="button" class="${cls}" data-action="${action}" ${data}>${text}</button>`;
 const pill = (text, cls = "") => `<span class="pill ${cls}">${text}</span>`;
 const stat = (name, value, cls = "") =>
   `<div class="stat ${cls}"><span>${name}</span><strong>${value}</strong></div>`;
@@ -359,7 +359,7 @@ function studio() {
 }
 function upgradeCard(name, level, desc, dept) {
   const u=E.upgradeUnlock(s,name),owned=level ? E.UPGRADE_MILESTONES[name][level-1] : "Renting as needed";
-  return `<article class="panel upgrade-card"><span class="eyebrow">${dept ? "DEPARTMENT" : "FACILITY"} · ${h(name)}</span><small class="muted">Current: ${h(owned)}</small><h3>${u.complete ? "Fully established" : h(u.title)}</h3><p>${u.complete ? desc : h(u.benefit)}</p>${!dept ? `<small class="muted">${desc}</small>` : ""}${u.complete ? pill("All improvements owned","mint-pill") : `<div class="unlock-requirements"><span class="${s.prestige>=u.prestige ? "mint" : "muted"}">${s.prestige>=u.prestige ? "✓" : "○"} ${u.prestige ? `${u.prestige} prestige required · you have ${Math.round(s.prestige)}` : "Available to a new studio"}</span><span>${E.money(u.cost)} investment · +${E.money(dept?2:3)}/week</span></div>${button(s.prestige<u.prestige ? "View unlock requirements" : s.cash<u.cost ? "Review funding needed" : "Review investment →","upgrade",`data-name="${name}"`,"outline full")}`}<details class="unlock-roadmap"><summary>Your path in ${h(name)}</summary>${E.UPGRADE_MILESTONES[name].map((title,i)=>`<p>${i<level ? "✓ " : ""}${h(title)}<small class="block">${dept ? ["Starting team","Money only","15 prestige + investment","35 prestige + investment"][i] : ["Money only","15 prestige + investment","35 prestige + investment","60 prestige + investment"][i]}</small></p>`).join("")}</details></article>`;
+  return `<article class="panel upgrade-card"><span class="eyebrow">${dept ? "DEPARTMENT" : "FACILITY"} · ${h(name)}</span><small class="muted">Current: ${h(owned)}</small><h3>${u.complete ? "Fully established" : "Unlock: "+h(u.title)}</h3><p>${u.complete ? desc : h(u.benefit)}</p>${!dept ? `<small class="muted">${desc}</small>` : ""}${u.complete ? pill("All improvements owned","mint-pill") : `<div class="unlock-requirements"><span class="${s.prestige>=u.prestige ? "mint" : "muted"}">${s.prestige>=u.prestige ? "✓" : "○"} ${u.prestige ? `${u.prestige} prestige required · you have ${Math.round(s.prestige)}` : "Available now"}</span><span>${E.accountMoney(u.cost)} upfront · ${E.accountMoney(dept?2:3)}/week</span></div>${button(s.prestige<u.prestige ? "View unlock requirements" : s.cash<u.cost ? "Review funding needed" : "Review upgrade","upgrade",`data-name="${name}"`,"outline full")}`}<details class="unlock-roadmap"><summary>View future upgrades</summary>${E.UPGRADE_MILESTONES[name].map((title,i)=>`<p>${i<level ? "✓ " : ""}${h(title)}<small class="block">${dept ? ["Starting team","Money only","15 prestige + investment","35 prestige + investment"][i] : ["Money only","15 prestige + investment","35 prestige + investment","60 prestige + investment"][i]}</small></p>`).join("")}</details></article>`;
 }
 function calendar() {
   return `<div class="notice-banner">August & December: larger blockbuster audiences, heavier competition. Choose a release date after filming wraps. It locks when you confirm it.</div><section class="panel rival-roster"><h3>The other studios in town</h3>${E.RIVAL_STUDIOS.map(r=>`<p><strong>${h(r.name)}</strong><small class="block">${h(r.focus)}</small></p>`).join("")}</section><div class="calendar-grid">${Array.from(
@@ -590,18 +590,12 @@ function openingContext(m) {
     forecast = !f
       ? "No saved forecast"
       : m.opening < f.low
-        ? "Opening ticket sales fell below your forecast"
+        ? "↓ Below forecast"
         : m.opening > f.high
-          ? "Opening ticket sales beat your forecast"
-          : "Opening ticket sales were within your forecast";
-  const changes = m.careerChanges ?? [],
-    gained = changes.filter(
-      (c) => Math.round(c.after) > Math.round(c.before),
-    ).length,
-    lost = changes.filter(
-      (c) => Math.round(c.after) < Math.round(c.before),
-    ).length;
-  return `<div class="opening-context"><p><strong>${forecast}</strong><br>${E.boxOfficeStatus(m).label} compared with other ${E.scopeName(m.scale).toLowerCase()}s. This measures ticket sales, not profit.</p><p>💵 Your studio has received: <strong>${E.accountMoney(m.receipts)}</strong><br>${m.receipts >= m.spent ? "✓ Movie profit to date" : "↗ Still needed to cover movie spending"}: <strong>${E.accountMoney(Math.abs(m.receipts-m.spent))}</strong><small class="block">Receipts include advances. Movie spending includes talent shares; studio overhead is separate. The film is still earning.</small></p>${button(`Cast & director fame: ↑ ${gained} rose · ↓ ${lost} fell · — ${changes.length - gained - lost} unchanged →`, "viewCareers", `data-id="${m.id}"`, "text-button full")}</div>`;
+          ? "↑ Beat forecast"
+          : "✓ Within forecast";
+  const recovered=m.spent>0?Math.min(100,Math.floor(m.receipts/m.spent*100)):100;
+  return `<div class="opening-context"><p class="opening-verdict">${forecast} · ${E.boxOfficeStatus(m).label}</p><div class="finance-lines"><div><span>💵 Studio earnings</span><strong>${E.accountMoney(m.receipts)}</strong></div><div><span>Movie spending recovered</span><strong>${recovered}%</strong></div></div><progress class="recovery-progress" max="100" value="${recovered}" aria-label="Movie spending recovered">${recovered}%</progress><p><strong>${m.receipts>=m.spent?'✓ Profit to date':'Still to recover'}: ${E.accountMoney(Math.abs(m.receipts-m.spent))}</strong><small class="block">🎟 Still earning in theaters</small></p><details><summary>How is this calculated?</summary><p>Ticket sales measure popularity, not profit. Studio earnings include advances and your ticket payments after distribution deductions. Movie spending includes talent shares; studio overhead is separate.</p></details></div>`;
 }
 function attachedTeam(m) {
   const team = [...m.contracts, ...(m.director ? [m.director] : [])];
@@ -679,14 +673,18 @@ function expectationsReview(m) {
   const rows = [];
   const add = (name, expected, actual, verdict = "", forecast = null, value = null) => {
     const tone=verdict === "Exceeded" ? "exceeded" : verdict === "Below" ? "below" : "met";
-    const position=forecast && Number.isFinite(value) ? Math.max(0,Math.min(100,15+70*(value-forecast.low)/Math.max(1,forecast.high-forecast.low))) : null;
-    rows.push(`<article class="comparison-row"><div class="comparison-name">${name}</div><div class="comparison-values"><span><small>Expected</small>${expected}</span><strong><small>Result</small>${actual}</strong></div>${position == null ? "" : `<div class="result-track" role="img" aria-label="${h(verdict)} within comparison range"><span class="expected-zone"></span><i style="left:${position}%"></i></div>`}${verdict ? `<span class="expectation-status status-${tone}">${h(verdict)}</span>` : ""}</article>`);
+    const score=String(actual).endsWith('/100');
+    const max=score?100:Math.max(1,(forecast?.high??0)*1.2,(value??0)*1.1);
+    const position=forecast && Number.isFinite(value)?Math.max(0,Math.min(100,value/max*100)):null;
+    const low=forecast?forecast.low/max*100:0,high=forecast?forecast.high/max*100:100;
+    const label=verdict==='Below'?`↓ ${score?Math.round(forecast.low-value)+' below forecast':'Below forecast'}`:verdict==='Exceeded'?`↑ ${score?Math.round(value-forecast.high)+' above forecast':'Exceeded forecast'}`:verdict?`✓ Within · ${verdict.toLowerCase()}`:'';
+    rows.push(`<article class="comparison-row"><div class="comparison-heading"><div class="comparison-name">${name}</div><strong class="comparison-actual">${actual}</strong></div><div class="comparison-values"><span>Expected ${expected}</span>${label?`<span class="expectation-status status-${tone}">${h(label)}</span>`:''}</div>${position==null?'':`<div class="result-track" role="img" aria-label="${h(label)}; ${score?'scale 0 to 100':'ticket sales scale'}"><span class="expected-zone" style="left:${low}%;width:${high-low}%"></span><i style="left:${position}%"></i></div>${score?'<div class="scale-labels"><span>0</span><span>100</span></div>':''}`}</article>`);
   };
   const verdict = (f,actual) => E.rangePosition(f,actual) ?? "";
   add(
-    `Opening ticket sales${m.marketingBudget != null ? `<small>With the ${E.money(m.marketingBudget)} marketing plan</small>` : ""}`,
+    `Opening ticket sales${m.marketingBudget != null ? `<small>With the ${E.accountMoney(m.marketingBudget)} marketing plan</small>` : ""}`,
     m.expectations
-      ? `${E.money(m.expectations.low)}–${E.money(m.expectations.high)}`
+      ? `${E.accountMoney(m.expectations.low)}–${E.accountMoney(m.expectations.high)}`
       : "Not recorded",
     E.accountMoney(m.opening),
     verdict(m.expectations, m.opening), m.expectations, m.opening,
@@ -732,7 +730,7 @@ function openingDialog(m) {
     <section data-opening-panel="reviews" ${section !== "reviews" ? "hidden" : ""}>${criticsPanel(m)}</section>
     <section data-opening-panel="team" ${section !== "team" ? "hidden" : ""}><div class="personal-recap">${careerResults(m)}</div>${button("Consider a sequel", "openingSequel", `data-id="${m.id}"`, "outline full")}</section>
   </div>`,"OPENING NIGHT");
-  dialog.querySelector(".modal-body").insertAdjacentHTML("beforebegin",`<nav class="opening-nav" aria-label="Opening night sections">${[["results","Results"],["reviews","Reviews"],["team","Cast & Director"]].map(([key,label])=>button(label,"openingSection",`data-section="${key}" aria-pressed="${section===key}"`,section===key?"selected":"")).join("")}</nav>`);
+  dialog.querySelector(".modal-body").insertAdjacentHTML("beforebegin",`<nav class="opening-nav" aria-label="Opening night sections">${[["results","Results"],["reviews","Reviews"],["team",`Cast & Director${(m.careerChanges??[]).some(c=>Math.round(c.after)!==Math.round(c.before))?' <span class="career-dot" aria-label="Career changes">●</span>':''}`]].map(([key,label])=>button(label,"openingSection",`data-section="${key}" aria-pressed="${section===key}"`,section===key?"selected":"")).join("")}</nav>`);
   dialog.insertAdjacentHTML("beforeend",`<div class="action-footer opening-footer">${button("Back to the lot →","dismissNotice","","primary full")}</div>`);
 }
 function criticsPanel(m) {
@@ -804,11 +802,10 @@ function drawDialog() {
         `<p>${h(p.name)}: ${h(q.refusal)}</p>`,
         "TALENT DECISION",
       );
-    return modal(
-      `An offer for ${h(p.name)}`,
-      `<div class="person-heading">${portrait(p, 80)}<div><h3>${h(p.name)}</h3><p>${p.kind === "actor" ? m.roles[v.role] : "Director"} · ${h(m.title)}</p><p>Expected fee: ${E.money(q.low)}–${E.money(q.high)} ${q.option ? "(existing sequel option)" : ""}</p></div></div>${q.personal ? `<p class="fresh-note">🌟 Loved ${h(q.personal)} · half-rate offer for this role</p>` : q.passion ? `<div class="notice-banner"><strong>“This is a role I want to be part of.”</strong><p>Passion project: their fee is 40% below their ordinary quote, before rounding. Usual range: ${E.money(q.normalLow)}–${E.money(q.normalHigh)}. Revenue-share terms are separate.</p></div>` : ""}<section class="panel"><strong>${q.grossShare ? `Required revenue share: ${Math.round(q.grossShare * 100)}%` : "No revenue share required"}</strong><p>${q.grossShare ? `Paid from your studio’s ticket receipts before recovering costs. Every $1,000,000 your studio receives pays this person ${E.money(1000 * q.grossShare)}. This is in addition to the upfront fee.` : m.scale === "Small" && m.difficulty >= 75 && p.star >= 60 && !E.freshFace(p) ? "They waive participation for this low-budget, challenging awards prospect." : "Your agreement is an upfront fee only."}</p><small>Total cast and director share after hiring: ${Math.round((E.participationRate(m) - (p.kind === "director" ? (m.director?.grossShare ?? 0) : (m.contracts.find((c) => c.role === v.role)?.grossShare ?? 0)) + q.grossShare) * 100)}%. Advances and licensing income are excluded.</small></section><form id="offer-form"><label>Offer ($)<input name="offer" type="text" inputmode="decimal" value="${E.dollarInput(q.option ? q.low : Math.ceil((q.low + q.high) / 2 / 10) * 10)}" required></label>${p.kind === "actor" ? '<label class="checkbox"><input type="checkbox" name="option"> Secure a sequel option (+20% upfront)</label>' : ""}<p class="muted small">Terms are agreed now; the fee is paid at greenlight. Check availability before filming. A sequel option fixes the return fee and revenue share, but does not reserve future dates.</p><button class="primary full">Make offer →</button></form>`,
-      "TALENT NEGOTIATION",
-    );
+    const aud=m.auditions[E.auditionKey(p,v.role)],share=Math.round(q.grossShare*100);
+    modal(`An offer for ${h(p.name)}`,`<div class="person-heading">${portrait(p,64)}<div><h3>${h(p.name)}</h3><p>${p.kind==='actor'?h(m.roles[v.role]):'Director'} · ${h(m.title)}</p>${aud!==undefined?`<p>Audition ${ratingRange(E.talentEstimate(s,p,aud))}</p>`:''}</div></div>${q.personal?`<div class="offer-opportunity">🌟 Loved ${h(q.personal)} · half-rate offer for this role</div>`:q.passion?`<div class="offer-opportunity"><strong>🌟 Passion-project discount</strong><p>“This is a role I want to be part of.”</p><small>Usual fee: ${E.accountMoney(q.normalLow)}–${E.accountMoney(q.normalHigh)}</small></div>`:''}<p>Asking now: <strong>${E.accountMoney(q.low)}–${E.accountMoney(q.high)}</strong>${q.option?' · Existing sequel option':''}</p><form id="offer-form"><label>Your offer ($)<input name="offer" type="text" inputmode="decimal" value="${E.dollarInput(q.option?q.low:Math.ceil((q.low+q.high)/2/10)*10)}" required></label><small>Paid when filming starts.</small><section class="offer-share"><strong>🎟 ${share?`Requires ${share}% of studio ticket income`:'No revenue share required'}</strong>${share?`<p>${E.accountMoney(1000*q.grossShare)} for every $1,000,000 your studio receives.<small class="block">Paid even before the movie becomes profitable.</small></p>`:''}<details><summary>Revenue-share details</summary><p>Applies to ticket income only; advances and licensing are excluded. Combined cast and director share after this hire: ${Math.round((E.participationRate(m)-(p.kind==='director'?(m.director?.grossShare??0):(m.contracts.find(c=>c.role===v.role)?.grossShare??0))+q.grossShare)*100)}%.</p></details></section>${p.kind==='actor'?'<label class="checkbox"><input type="checkbox" name="option"><span>Lock in their fee for a sequel — <strong id="option-price"></strong> extra</span></label><small>Keeps this fee and revenue-share rate for their return. Availability is not guaranteed.</small>':''}</form>`,'TALENT NEGOTIATION');
+    dialog.insertAdjacentHTML('beforeend',`<footer class="deal-footer"><div id="offer-total"></div><button class="primary full" form="offer-form">Make offer →</button></footer>`);
+    moneyPreview();return;
   }
   if (v.kind === "production") return production(m);
   if (v.kind === "release") return releasePlanner(m);
@@ -824,13 +821,13 @@ function drawDialog() {
     );
   }
   if (v.kind === "distribution")
-    return modal("Choose distribution", `${m.responseExpectations ? `<p class="forecast">Expected audience: ${ratingRange(m.responseExpectations.audience)} · Critics: ${ratingRange(m.responseExpectations.critics)}<small>Estimates from your script, hiring reports and any test screening. Actual results may fall outside these ranges.</small></p>` : ""}${distributionOffers(m)}`, h(m.title));
+    return modal("Choose distribution", `${m.responseExpectations ? `<div class="forecast">👥 Audience ${ratingRange(m.responseExpectations.audience)} · 📝 Critics ${ratingRange(m.responseExpectations.critics)}<details><summary>About these estimates</summary><p>Based on your script, hiring reports and any test screening. Actual results can fall outside these ranges.</p></details></div>` : ""}${distributionOffers(m)}`, h(m.title));
   if (v.kind === "dealReview") {
     const d = E.distribution(s, m)[v.deal],
       example = Math.max(0, 10000 * d.share - d.recoup);
     return modal(
       "Your deal, in dollars",
-      `<h3>${h(d.name)}</h3><div class="finance-lines"><div><span>Cash paid to your studio now</span><strong>${E.money(d.advance)}</strong></div><div><span>Release fee paid by you now</span><strong>${E.money(d.cost)}</strong></div><div><span>If audiences buy $10,000,000 in tickets</span><strong>You receive ${E.money(example)}</strong></div></div><p>${h(d.desc)} Release support funded by the distributor: ${E.money(d.support)}. Amount recovered from your ticket share before further payments: ${E.money(d.recoup)}. The example is additional ticket income after recovery and before talent participation. Optional marketing campaigns remain separate.</p>${button("Accept this distribution deal", "distribute", `data-id="${m.id}" data-deal="${v.deal}"`, "primary full")}`,
+      `<h3>${h(d.name)}</h3><div class="finance-lines"><div><span>Cash paid to your studio now</span><strong>${E.money(d.advance)}</strong></div><div><span>Release fee paid by you now</span><strong>${E.money(d.cost)}</strong></div><div><span>If audiences buy $10,000,000 in tickets</span><strong>You receive ${E.money(example)}</strong></div></div><p>${h(d.desc)} Release support funded by the distributor: ${E.money(d.support)}. Amount recovered from your ticket share before further payments: ${E.money(d.recoup)}. The example is additional ticket income after recovery and before talent participation. Optional marketing campaigns remain separate.</p>${button("Choose this deal", "distribute", `data-id="${m.id}" data-deal="${v.deal}"`, "primary full")}`,
       "DISTRIBUTION REVIEW",
     );
   }
@@ -1135,17 +1132,9 @@ function releaseAndDistribution(m) {
   return `<section class="panel"><span class="eyebrow">NEXT ACTION</span><h3>Choose your distribution deal</h3><p>Your release date is set. Choose who releases the film and how much of each ticket payment your studio receives.</p>${button("Choose distribution →", "distribution", `data-id="${m.id}"`, "primary full")}</section>`;
 }
 function distributionOffers(m) {
-  return `<section><p class="muted small">Compare all three options. Cash now includes the payment to you minus any release fee.</p><table class="distribution-options distribution-overview"><thead><tr><th>Deal</th><th>Cash now</th><th>Share</th><th>Reach</th></tr></thead><tbody>${Object.entries(
-    E.distribution(s, m),
-  )
-    .map(
-      ([key, d]) =>
-        `<tr><th scope="row">${button(key === "secure" ? "Guaranteed →" : key === "partner" ? "Partner →" : "Self-release →", "dealReview", `data-id="${m.id}" data-deal="${key}"`, "text-button")}<small>${d.recoup ? `Recover ${E.money(d.recoup)} first` : "No recovery"}</small></th><td class="${d.advance - d.cost < 0 ? "negative" : "mint"}">${E.money(d.advance - d.cost)}</td><td>${Math.round(d.share * 100)}%</td><td>${d.reach >= 1.1 ? "Wide" : d.reach >= 1 ? "Established" : "Limited"}</td></tr>`,
-    )
-    .join(
-      "",
-    )}</tbody></table><p class="muted small">Share = your share of ticket sales, before talent payouts. For a partner deal, the advance and release support are recovered from that share before more cash reaches your studio.</p><p>Tap a deal to review costs and a dollar example before signing.</p></section>`;
+ return `<section class="distribution-cards"><p class="muted small">Select a deal to review it before signing.</p>${Object.entries(E.distribution(s,m)).map(([key,d])=>`<article class="distribution-card"><h3>${key==='secure'?'Guaranteed payment':key==='partner'?'Distribution partner':'Self-distribute'}</h3><div class="finance-lines"><div><span>${d.advance-d.cost>=0?'💵 Receive now':'💸 Pay now'}</span><strong>${E.accountMoney(Math.abs(d.advance-d.cost))}</strong></div><div><span>🎟 Your ticket share</span><strong>${Math.round(d.share*100)}%</strong></div><div><span>Reach</span><strong>${d.reach>=1.1?'Wide':d.reach>=1?'Established':'Limited'}</strong></div></div>${d.recoup?`<p>Your ticket payments begin after the distributor recovers ${E.accountMoney(d.recoup)}.</p>`:'<p>No distributor recovery before ticket payments.</p>'}${button('Review this deal →','dealReview',`data-id="${m.id}" data-deal="${key}"`,'outline full')}</article>`).join('')}<small>Ticket shares are before talent payouts.</small></section>`;
 }
+
 function releasePlanner(m) {
   if (s.week >= E.END - 1)
     return modal(
@@ -1181,12 +1170,29 @@ function releasePreview(m) {
   $("release-preview").innerHTML =
     `<div class="notice-banner"><strong>${peak ? "Larger blockbuster audience" : "Normal audience demand"} · ${rivals.length > 2 ? "Crowded" : rivals.length ? "Some competition" : "Quiet window"}</strong></div>${rivals.map((r) => `<div class="award-row"><span>${h(r.title)}<small class="block">${h(E.rivalStudio(r).name)} · ${r.genre} · Week ${E.date(r.week).week}</small></span>${pill(r.genre === m.genre ? "Similar audience" : "Different audience", r.genre === m.genre ? "gold-pill" : "")}</div>`).join("") || "<p>No competing releases announced nearby.</p>"}`;
 }
+function moneyPreview() {
+ const form=$('offer-form')||$('loan-form');if(!form)return;
+ const input=form.elements[form.id==='offer-form'?'offer':'amount'];
+ let amount;try{amount=E.fromDollars(input.value.replaceAll(",", ""));}catch{amount=NaN;}
+ const valid=Number.isFinite(amount)&&amount>=0;
+ if(form.id==='offer-form'){
+  const q=E.quote(s,E.person(s,view.person),E.movie(s,view.id),view.role);
+  if($('option-price'))$('option-price').textContent=valid?E.accountMoney(amount*.2):'—';
+  $('offer-total').innerHTML=valid?`<strong>Due when filming starts: ${E.accountMoney(amount*(form.elements.option?.checked?1.2:1))}</strong><small class="block">${q.grossShare?`Plus ${Math.round(q.grossShare*100)}% of studio ticket income`:'No revenue share'}</small>`:'Enter a valid offer.';
+  dialog.querySelector('[form="offer-form"]').disabled=!valid;
+ }else{
+  const bank=E.BANKS.find(b=>b.id===form.elements.bankId.value),max=E.bankAvailable(s,bank.id),ok=valid&&amount>=1&&amount<=max;
+  $('loan-preview').innerHTML=valid?`<div class="finance-lines"><div><span>💵 Cash after borrowing</span><strong>${E.accountMoney(s.cash+amount)}</strong></div><div><span>📅 First payment on this loan</span><strong>${E.accountMoney(amount/104+amount*bank.apr/52)}</strong></div></div><small>2 years · Weekly payments decrease. Existing loans are separate.</small>${!ok?'<p class="negative">Choose an amount between $1,000 and '+E.accountMoney(max)+'.</p>':''}`:'Enter a valid loan amount.';
+  $('loan-submit').textContent=valid?'Borrow '+E.accountMoney(amount):'Borrow';$('loan-submit').disabled=!ok;
+ }
+}
 function bank() {
   const emergency = s.cash < 0;
   const selected = E.BANKS.find(b => b.id === view.bankId);
   const credit = selected ? E.bankAvailable(s,selected.id) : 0;
-  modal(emergency ? "Your studio needs a lifeline." : "Choose your lender.",
-    `<p>Each bank has its own lending limit. Bank loans charge annual interest on the remaining balance, with principal repaid weekly over 104 weeks.</p>${sharkWarning()}<div class="campaign-grid">${E.BANKS.map(b => `<button class="campaign ${selected?.id === b.id ? "purchased" : ""}" data-action="selectBank" data-bank="${b.id}" aria-pressed="${selected?.id === b.id}"><strong>${b.name}</strong><b>${Math.round(b.apr*100)}% annual interest</b><span>${E.money(E.bankAvailable(s,b.id))} available</span></button>`).join("")}</div>${selected ? credit >= 1 ? `<form id="loan-form"><input type="hidden" name="bankId" value="${selected.id}"><label>Loan amount ($)<input type="text" inputmode="decimal" name="amount" value="${E.dollarInput(Math.min(Math.floor(credit),Math.max(1000,Math.ceil(-s.cash+E.burn(s)*2))))}" required></label><p>${Math.round(selected.apr*100)}% annual interest · 104 weekly principal payments · No early repayment penalty.</p><button class="primary full">Accept ${selected.name} loan</button></form>` : `<p>This bank has no further loan available.</p>` : `<p>Select a bank to review its loan.</p>`}${E.sharkAvailable(s) ? `<section class="panel"><h3>Last resort: the loan shark</h3><p>Receive <strong>$2,000,000</strong> now. A fixed $400,000 fee makes <strong>$2,400,000 due in 13 weeks</strong> (about three months). No weekly installments. Payment is automatic after that week’s income. If you cannot pay the full balance, the studio closes. Available once per studio, while at least 13 weeks remain in the demo.</p>${button("Accept loan shark terms · $2,000,000", "sharkLoan", "", "primary full")}</section>` : ""}${emergency ? button("End this studio’s run", "end", "", "danger-link") : ""}`, "STUDIO FINANCING");
+  modal(emergency ? "Your studio needs a lifeline." : "Finance your next move.",
+    `<p>Choose a bank, then review the payments for your loan.</p>${sharkWarning()}<div class="bank-options">${E.BANKS.map(b => `<button class="campaign ${selected?.id === b.id ? "purchased" : ""}" data-action="selectBank" data-bank="${b.id}" aria-pressed="${selected?.id === b.id}"><strong>${selected?.id===b.id?"✓ Selected · ":""}${b.name}</strong><b>${Math.round(b.apr*100)}% annual interest</b><span>${E.accountMoney(E.bankAvailable(s,b.id))} available</span></button>`).join("")}</div>${selected ? credit >= 1 ? `<form id="loan-form"><input type="hidden" name="bankId" value="${selected.id}"><label>Loan amount ($)<input type="text" inputmode="decimal" name="amount" value="${E.dollarInput(Math.min(Math.floor(credit),Math.max(1000,Math.ceil(-s.cash+E.burn(s)*2))))}" required></label><div class="loan-shortcuts">${button("Cover cash shortfall","loanShortcut",'data-size="shortfall"',"outline")}${button("Maximum available","loanShortcut",'data-size="max"',"outline")}</div><div id="loan-preview"></div><details><summary>Loan terms</summary><p>${Math.round(selected.apr*100)}% annual interest on the balance. Repayment over 2 years. Payments decrease as the balance falls. No early repayment penalty.</p></details><button class="primary full" id="loan-submit">Borrow</button></form>` : `<p>This bank has no further loan available.</p>` : `<p>Select a bank to review its loan.</p>`}${E.sharkAvailable(s) ? `<section class="panel"><h3>Last resort: the loan shark</h3><p>Receive <strong>$2,000,000</strong> now. A fixed $400,000 fee makes <strong>$2,400,000 due in 13 weeks</strong> (about three months). No weekly installments. Payment is automatic after that week’s income. If you cannot pay the full balance, the studio closes. Available once per studio, while at least 13 weeks remain in the demo.</p>${button("Accept loan shark terms · $2,000,000", "sharkLoan", "", "primary full")}</section>` : ""}${emergency ? button("End this studio’s run", "end", "", "danger-link") : ""}`, "STUDIO FINANCING");
+  moneyPreview();
   if (s.cash < 0) for (const m of s.movies.filter(m=>m.stage === "catalog" && m.streamingDeal === null)) dialog.querySelector(".modal-body").insertAdjacentHTML("afterbegin",button(`Review streaming offers: ${h(m.title)}`,"streaming",`data-id="${m.id}"`,"outline full"));
 }
 function checkEmergency() {
@@ -1310,6 +1316,10 @@ function handle(e) {
       view.visibleCount = 3;
       drawDialog();
       break;
+    case "loanShortcut": {
+      const f=$('loan-form'),max=E.bankAvailable(s,f.elements.bankId.value);
+      f.elements.amount.value=E.dollarInput(b.dataset.size==='max'?Math.floor(max):Math.min(Math.floor(max),Math.max(1,Math.ceil(-s.cash))));moneyPreview();break;
+    }
     case "auditionShortlist": {
       const cards = [
         ...dialog.querySelectorAll('[data-action="audition"]'),
@@ -1564,9 +1574,9 @@ function handle(e) {
     case "confirmUpgrade":
       transact("upgrade", { name: b.dataset.name }, () => close());
       break;
-    case "bank":
     case "repayAll":
       transact("repay",{amount:E.debtTotal(s)},()=>close());break;
+    case "bank":
     case "repay":
     case "help":
     case "recap":
@@ -1649,7 +1659,7 @@ dialog.addEventListener("submit", (e) => {
         id: v.id,
         person: v.person,
         role: v.role,
-        offer: E.fromDollars(d.offer),
+        offer: E.fromDollars(d.offer.replaceAll(",", "")),
         option: d.option === "on",
       },
       () => {
@@ -1687,7 +1697,7 @@ dialog.addEventListener("submit", (e) => {
       };
     });
   if (f.id === "loan-form")
-    transact("loan", { amount: E.fromDollars(d.amount), bankId: d.bankId }, () => {
+    transact("loan", { amount: E.fromDollars(d.amount.replaceAll(",", "")), bankId: d.bankId }, () => {
       if (s.cash >= 0) close();
     });
   if (f.id === "repay-form")
@@ -1709,6 +1719,7 @@ dialog.addEventListener("submit", (e) => {
   }
 });
 dialog.addEventListener("input", (e) => {
+  if (e.target.closest("#offer-form, #loan-form")) moneyPreview();
   if (e.target.closest("#production-form"))
     productionPreview(E.movie(s, view.id));
 });
@@ -1769,3 +1780,8 @@ checkEmergency();
 if (s.notices.length || s.epilogue) nextNotice();
 
 if (!view) requireReleaseDate();
+
+document.addEventListener('focusout',e=>{
+ if(!e.target.matches('#offer-form input[name="offer"], #loan-form input[name="amount"]'))return;
+ try{const value=E.fromDollars(e.target.value.replaceAll(",", ""));if(Number.isFinite(value)&&value>=0)e.target.value=E.dollarInput(value);}catch{}moneyPreview();
+});
