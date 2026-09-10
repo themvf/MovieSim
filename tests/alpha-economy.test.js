@@ -22,6 +22,7 @@ function film(s, offset = 0) {
     });
   });
   const p = s.people.filter((p) => p.kind === "director")[offset];
+  E.act(s, "audition", {id:m.id, person:p.id});
   E.act(s, "hire", { id: m.id, person: p.id, offer: E.quote(s, p, m).high });
   return m;
 }

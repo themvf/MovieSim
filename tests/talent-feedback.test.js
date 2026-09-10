@@ -31,8 +31,7 @@ test("hire snapshots survive staff upgrades and match real actor/director delive
   s.cash = 100000;
   const actors = s.people.filter((p) => p.kind === "actor");
   const hire = (p, role) => {
-    if (p.kind === "actor")
-      E.act(s, "audition", { id: m.id, person: p.id, role });
+    E.act(s, "audition", { id: m.id, person: p.id, role });
     const q = E.quote(s, p, m, role);
     E.act(s, "hire", { id: m.id, person: p.id, role, offer: q.high });
   };

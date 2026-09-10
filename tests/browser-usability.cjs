@@ -47,6 +47,7 @@ const fs = require("node:fs");
         .filter((p) => p.kind === "director")
         .sort((a, b) => a.fee - b.fee)[0],
       q = E.quote(s, director, m);
+    E.act(s, "audition", {id:m.id,person:director.id});
     E.act(s, "hire", {
       id: m.id,
       person: director.id,

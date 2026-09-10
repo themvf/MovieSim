@@ -34,6 +34,7 @@ function packageFilm(s, m, options = {}) {
       )
       .sort((a, b) => a.fee - b.fee)[0],
     q = E.quote(s, p, m);
+  E.act(s, "audition", {id:m.id, person:p.id});
   E.act(s, "hire", {
     id: m.id,
     person: p.id,

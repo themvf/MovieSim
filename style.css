@@ -3340,3 +3340,17 @@ summary {
 
 .opening-report .opening-context p{line-height:1.35;margin:6px 0}.opening-report .opening-context{margin-bottom:8px}.opening-report .release-spending{margin:8px 0 16px}
 .opportunity-board{display:grid;gap:10px;margin:20px 0}.opportunity-board article{display:flex;align-items:center;gap:12px;border:1px solid #425a59;border-radius:10px;padding:14px;background:#17282a}.opportunity-board article>div{flex:1}.opportunity-board small{display:block;color:#aebdc3;margin-top:5px}.opportunity-icon{font-size:25px}.production-choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}.outcome-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0}.outcome-tiles>div{padding:12px;background:#1d3034;border-radius:8px;text-align:center}.outcome-tiles span{font-size:24px;display:block}.outcome-tiles strong,.outcome-tiles small{display:block;margin-top:5px}.outcome-tiles small{color:#afc0c6;font-size:12px}@media(max-width:500px){.production-choices{grid-template-columns:1fr}.opportunity-board article{flex-wrap:wrap}.opportunity-board article .text-button{padding:6px}}
+
+/* 0.14: distinct status backgrounds and higher-contrast secondary text. */
+:root { --muted:#bdcbd2; --line:#536873; --mint:#79edb0; --gold:#ffe17b; --danger:#ff9aa8; }
+.rating-range { display:inline-block; padding:2px 6px; border:1px solid currentColor; border-radius:4px; font-variant-numeric:tabular-nums; }
+.rating-green { color:#8af0b4; } .rating-range.rating-green { background:#173c2a; }
+.rating-yellow { color:#fff080; } .rating-range.rating-yellow { background:#3d3710; }
+.rating-orange { color:#ffb36c; } .rating-range.rating-orange { background:#482a12; }
+.rating-red { color:#ffa0b3; } .rating-range.rating-red { background:#481d2b; }
+.status-met, .comparison-row .status-met { color:#a9d9ff; background:#18354c; }
+.status-exceeded, .comparison-row .status-exceeded { color:#8af0b4; background:#173c2a; }
+.status-below, .comparison-row .status-below { color:#ffa0b3; background:#481d2b; }
+.comparison-row .expectation-status { display:inline-block; padding:3px 6px; border:1px solid currentColor; border-radius:4px; }
+.audition-limit { padding:12px; border:1px solid #7bb8e4; border-radius:6px; background:#18354c; color:#e5f3ff; }
+:focus-visible { outline:3px solid #a9d9ff; outline-offset:3px; }

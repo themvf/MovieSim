@@ -12,6 +12,7 @@ const assert=require('node:assert/strict');
   const actors=s.people.filter(p=>p.kind==='actor').sort((a,b)=>a.fee-b.fee);
   for(let role=0;role<m.roles.length;role++) {const p=actors[role];E.act(s,'audition',{id:m.id,person:p.id,role});const q=E.quote(s,p,m,role);E.act(s,'hire',{id:m.id,person:p.id,role,offer:Math.ceil(q.high)});}
   const p=s.people.filter(p=>p.kind==='director').sort((a,b)=>a.fee-b.fee)[0],q=E.quote(s,p,m);
+  E.act(s,'audition',{id:m.id,person:p.id});
   E.act(s,'hire',{id:m.id,person:p.id,offer:Math.ceil(q.high)});
   E.act(s,'greenlight',{id:m.id,sets:250,crew:350,effects:100,duration:8});
   while(m.stage==='filming'){if(m.event)E.act(s,'event',{id:m.id,choice:'split'});s.notices=[];E.act(s,'next');}

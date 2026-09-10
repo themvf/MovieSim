@@ -20,7 +20,7 @@ function studio(E,seed,strategy,deal){
     if(kind==='director'?m.director:m.contracts.some(c=>c.role===role))continue;
     const p=s.people.filter(p=>p.kind===kind&&!p.retired&&!m.contracts.some(c=>c.id===p.id)&&E.available(p,s.week,s.week+duration)&&!E.quote(s,p,m,role).refusal).sort((a,b)=>E.quote(s,a,m,role).high-E.quote(s,b,m,role).high)[0];
     if(!p)continue;
-    if(kind==='actor')E.act(s,'audition',{id:m.id,person:p.id,role});E.act(s,'hire',{id:m.id,person:p.id,role,offer:E.quote(s,p,m,role).high});
+    if(kind==='actor' || E.auditionAllowance)E.act(s,'audition',{id:m.id,person:p.id,role});E.act(s,'hire',{id:m.id,person:p.id,role,offer:E.quote(s,p,m,role).high});
    }
    if(m.director&&m.contracts.length===m.roles.length){
     const fees=[...m.contracts,m.director].reduce((sum,c)=>sum+c.fee+c.optionCost,0);

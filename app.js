@@ -1,5 +1,5 @@
-import * as E from "./engine.js?v=0.13.1";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.13.1";
+import * as E from "./engine.js?v=0.14.0";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.14.0";
 const BUILD = "0.10.0";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
@@ -590,10 +590,10 @@ function openingContext(m) {
     forecast = !f
       ? "No saved forecast"
       : m.opening < f.low
-        ? "Below your forecast"
+        ? "Opening ticket sales fell below your forecast"
         : m.opening > f.high
-          ? "Exceeded your forecast"
-          : "Met your forecast";
+          ? "Opening ticket sales beat your forecast"
+          : "Opening ticket sales were within your forecast";
   const changes = m.careerChanges ?? [],
     gained = changes.filter(
       (c) => Math.round(c.after) > Math.round(c.before),
@@ -601,7 +601,7 @@ function openingContext(m) {
     lost = changes.filter(
       (c) => Math.round(c.after) < Math.round(c.before),
     ).length;
-  return `<div class="opening-context"><p><strong>${forecast}</strong><br>${E.boxOfficeStatus(m).label} compared with other ${E.scopeName(m.scale).toLowerCase()}s.</p><p>Studio receipts: <strong>${E.accountMoney(m.receipts)}</strong><br>${m.receipts >= m.spent ? "Movie profit so far" : "Costs still to recover"}: <strong>${E.accountMoney(Math.abs(m.receipts-m.spent))}</strong></p>${button(`Cast careers: ${gained} gained · ${lost} lost · ${changes.length - gained - lost} unchanged →`, "viewCareers", `data-id="${m.id}"`, "text-button full")}</div>`;
+  return `<div class="opening-context"><p><strong>${forecast}</strong><br>${E.boxOfficeStatus(m).label} compared with other ${E.scopeName(m.scale).toLowerCase()}s. This measures ticket sales, not profit.</p><p>💵 Your studio has received: <strong>${E.accountMoney(m.receipts)}</strong><br>${m.receipts >= m.spent ? "✓ Movie profit to date" : "↗ Still needed to cover movie spending"}: <strong>${E.accountMoney(Math.abs(m.receipts-m.spent))}</strong><small class="block">Receipts include advances. Movie spending includes talent shares; studio overhead is separate. The film is still earning.</small></p>${button(`Cast & director fame: ↑ ${gained} rose · ↓ ${lost} fell · — ${changes.length - gained - lost} unchanged →`, "viewCareers", `data-id="${m.id}"`, "text-button full")}</div>`;
 }
 function attachedTeam(m) {
   const team = [...m.contracts, ...(m.director ? [m.director] : [])];
@@ -899,7 +899,7 @@ function drawDialog() {
       at = level.at;
     return modal(
       "Your studio just moved up",
-      `<div class="prestige-reveal"><span class="laurel">✦</span><span class="eyebrow gold">PRESTIGE LEVEL ${v.level + 1}</span><h2>${h(level.name)}</h2><p>${level.description}</p><div class="benefit-list"><div><strong>Talent negotiations</strong><span>Your reputation helps you negotiate lower talent fees.</span></div><div><strong>Release reach</strong><span>Your reputation helps self-distributed films reach more audiences.</span></div><div><strong>More borrowing room</strong><span>Bank credit limit at least ${E.money(8000 + at * 60)}.</span></div></div><p class="muted small">${at===15 ? "New prestige requirements cleared: specialist departments and expanded facilities." : at===35 ? "New prestige requirements cleared: top-tier departments and advanced facilities." : at===60 ? "New prestige requirements cleared: a full backlot and studio-scale post-production and effects facilities." : "Your reputation keeps improving negotiation and borrowing power."} Each investment still needs cash and the preceding improvements.</p>${button("Explore studio unlocks →", "viewUnlocks", "", "primary full")}${button("Back to the lot", "dismissNotice", "", "outline full")}</div>`,
+      `<div class="prestige-reveal"><span class="laurel">✦</span><span class="eyebrow gold">PRESTIGE LEVEL ${v.level + 1}</span><h2>${h(level.name)}</h2><p>${level.description}</p><div class="benefit-list"><div><strong>${5 + v.level * 2} auditions per role each week</strong><span>Includes a separate allowance for directors on every movie.</span></div><div><strong>Talent negotiations</strong><span>Your reputation helps you negotiate lower talent fees.</span></div><div><strong>Release reach</strong><span>Your reputation helps self-distributed films reach more audiences.</span></div><div><strong>More borrowing room</strong><span>Bank credit limit at least ${E.money(8000 + at * 60)}.</span></div></div><p class="muted small">${at===15 ? "New prestige requirements cleared: specialist departments and expanded facilities." : at===35 ? "New prestige requirements cleared: top-tier departments and advanced facilities." : at===60 ? "New prestige requirements cleared: a full backlot and studio-scale post-production and effects facilities." : "Your reputation keeps improving negotiation and borrowing power."} Each investment still needs cash and the preceding improvements.</p>${button("Explore studio unlocks →", "viewUnlocks", "", "primary full")}${button("Back to the lot", "dismissNotice", "", "outline full")}</div>`,
       "AN INDUSTRY MILESTONE",
     );
   }
@@ -947,7 +947,7 @@ function casting(m, director) {
   );
   modal(
     director ? "Find your director" : `Casting: ${m.roles[role]}`,
-    `<div class="casting-context"><strong>${h(m.title)}</strong><small>${h(m.roleDescriptions?.[role] ?? m.roles[role] ?? "Lead the creative team")}</small><span>${director ? "" : roleGuidance(m,role)+"<br>"}${m.genre} · ${plan.duration}-week shoot${view.returnTo === "production" ? " · Returning to your production plan" : ""}</span></div><div class="casting-mode">${button(view.showAll ? "Show shortlist" : "Browse all", "castingMode", "", "outline")}${!director ? button(view.showAll ? "Audition shown" : "Audition shortlist", "auditionShortlist", `data-id="${m.id}"`, "outline") : ""}</div><details class="casting-filter-details"><summary>Budget, genre & sorting</summary><div class="casting-filters"><label>Fee range<select id="casting-budget">${[
+    `<div class="casting-context"><strong>${h(m.title)}</strong><small>${h(director ? "Lead the creative team" : m.roleDescriptions?.[role] ?? m.roles[role])}</small><span>${director ? "" : roleGuidance(m,role)+"<br>"}${m.genre} · ${plan.duration}-week shoot${view.returnTo === "production" ? " · Returning to your production plan" : ""}</span></div><p class="audition-limit">🎬 ${E.auditionAllowance(s,m,director ? "director" : role).remaining} of ${E.auditionAllowance(s,m,director ? "director" : role).limit} auditions left this week · ${director ? "Director" : h(m.roles[role])}<small class="block">Resets next week. Higher studio prestige unlocks more auditions.</small></p><div class="casting-mode">${button(view.showAll ? "Show shortlist" : "Browse all", "castingMode", "", "outline")}${!director ? button(view.showAll ? "Audition shown" : "Audition shortlist", "auditionShortlist", `data-id="${m.id}"`, "outline") : ""}</div><details class="casting-filter-details"><summary>Budget, genre & sorting</summary><div class="casting-filters"><label>Fee range<select id="casting-budget">${[
       ["all", "All budgets"],
       ["250", "Under $250,000"],
       ["750", "Under $750,000"],
@@ -1015,10 +1015,10 @@ function casting(m, director) {
       )
       .map((p) => {
         const q = E.quote(s, p, m, role),
-          aud = m.auditions[`${role}:${p.id}`],
+          aud = m.auditions[E.auditionKey(p, role)],
           booked = !E.available(p, s.week, s.week + plan.duration),
           cast = m.contracts.some((c) => c.id === p.id);
-        return `<article class="casting-card"><div class="person-heading">${portrait(p, 52)}<div><h3>${h(p.name)}</h3>${talentBadge(p)}<p class="muted small">${h(p.gender)} · Age ${p.age}${p.kind === "actor" ? ` · Playing age ${Math.max(18,p.age-5)}–${p.age+5}` : ""}</p></div>${button("Career ↗", "person", `data-person="${p.id}"`, "text-button")}</div>${talentAccolades(p)}${q.personal ? `<p class="fresh-note">🌟 Loved ${h(q.personal)} · half-rate offer for this role</p>` : q.passion ? '<p class="fresh-note">Passion project · special reduced fee</p>' : ""}<details class="talent-secondary"><summary>Strengths & ratings</summary>${genreStrengths(p)}${talentRatings(p, genre)}</details><div class="casting-metrics"><span>Expected fee<b>${E.money(q.low)}–${E.money(q.high)}</b>${q.grossShare ? `<small>Plus ${Math.round(q.grossShare * 100)}% of studio ticket receipts</small>` : ""}</span><span>${director ? "Expected direction" : "Audition for this role"}<b>${director ? ratingRange(E.talentEstimate(s, p, E.directorAbility(p, m.genre))) : aud === undefined ? "Not yet held" : ratingRange(E.talentEstimate(s, p, aud))}</b></span></div>${E.freshFace(p) ? '<p class="fresh-note">Still building recognition beyond independent films.</p>' : ""}<div class="card-bottom"><small class="${booked ? "peach" : "muted"}">${q.refusal ? h(q.refusal) : cast ? "Already in this cast" : booked ? `Unavailable during your ${plan.duration}-week shoot` : q.option ? "Sequel option available" : "Available for your shoot"}</small>${q.refusal ? pill("Not interested") : cast ? "" : booked ? pill("Schedule conflict") : !director && aud === undefined ? button("Hold audition", "audition", `data-id="${m.id}" data-person="${p.id}" data-role="${role}"`, "outline") : button("Negotiate →", "offer", `data-id="${m.id}" data-person="${p.id}" data-role="${role}"`, "outline")}</div></article>`;
+        return `<article class="casting-card"><div class="person-heading">${portrait(p, 52)}<div><h3>${h(p.name)}</h3>${talentBadge(p)}<p class="muted small">${h(p.gender)} · Age ${p.age}${p.kind === "actor" ? ` · Playing age ${Math.max(18,p.age-5)}–${p.age+5}` : ""}</p></div>${button("Career ↗", "person", `data-person="${p.id}"`, "text-button")}</div>${talentAccolades(p)}${q.personal ? `<p class="fresh-note">🌟 Loved ${h(q.personal)} · half-rate offer for this role</p>` : q.passion ? '<p class="fresh-note">Passion project · special reduced fee</p>' : ""}<details class="talent-secondary"><summary>Strengths & ratings</summary>${genreStrengths(p)}${talentRatings(p, genre)}</details><div class="casting-metrics"><span>Expected fee<b>${E.money(q.low)}–${E.money(q.high)}</b>${q.grossShare ? `<small>Plus ${Math.round(q.grossShare * 100)}% of studio ticket receipts</small>` : ""}</span><span>${director ? "Director audition" : "Audition for this role"}<b>${aud === undefined ? "Not yet held" : ratingRange(E.talentEstimate(s, p, aud))}</b></span></div>${E.freshFace(p) ? '<p class="fresh-note">Still building recognition beyond independent films.</p>' : ""}<div class="card-bottom"><small class="${booked ? "peach" : "muted"}">${q.refusal ? h(q.refusal) : cast ? "Already in this cast" : booked ? `Unavailable during your ${plan.duration}-week shoot` : q.option ? "Sequel option available" : "Available for your shoot"}</small>${q.refusal ? pill("Not interested") : cast ? "" : booked ? pill("Schedule conflict") : aud === undefined ? E.auditionAllowance(s,m,director ? "director" : role).remaining === 0 ? pill("Weekly limit reached") : button("Hold audition", "audition", `data-id="${m.id}" data-person="${p.id}" data-role="${role}"`, "outline") : button("Negotiate →", "offer", `data-id="${m.id}" data-person="${p.id}" data-role="${role}"`, "outline")}</div></article>`;
       })
       .join("")}</div>`,
     director ? "DIRECTOR SEARCH" : "CASTING ROOM",
@@ -1314,8 +1314,11 @@ function handle(e) {
       const cards = [
         ...dialog.querySelectorAll('[data-action="audition"]'),
       ].map((b) => ({ ...b.dataset }));
-      for (const c of cards)
+      for (const c of cards) {
+        const m = E.movie(s,id), p = E.person(s,c.person);
+        if (!E.auditionAllowance(s,m,p.kind === "director" ? "director" : Number(c.role)).remaining) break;
         E.act(s, "audition", { id, person: c.person, role: Number(c.role) });
+      }
       save();
       drawDialog();
       break;

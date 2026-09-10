@@ -382,6 +382,13 @@ export function scheduleInfo(duration, m) {
     risk: clamp(0.3 * (8 / duration) ** 1.5, 0.08, 0.6),
   };
 }
+export function auditionKey(p, role) { return `${p.kind === "director" ? "director" : role}:${p.id}`; }
+export function auditionAllowance(s, m, role) {
+  const limit = 5 + Math.max(0, prestigeLevel(s.prestige)) * 2;
+  const record = m.auditionWeeks?.[role];
+  const used = record?.week === s.week ? record.used : 0;
+  return { limit, used, remaining: Math.max(0, limit - used) };
+}
 export function productionCosts(s, m, b, duration) {
   const saving =
     s.facilities.Soundstage * 0.09 * b.sets +
@@ -1359,7 +1366,7 @@ export function act(s, type, a = {}) {
                     ? (m.difficulty - p.talent) * 0.2
                     : 0),
               );
-        if (p.kind === "actor") m.auditions[`${member.role}:${p.id}`] = ability;
+        m.auditions[auditionKey(p, member.role)] = ability;
         const contract = {
           id: p.id,
           role: member.role,
@@ -1386,14 +1393,17 @@ export function act(s, type, a = {}) {
     case "audition": {
       stage(m, ["packaging"]);
       const p = person(s, a.person);
-      if (!p || p.kind !== "actor") throw Error("Choose an actor.");
-      const key = `${a.role}:${p.id}`;
-      if (!m.auditions[key])
-        m.auditions[key] = clamp(
-          roleAbility(p, m.genre) +
-            roll(s, -13, 13) -
-            (m.difficulty > p.talent ? (m.difficulty - p.talent) * 0.2 : 0),
-        );
+      if (!p || p.retired) throw Error("Choose available talent.");
+      const role = p.kind === "director" ? "director" : a.role;
+      if (p.kind !== "director" && (!Number.isInteger(role) || role < 0 || role >= m.roles.length)) throw Error("Choose a role.");
+      const key = auditionKey(p, role);
+      if (m.auditions[key] !== undefined) break;
+      const allowance = auditionAllowance(s, m, role);
+      if (!allowance.remaining) throw Error(`All ${allowance.limit} auditions for this ${role === "director" ? "director position" : "role"} are used this week. Advance to next week for more.`);
+      m.auditionWeeks ??= {};
+      m.auditionWeeks[role] = {week:s.week, used:allowance.used + 1};
+      m.auditions[key] = p.kind === "director" ? directorAbility(p, m.genre) : clamp(
+        roleAbility(p, m.genre) + roll(s, -13, 13) - (m.difficulty > p.talent ? (m.difficulty - p.talent) * .2 : 0));
       break;
     }
     case "hire": {
@@ -1408,8 +1418,8 @@ export function act(s, type, a = {}) {
         throw Error("Choose a role.");
       if (m.contracts.some((c) => c.id === p.id))
         throw Error("This actor already has a role in this movie.");
-      if (p.kind === "actor" && m.auditions[`${a.role}:${p.id}`] === undefined)
-        throw Error("Audition the actor first.");
+      if (m.auditions[auditionKey(p, a.role)] === undefined)
+        throw Error("Hold an audition first.");
       const q = quote(s, p, m, a.role);
       if (q.refusal) throw Error(q.refusal);
       const offer = amt(a.offer, 0, 100000);

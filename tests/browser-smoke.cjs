@@ -94,6 +94,7 @@ const fs = require("node:fs");
   await click('[data-action="director"]');
   await page.locator(".casting-filter-details > summary").click();
   await page.locator("#casting-budget").selectOption("750");
+  await click('[data-action="audition"]');
   await click('[data-action="offer"]');
   await page.locator("#offer-form button").click();
   await click('[data-action="production"]');

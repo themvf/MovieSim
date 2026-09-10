@@ -22,6 +22,7 @@ function film(s) {
   const d = s.people
     .filter((p) => p.kind === "director")
     .sort((a, b) => a.fee - b.fee)[0];
+  E.act(s, "audition", {id:m.id, person:d.id});
   E.act(s, "hire", { id: m.id, person: d.id, offer: E.quote(s, d, m).high });
   E.act(s, "greenlight", {
     id: m.id,

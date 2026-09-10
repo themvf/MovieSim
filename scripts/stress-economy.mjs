@@ -16,7 +16,7 @@ function run(E,seed,genre,scale,tier,schedule,marketing){
  const sc=s.market[0];Object.assign(sc,{genre,subgenre:genre==='Horror'?'Supernatural':'Adventure',scale,quality:75,difficulty:65,roles:['Lead','Supporting'],price:100});
  const m=E.act(s,'buy',{script:sc.id});m.auditQualitySeed=rng(seed,500);m.auditOpeningSeed=rng(seed,1000);
  const people=[...s.people.filter(p=>p.kind==='actor').slice(0,2),s.people.find(p=>p.kind==='director')];
- for(const [i,p] of people.entries()) {Object.assign(p,{fee:150,star:35,talent:75,presence:70,bookings:[],look:1});p.genres[genre]=80;if(i<2)E.act(s,'audition',{id:m.id,person:p.id,role:i});E.act(s,'hire',{id:m.id,person:p.id,role:i<2?i:undefined,offer:E.quote(s,p,m).high});}
+ for(const [i,p] of people.entries()) {Object.assign(p,{fee:150,star:35,talent:75,presence:70,bookings:[],look:1});p.genres[genre]=80;if(i<2 || E.auditionAllowance)E.act(s,'audition',{id:m.id,person:p.id,role:i});E.act(s,'hire',{id:m.id,person:p.id,role:i<2?i:undefined,offer:E.quote(s,p,m).high});}
  const duration=schedule==='short'?4:schedule==='extended'?E.recommendedWeeks(m)+4:E.recommendedWeeks(m);
  const b=Object.fromEntries(['sets','crew','effects'].map(k=>[k,E.budgetCost(m,k,tier)]));
  E.act(s,'greenlight',{id:m.id,...b,duration});
