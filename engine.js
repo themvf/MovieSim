@@ -144,15 +144,15 @@ export function upgradeUnlock(s,name) {
 }
 export const LOCATION_PLANS = [
  {name:"Mixed locations",cost:1,desc:"A mix of interiors and nearby exteriors."},
- {name:"Mostly interiors",cost:.8,desc:"Contained sets, fewer moves, controlled conditions."},
- {name:"Local exteriors",cost:1.1,desc:"Real streets and landscapes; weather exposure."},
- {name:"Exotic locations",cost:1.35,desc:"Travel and distinctive scenery; expensive logistics."},
+ {name:"Interior filming",cost:.8,desc:"Contained sets, fewer moves, controlled conditions."},
+ {name:"Local exterior filming",cost:1.1,desc:"Real streets and landscapes; weather exposure."},
+ {name:"Distant locations",cost:1.35,desc:"Travel and distinctive scenery; expensive logistics."},
 ];
 export const EFFECTS_PLANS = [
- {name:"Balanced effects",cost:1,desc:"Use practical and digital work as needed."},
+ {name:"Practical + visual effects",cost:1,desc:"Use practical and digital work as needed."},
  {name:"Practical effects",cost:1.05,desc:"Build and photograph physical effects."},
- {name:"Digital spectacle",cost:1.25,desc:"More digital work and post-production."},
- {name:"Imply rather than show",cost:.75,desc:"Use sound, editing and performances to suggest the action."},
+ {name:"Visual effects (VFX)",cost:1.25,desc:"More digital work and post-production."},
+ {name:"Minimal effects",cost:.75,desc:"Use sound, editing and performances to suggest the action."},
 ];
 const TREND_TYPES=[
  {name:"Low-budget horror",genre:"Horror",scale:"Small",icon:"👻"},
@@ -304,8 +304,8 @@ export const BUDGET_DETAILS = {
   ],
   effects: [
     "Minimal effects & simple fixes",
-    "Basic practical effects",
-    "Practical effects & selected VFX",
+    "A small effects crew",
+    "Dedicated effects crew & finishing",
     "Dedicated effects team",
     "Extensive custom effects work",
   ],
@@ -387,9 +387,14 @@ export function productionCosts(s, m, b, duration) {
     s.facilities.Soundstage * 0.09 * b.sets +
     s.facilities["Effects workshop"] * 0.09 * b.effects +
     s.facilities["Editing suite"] * 0.04 * b.crew;
-  const total =
-    (b.sets * (LOCATION_PLANS[m.location??0]?.cost??1) + b.crew + b.effects * (EFFECTS_PLANS[m.effectsApproach??0]?.cost??1) - saving) * scheduleInfo(duration).multiplier;
-  return { saving, total, weekly: total / duration };
+  const multiplier = scheduleInfo(duration).multiplier;
+  const departments = {
+    sets: (b.sets * (LOCATION_PLANS[m.location??0]?.cost??1) - s.facilities.Soundstage * .09 * b.sets) * multiplier,
+    crew: (b.crew - s.facilities["Editing suite"] * .04 * b.crew) * multiplier,
+    effects: (b.effects * (EFFECTS_PLANS[m.effectsApproach??0]?.cost??1) - s.facilities["Effects workshop"] * .09 * b.effects) * multiplier,
+  };
+  const total = departments.sets + departments.crew + departments.effects;
+  return { saving, total, weekly: total / duration, departments };
 }
 const DEBT_EPSILON = 1e-10; // Internal thousands: far below one cent; only arithmetic residue.
 function validMovieFinances(m) {
