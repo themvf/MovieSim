@@ -3284,3 +3284,35 @@ summary {
 .critic-review .section-title { margin-bottom: 4px; }
 .streaming-comparison { min-width: 0; width: 100%; }
 .streaming-comparison td, .streaming-comparison th { padding: 10px 6px; white-space: normal; }
+
+/* Compact opening-night views and active streaming cards. */
+.opening-nav { display: flex; gap: 4px; flex-shrink: 0; padding: 8px 16px; border-bottom: 1px solid #34444b; }
+.opening-nav button { flex: 1; padding: 10px 4px; font-size: 13px; background: transparent; color: #acb9bc; border: 1px solid transparent; border-radius: 6px; }
+.opening-nav button.selected { background: #26363d; color: #fff; border-color: #76978d; }
+.opening-report [hidden] { display: none !important; }
+.opening-hero { text-align: center; }
+.opening-hero .opening-number { display: block; font-size: 32px; margin: 8px 0; }
+.opening-report .expectations-review { padding: 0; background: transparent; border: 0; }
+.opening-report .comparison-list { margin: 8px 0; }
+.opening-report .comparison-list th, .opening-report .comparison-list td { padding: 10px 5px; font-size: 13px; background: transparent; }
+.opening-report .comparison-list th:first-child { width: 34%; }
+.comparison-help { margin-top: 12px; text-align: left; }
+.opening-report .panel { margin: 0; padding: 0; background: transparent; border: 0; }
+.critic-review { text-align: left; }
+.critic-review .section-title { align-items: center; }
+.critic-review h3 { font-size: 17px; }
+.critic-review p { margin: 8px 0 0; line-height: 1.5; }
+.critic-score { font-size: 25px; white-space: nowrap; }
+.critic-score small { font-size: 12px; color: #acb9bc; }
+.compact-career { display: grid; grid-template-columns: 40px minmax(0,1fr) auto; gap: 12px; padding: 14px 0; margin: 0; border-bottom: 1px solid #34444b; text-align: left; align-items: center; }
+.compact-career small { font-size: 12px; line-height: 1.5; margin-top: 4px; }
+.career-fame { display: block; font-size: 13px; margin-top: 4px; color: #acb9bc; }
+.career-delta { font-size: 18px; white-space: nowrap; }
+.opening-footer { padding: 12px 20px; }
+.streaming-card-info { padding: 10px 0; line-height: 1.7; }
+@media(max-width:600px) { .opening-report .personal-recap { margin: 0; padding: 0; } }
+
+.streaming-card-info { font-size: 12px; }
+.opening-report .opening-context { margin-bottom: 16px; }
+.opening-report .opening-context p { margin: 8px 0; line-height: 1.5; }
+.opening-report .opening-context .text-button { padding: 6px 0; font-size: 12px; text-align: left; }

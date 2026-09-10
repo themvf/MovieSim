@@ -139,10 +139,19 @@ function focusDialogHeading() {
 function modal(title, body, eyebrow = "STUDIO DESK") {
   dialog.innerHTML = `<div class="modal-head"><div><span class="eyebrow">${eyebrow}</span><h2 tabindex="-1" autofocus>${title}</h2></div>${view?.back ? button("←", "back", "", "icon-button back-button") : ""}${["awardsInvite", "nominations", "ceremony"].includes(view?.kind) ? "" : button("×", "close", "", "icon-button close-button")}</div><div class="modal-body">${body}</div>`;
 }
+function isStreaming(m) {
+  return m.stage === "catalog" && m.streamingDeal && s.week <= m.streamingDeal.endWeek;
+}
+function isActiveMovie(m) {
+  return !["catalog","cancelled"].includes(m.stage) || isStreaming(m) || (m.stage === "catalog" && m.streamingDeal === null);
+}
+function movieStageLabel(m) {
+  return isStreaming(m) ? "Streaming" : m.stage === "catalog" && m.streamingDeal === null ? "Streaming deal needed" : labels[m.stage];
+}
 function render() {
   const d = E.date(s.week),
     active = s.movies.filter(
-      (m) => !["catalog", "cancelled"].includes(m.stage),
+      isActiveMovie,
     );
   const decisions = active.filter(
     (m) => m.event || ["packaging", "ready"].includes(m.stage),
@@ -183,7 +192,7 @@ function render() {
 }
 function slate() {
   const active = s.movies.filter(
-      (m) => !["catalog", "cancelled"].includes(m.stage),
+      isActiveMovie,
     ),
     released = s.movies.filter((m) =>
       ["theaters", "catalog"].includes(m.stage),
@@ -192,7 +201,7 @@ function slate() {
     filter === "active"
       ? active
       : filter === "catalog"
-        ? s.movies.filter((m) => ["catalog", "cancelled"].includes(m.stage))
+        ? s.movies.filter((m) => !isActiveMovie(m))
         : s.movies;
   return `${sharkWarning()}<section class="hero ${s.started ? "compact-hero" : ""}"><div class="hero-copy"><span class="eyebrow mint">${s.started ? "ON THE LOT THIS WEEK" : "WELCOME TO THE LOT"}</span><h2>${s.started ? `${active.length} picture${active.length === 1 ? "" : "s"} in motion.` : "Small studio.<br>Big picture."}</h2><p>${s.started ? `${active.filter((m) => m.stage === "filming").length} filming · ${released.length} released · Your next decision is below.` : "You have $6 million, an empty slate, and five years. Find a script. Discover a star. Make something that lasts."}</p>${button(s.started ? "Visit your studio ↗" : "Find your first script →", "nav", `data-tab="${s.started ? "studio" : "scripts"}"`, "light-button")}</div><div class="hero-art">${studioArt(s)}<span class="art-caption">${h(s.name)} · LOS ANGELES, ${E.date(s.week).year}</span></div></section>
  <div class="metrics">${stat("ACTIVE PRODUCTIONS", active.filter((m) => m.stage === "filming").length)}${stat("WEEKLY COMMITMENTS", E.money(E.burn(s)))}${stat("TOTAL BOX OFFICE", E.money(released.reduce((v, m) => v + m.gross, 0)))}${stat(
@@ -239,7 +248,7 @@ function movieCard(m) {
       : m.stage === "packaging"
         ? "Choose cast & director"
         : null;
-  return `<article class="movie-card" data-action="${m.stage === "ready" && m.release != null ? "distribution" : "movie"}" data-id="${m.id}" tabindex="0" role="button" aria-label="Manage ${h(m.title)}">${poster(m)}<div class="movie-info"><div class="movie-meta">${pill(labels[m.stage], m.stage === "theaters" ? "mint-pill" : "")}${m.parent ? pill("SEQUEL", "gold-pill") : ""}</div><h3>${h(m.title)}</h3><p>${h(m.genre)} / ${h(m.subgenre)} <span>·</span> ${E.scopeName(m.scale)}</p><div class="cast-mini">${cast.map((p) => portrait(p, 28)).join("")}<span>${cast.length ? cast.map((p) => h(p.name.split(" ")[0])).join(", ") : "Your cast is waiting to be discovered"}</span></div>${m.stage === "filming" ? `<div class="production-progress"><span>Filming</span><span>${m.progress} / ${m.duration} weeks</span><div class="bar"><i style="width:${(m.progress / m.duration) * 100}%"></i></div></div>` : ""}${m.boxWeeks.length ? `<p><strong>${E.boxOfficeStatus(m).label}</strong> · ${m.receipts >= m.spent ? "Profit" : "Unrecovered costs"} ${E.money(Math.abs(m.receipts - m.spent))}</p>${weeklyChart(m)}` : ""}<div class="movie-bottom"><span>${["theaters", "catalog"].includes(m.stage) ? `Box office <strong>${E.money(m.gross)}</strong>` : `Spent <strong>${E.money(m.spent)}</strong>`}</span><span class="${needs ? "peach" : "muted"}">${needs ? `${needs} →` : m.release ? `${E.date(m.release).label} →` : "View project →"}</span></div></div></article>`;
+  return `<article class="movie-card" data-action="${m.stage === "ready" && m.release != null ? "distribution" : "movie"}" data-id="${m.id}" tabindex="0" role="button" aria-label="Manage ${h(m.title)}">${poster(m)}<div class="movie-info"><div class="movie-meta">${pill(movieStageLabel(m), m.stage === "theaters" ? "mint-pill" : "")}${m.parent ? pill("SEQUEL", "gold-pill") : ""}</div><h3>${h(m.title)}</h3><p>${h(m.genre)} / ${h(m.subgenre)} <span>·</span> ${E.scopeName(m.scale)}</p><div class="cast-mini">${cast.map((p) => portrait(p, 28)).join("")}<span>${cast.length ? cast.map((p) => h(p.name.split(" ")[0])).join(", ") : "Your cast is waiting to be discovered"}</span></div>${m.stage === "filming" ? `<div class="production-progress"><span>Filming</span><span>${m.progress} / ${m.duration} weeks</span><div class="bar"><i style="width:${(m.progress / m.duration) * 100}%"></i></div></div>` : ""}${m.boxWeeks.length ? `<p><strong>${E.boxOfficeStatus(m).label}</strong> · ${m.receipts >= m.spent ? "Profit" : "Unrecovered costs"} ${E.money(Math.abs(m.receipts - m.spent))}</p>${isStreaming(m) ? `<p class="streaming-card-info"><strong>${h(m.streamingDeal.name)}</strong> · ${Math.max(0,m.streamingDeal.endWeek-s.week)} weeks left<br>Streaming earned: <strong>${E.money(m.catalog)}</strong><br>${m.streamingDeal.id === "exclusive" ? "Upfront license paid · no weekly royalties" : `Next week: <strong>${E.money(E.catalogIncome({...s,week:s.week+1},m))}</strong>`}</p>` : weeklyChart(m)}` : ""}<div class="movie-bottom"><span>${["theaters", "catalog"].includes(m.stage) ? `Box office <strong>${E.money(m.gross)}</strong>` : `Spent <strong>${E.money(m.spent)}</strong>`}</span><span class="${needs ? "peach" : "muted"}">${needs ? `${needs} →` : m.release ? `${E.date(m.release).label} →` : "View project →"}</span></div></div></article>`;
 }
 function scripts() {
   return `<div class="section-title"><h2>Available screenplays <span>${s.market.length}</span></h2><span class="muted small">New scripts every 13 weeks</span></div><div class="script-grid">${s.market.map((m) => `<article class="script-card"><div class="script-top">${poster(m)}<div>${pill(E.scopeName(m.scale))}<span class="eyebrow">${h(m.genre)} / ${h(m.subgenre)}</span><h3>${h(m.title)}</h3><p>${h(m.premise)}</p></div></div><div class="script-stats">${stat("QUALITY ESTIMATE", ratingRange(E.range(m.quality, s.departments.Development)))}${stat("ROLE DIFFICULTY", `${E.score(m.difficulty)}/100`)}${stat("CAST", `${m.roles.length} roles`)}</div><div class="card-bottom"><strong>${E.money(m.price)} <small>incl. sequel rights</small></strong>${button("Read & acquire →", "script", `data-script="${m.id}"`, "outline")}</div></article>`).join("")}</div><p class="muted small">Quality is an estimate. There is no prescribed production budget—your choices and your results will teach you the economics.</p>`;
@@ -553,17 +562,14 @@ function successSummary(m) {
   return `<section class="panel"><span class="eyebrow">BOX-OFFICE RESPONSE</span><h3>${result.label}</h3><p>${result.final ? "Final theatrical result" : "Opening assessment · final verdict after the run"} · Compared with films of this scope.</p><strong>${net >= 0 ? "Movie profit so far" : result.final ? "Movie loss so far" : "Costs still to recover"}: ${E.money(Math.abs(net))}</strong><p class="muted small">Ticket popularity and profit are separate. Talent revenue shares paid: ${E.money(m.participationPaid ?? 0)}. Studio overhead is separate; licensing can keep earning.</p></section>`;
 }
 function careerResults(m) {
-  return `<section><h3>Cast & director: career changes</h3>${
-    (m.careerChanges ?? [])
-      .map((c) => {
-        const p = E.person(s, c.id),
-          before = Math.round(c.before),
-          after = Math.round(c.after),
-          delta = after - before;
-        return `<div class="career-headline">${portrait(p, 40)}<div><strong>${h(p.name)}</strong><small class="block">${p.kind === "director" ? "Director" : h(m.roles[m.contracts.find((x) => x.id === p.id)?.role] ?? "Actor")}</small><p>Fame ${before} → ${after} <strong class="${delta > 0 ? "mint" : delta < 0 ? "negative" : "muted"}">${delta > 0 ? "↑ +" + delta : delta < 0 ? "↓ " + delta : "— Unchanged"}</strong></p><small>${delta > 0 ? "Their performance earned attention." : delta < 0 ? "Their performance hurt their reputation." : "This release did not change their fame."} Performance ${E.score(c.performance)}/100.</small></div></div>`;
-      })
-      .join("") || "<p>No career changes recorded for this earlier film.</p>"
-  }</section>`;
+  const changes=[...(m.careerChanges ?? [])].sort((a,b)=>{
+    const rank=c=>E.person(s,c.id).kind === "director" ? 99 : m.contracts.find(x=>x.id===c.id)?.role ?? 98;
+    return rank(a)-rank(b);
+  });
+  return `<section class="career-results"><h3>Cast & director: career changes</h3>${changes.map(c=>{
+    const p=E.person(s,c.id),before=Math.round(c.before),after=Math.round(c.after),delta=after-before;
+    return `<div class="career-headline compact-career">${portrait(p,40)}<div><strong>${h(p.name)}</strong><small class="block">${p.kind === "director" ? "Director" : h(m.roles[m.contracts.find(x=>x.id===p.id)?.role] ?? "Actor")} · Performance ${E.score(c.performance)}/100</small><span class="career-fame">Fame ${before} → ${after}</span></div><strong class="career-delta ${delta>0 ? "mint" : delta<0 ? "negative" : "muted"}">${delta>0 ? "↑ +"+delta : delta<0 ? "↓ "+delta : "—"}</strong></div>`;
+  }).join("") || '<p>No career changes recorded for this earlier film.</p>'}<p class="muted small">Changes reflect each person’s performance and the film’s opening exposure. Fame can rise, fall, or stay unchanged.</p></section>`;
 }
 function openingContext(m) {
   const f = m.expectations,
@@ -581,7 +587,7 @@ function openingContext(m) {
     lost = changes.filter(
       (c) => Math.round(c.after) < Math.round(c.before),
     ).length;
-  return `<div class="opening-context"><p><strong>${forecast}</strong><br>${E.boxOfficeStatus(m).label} compared with other ${E.scopeName(m.scale).toLowerCase()}s.</p><p>Studio receipts so far: <strong>${E.money(m.receipts)}</strong></p>${button(`Cast careers: ${gained} gained · ${lost} lost · ${changes.length - gained - lost} unchanged →`, "viewCareers", `data-id="${m.id}"`, "outline full")}</div>`;
+  return `<div class="opening-context"><p><strong>${forecast}</strong><br>${E.boxOfficeStatus(m).label} compared with other ${E.scopeName(m.scale).toLowerCase()}s.</p><p>Studio receipts: <strong>${E.money(m.receipts)}</strong><br>${m.receipts >= m.spent ? "Movie profit so far" : "Costs still to recover"}: <strong>${E.money(Math.abs(m.receipts-m.spent))}</strong></p>${button(`Cast careers: ${gained} gained · ${lost} lost · ${changes.length - gained - lost} unchanged →`, "viewCareers", `data-id="${m.id}"`, "text-button full")}</div>`;
 }
 function attachedTeam(m) {
   const team = [...m.contracts, ...(m.director ? [m.director] : [])];
@@ -604,7 +610,7 @@ function sequelReview(m) {
 }
 function movieDetail(m) {
   const cast = [...m.contracts].sort((a, b) => a.role - b.role);
-  return `<div class="detail-hero">${poster(m, true)}<div>${pill(labels[m.stage])}<h2>${h(m.title)}</h2><p>${h(m.genre)} / ${h(m.subgenre)} · ${E.scopeName(m.scale)}</p><p class="muted">${h(m.premise)}</p><p class="scope-description">${E.SCOPES[m.scale].description}</p>${m.release ? `<p class="small peach">Release locked: ${E.date(m.release).label}, week ${E.date(m.release).week}</p>` : ""}</div></div><div class="detail-stats">${stat("SPENT", E.money(m.spent))}${stat("STUDIO RECEIPTS", E.money(m.receipts))}${stat("SCRIPT ESTIMATE", ratingRange(E.range(m.scriptQuality, s.departments.Development)))}</div>
+  return `<div class="detail-hero">${poster(m, true)}<div>${pill(movieStageLabel(m))}<h2>${h(m.title)}</h2><p>${h(m.genre)} / ${h(m.subgenre)} · ${E.scopeName(m.scale)}</p><p class="muted">${h(m.premise)}</p><p class="scope-description">${E.SCOPES[m.scale].description}</p>${m.release ? `<p class="small peach">Release locked: ${E.date(m.release).label}, week ${E.date(m.release).week}</p>` : ""}</div></div><div class="detail-stats">${stat("SPENT", E.money(m.spent))}${stat("STUDIO RECEIPTS", E.money(m.receipts))}${stat("SCRIPT ESTIMATE", ratingRange(E.range(m.scriptQuality, s.departments.Development)))}</div>
  ${m.event ? productionDecision(m) : ""}
  ${m.stage === "development" ? `<div class="notice-banner">Your development department is writing. Ready in ${Math.max(0, m.ready - s.week)} weeks.</div>${attachedTeam(m)}` : ""}
  ${
@@ -720,10 +726,20 @@ function expectationsReview(m) {
     `${E.score(m.fans)}/100<small>Release audience</small>`,
   );
   add("Critics", "Not forecast", `${E.score(m.critics)}/100`);
-  return `<section class="expectations-review talent-review"><h3>Expectations vs. results</h3><table class="comparison-list"><thead><tr><th scope="col">Measure</th><th scope="col">Expected</th><th scope="col">Result</th></tr></thead><tbody>${rows.join("")}</tbody></table><p class="muted small">↑ Exceeded: above the range. ✓ Met: inside the range, including its endpoints. ↓ Below: under the range. Talent expectations are saved at hiring; box office is saved before release. The opening forecast includes your marketing plan; actual sales also depend on the film, cast, timing and distribution. Marketing spending is measured through opening. Test screenings are an early signal, not a guarantee. Scores measure performance, not fame.</p>${ratingLegend}</section>`;
+  return `<section class="expectations-review talent-review"><h3>Expectations vs. results</h3><table class="comparison-list"><thead><tr><th scope="col">Measure</th><th scope="col">Expected</th><th scope="col">Result</th></tr></thead><tbody>${rows.join("")}</tbody></table><details class="comparison-help"><summary>How to read these results</summary><p class="muted small">↑ Exceeded: above the range. ✓ Met: inside the range, including its endpoints. ↓ Below: under the range. Talent expectations are saved at hiring; box office is saved before release. The opening forecast includes your marketing plan; actual sales also depend on the film, cast, timing and distribution. Marketing spending is measured through opening. Test screenings are an early signal, not a guarantee. Scores measure performance, not fame.</p>${ratingLegend}</details></section>`;
+}
+function openingDialog(m) {
+  const section=view.openingTab ?? "results";
+  modal(h(m.title),`<div class="opening-report">
+    <section data-opening-panel="results" ${section !== "results" ? "hidden" : ""}><div class="opening-hero"><span class="eyebrow">OPENING BOX OFFICE</span><strong class="opening-number">${E.money(m.opening)}</strong></div>${openingContext(m)}${expectationsReview(m)}<p class="muted small">This movie is still earning. Studio overhead is separate.</p></section>
+    <section data-opening-panel="reviews" ${section !== "reviews" ? "hidden" : ""}>${criticsPanel(m)}</section>
+    <section data-opening-panel="team" ${section !== "team" ? "hidden" : ""}><div class="personal-recap">${careerResults(m)}</div>${button("Consider a sequel", "openingSequel", `data-id="${m.id}"`, "outline full")}</section>
+  </div>`,"OPENING NIGHT");
+  dialog.querySelector(".modal-body").insertAdjacentHTML("beforebegin",`<nav class="opening-nav" aria-label="Opening night sections">${[["results","Results"],["reviews","Reviews"],["team","Cast & Director"]].map(([key,label])=>button(label,"openingSection",`data-section="${key}" aria-pressed="${section===key}"`,section===key?"selected":"")).join("")}</nav>`);
+  dialog.insertAdjacentHTML("beforeend",`<div class="action-footer opening-footer">${button("Back to the lot →","dismissNotice","","primary full")}</div>`);
 }
 function criticsPanel(m) {
-  return `<section class="panel"><span class="eyebrow">THE REVIEWS ARE IN</span><h3>Three critics. Three perspectives.</h3><p>Overall critics score: <strong>${E.score(m.critics)}/100</strong></p>${E.criticReviews(m).map(r=>`<article class="critic-review"><div class="section-title"><h3>${h(r.name)}</h3>${pill(`${E.score(r.score)}/100`)}</div><small class="muted">${h(r.taste)}</small><p>“${h(r.quote)}”</p></article>`).join("")}</section>`;
+  return `<section class="panel"><span class="eyebrow">THE REVIEWS ARE IN</span><h3>Three critics. Three perspectives.</h3><p>Overall critics score: <strong>${E.score(m.critics)}/100</strong></p>${E.criticReviews(m).map(r=>`<article class="critic-review"><div class="section-title"><h3>${h(r.name)}</h3><strong class="critic-score ${r.score >= 75 ? "mint" : r.score >= 50 ? "gold" : r.score >= 25 ? "peach" : "negative"}">${E.score(r.score)}<small>/100</small></strong></div><small class="muted">${h(r.taste)}</small><p>“${h(r.quote)}”</p></article>`).join("")}</section>`;
 }
 function streamingSummary(m) {
   if (m.stage !== "catalog") return "";
@@ -877,12 +893,7 @@ function drawDialog() {
       "STUDIO INVESTMENT",
     );
   if (v.kind === "streaming") return streamingDialog(m);
-  if (v.kind === "opening")
-    return modal(
-      "The numbers are in.",
-      `<div class="opening-reveal"><span class="eyebrow gold">OPENING WEEKEND</span><h2>${h(m.title)}</h2><strong class="opening-number">${E.money(m.opening)}</strong><p>GROSS BOX OFFICE</p>${openingContext(m)}${criticsPanel(m)}${expectationsReview(m)}${releaseRecap(m)}${button("Consider a sequel", "openingSequel", `data-id="${m.id}"`, "outline full")}<details><summary>Forecast & detailed performance report</summary>${poster(m, true)}<div class="scores">${stat("CRITICS", E.score(m.critics))}${stat("FANS", E.score(m.fans))}${stat("YOUR FIRST RECEIPTS", E.money(Math.max(0, m.receipts - m.advance)))}</div><p class="muted">${m.fans > 75 ? "The audience is talking. Now let’s see how long the run lasts." : m.fans < 50 ? "A tough first audience. Keep a close eye on further marketing spending." : "The first weekend is only the beginning. Word of mouth takes over from here."}</p></details>${button("Back to the lot →", "dismissNotice", "", "primary full")}</div>`,
-      "THE BOX OFFICE",
-    );
+  if (v.kind === "opening") return openingDialog(m);
   if (v.kind === "awardsInvite") return awardsInvite(v.year);
   if (v.kind === "nominations") return nominationsDialog(v.year);
   if (v.kind === "ceremony") return ceremonyDialog(v.year);
@@ -1231,6 +1242,11 @@ function handle(e) {
   const a = b.dataset.action,
     id = b.dataset.id;
   switch (a) {
+    case "openingSection":
+      view.openingTab=b.dataset.section;
+      drawDialog();
+      dialog.querySelector(`[data-section="${view.openingTab}"]`)?.focus({preventScroll:true});
+      break;
     case "streaming":
       open("streaming",{id});
       break;

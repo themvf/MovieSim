@@ -182,7 +182,7 @@ const fs = require("node:fs");
   await click('[data-action="distribute"][data-deal="partner"]');
   await click('[data-action="close"]');
   for (let i = 0; i < 3; i++) await click('[data-action="next"]');
-  await page.waitForSelector(".opening-reveal");
+  await page.waitForSelector(".opening-report");
   const teamCount = await page.evaluate(
     () =>
       JSON.parse(localStorage.getItem("moviesim-save-v1")).movies[0].contracts
@@ -200,7 +200,6 @@ const fs = require("node:fs");
   if ((await page.locator(".career-headline").count()) !== teamCount)
     throw Error("Career summary must open whole team");
   await click('[data-action="back"]');
-  await page.locator(".opening-reveal > details > summary").click();
   await page.waitForSelector(".expectations-review");
   if ((await page.locator(".comparison-list").count()) !== 1)
     throw Error("Expected one unified comparison list");
@@ -258,7 +257,7 @@ const fs = require("node:fs");
       localStorage.setItem("moviesim-save-v1", JSON.stringify(s));
     });
     await page.reload();
-    await page.waitForSelector(".opening-reveal");
+    await page.waitForSelector(".opening-report");
     if (method === "close") await click('[data-action="close"]');
     else await page.keyboard.press("Escape");
     await page.waitForSelector('[data-action="next"]:visible');
