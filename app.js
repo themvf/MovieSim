@@ -1472,13 +1472,26 @@ function handle(e) {
         returnTo: view.returnTo,
       });
       break;
-    case "audition":
-      transact("audition", {
+    case "audition": {
+      const personId = b.dataset.person;
+      const bodyScroll = dialog.querySelector(".modal-body").scrollTop;
+      const dialogScroll = dialog.scrollTop;
+      if (transact("audition", {
         id,
-        person: b.dataset.person,
+        person: personId,
         role: Number(b.dataset.role),
-      });
+      }) && view?.kind === "casting") {
+        // Rendering replaces the dialog body. Restore this actor's place, then
+        // move keyboard focus to the negotiation action without jumping up.
+        const offer = [...dialog.querySelectorAll('[data-action="offer"]')]
+          .find(el => el.dataset.person === personId);
+        dialog.scrollTop = dialogScroll;
+        dialog.querySelector(".modal-body").scrollTop = bodyScroll;
+        offer?.focus({ preventScroll: true });
+        offer?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
       break;
+    }
     case "person":
       open("person", {
         person: b.dataset.person,
