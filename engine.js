@@ -107,6 +107,41 @@ export const estimateText = (estimate) => `${estimate.low}–${estimate.high}`;
 export const directorAbility = (p, genre) =>
   p.talent * 0.8 + (p.genres[genre] ?? 50) * 0.2;
 export const SCALES = ["Small", "Mid-budget", "Blockbuster"];
+export const RIVAL_STUDIOS = [
+  { id:"atlas", name:"Atlas Pictures", focus:"Action, sci-fi & big releases", genres:["Action","Sci-fi"] },
+  { id:"velvet", name:"Velvet Lantern Films", focus:"Drama, comedy & awards contenders", genres:["Drama","Comedy"] },
+  { id:"nightowl", name:"Night Owl Studios", focus:"Horror & thrillers", genres:["Horror","Thriller"] },
+];
+export function rivalStudio(r) {
+  const hash=[...(r.title ?? r.winner ?? "")].reduce((v,c)=>v+c.charCodeAt(0),0);
+  return RIVAL_STUDIOS.find(x=>x.id===r.studioId) ?? RIVAL_STUDIOS.find(x=>x.genres.includes(r.genre)) ?? RIVAL_STUDIOS[hash%3];
+}
+export const UPGRADE_MILESTONES = {
+  Development: ["Script desk", "Story development team", "Script development department", "Prestige development slate"],
+  Casting: ["Casting desk", "Talent scouts", "Specialist casting team", "Studio casting department"],
+  Production: ["Production desk", "Experienced line producers", "Senior production team", "Studio production department"],
+  Marketing: ["Marketing desk", "Campaign team", "Theatrical marketing department", "Studio release department"],
+  Research: ["Research desk", "Audience research team", "Box-office analysis team", "Studio research department"],
+  Soundstage: ["Your first soundstage", "Standing sets", "Soundstage complex", "A full studio backlot"],
+  "Editing suite": ["Your first editing suite", "In-house post-production", "Post-production department", "Studio post-production center"],
+  "Effects workshop": ["Your first effects workshop", "Effects production team", "Specialist effects department", "Studio effects center"],
+};
+export function upgradeUnlock(s,name) {
+  const dept=Object.hasOwn(s.departments,name),level=(dept?s.departments:s.facilities)[name];
+  if (level === undefined || !UPGRADE_MILESTONES[name]) throw Error("Unknown upgrade.");
+  const next=level+1,prestige=dept ? [0,0,0,15,35][next] : [0,0,15,35,60][next];
+  const benefits={
+    Development:"Sharper script estimates and stronger commissioned screenplays.",
+    Casting:"Narrower talent estimates help you compare auditions and director candidates.",
+    Production:"A more experienced production team improves execution on future films.",
+    Marketing:"Campaigns reach more people, and self-distributed films get wider access to audiences.",
+    Research: next===2 ? "Unlock detailed craft and performance analysis in release reports, with narrower forecasts." : next===3 ? "Unlock competition, seasonality and campaign-reach breakdowns in release reports." : "Your narrowest box-office forecasts and more representative test screenings.",
+    Soundstage:"Reuse owned sets and reduce future set-and-location costs.",
+    "Editing suite":"Bring more editing in-house and reduce future crew-and-post costs.",
+    "Effects workshop":"Build effects in-house and reduce future effects costs.",
+  };
+  return { level:next,title:UPGRADE_MILESTONES[name][next-1],prestige:prestige ?? 0,cost:upgradeCost(s,name),benefit:benefits[name],complete:level>=4 };
+}
 export const PRESTIGE_LEVELS = [
   {
     at: 0,
@@ -807,6 +842,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
         strength: roll(s, 70, 95),
       });
   }
+  for (const r of s.rivals) r.studioId=rivalStudio(r).id;
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
   return s;
 }
@@ -1536,11 +1572,14 @@ export function act(s, type, a = {}) {
         obj = isDepartment ? s.departments : s.facilities;
       if (!Object.hasOwn(obj, a.name)) throw Error("Unknown upgrade.");
       if (obj[a.name] >= 4) throw Error("Already fully upgraded.");
-      const cost = upgradeCost(s, a.name);
+      const unlock=upgradeUnlock(s,a.name);
+      if (s.prestige < unlock.prestige) throw Error(`Reach ${unlock.prestige} prestige to unlock ${unlock.title}.`);
+      const cost = unlock.cost;
+      if (s.cash < cost) throw Error(`You need ${money(cost)} available cash for ${unlock.title}.`);
       debit(s, cost);
       s.invested += cost;
       obj[a.name]++;
-      log(s, `${a.name} upgraded to level ${obj[a.name]}.`);
+      log(s, `${unlock.title} is now part of your studio.`);
       break;
     }
     case "awardsCampaign": {
@@ -1588,8 +1627,8 @@ export function act(s, type, a = {}) {
 }
 export function upgradeCost(s, name) {
   return Object.hasOwn(s.departments, name)
-    ? 300 * s.departments[name] ** 1.6
-    : 700 * (s.facilities[name] + 1) ** 1.5;
+    ? [0, 300, 900, 1800, 0][s.departments[name]]
+    : [700, 2000, 3500, 5500, 0][s.facilities[name]];
 }
 export function distribution(s, m) {
   const market =
@@ -1827,6 +1866,7 @@ export function nominations(s, year, epilogue = false) {
         : `A New Horizon ${year}-${i + 1}`;
       candidates.push({
         id: null,
+        studioId: rivalStudio(s.rivals.find(r=>r.title===title && date(r.week).year===year) ?? {title}).id,
         title,
         person: null,
         name:
@@ -1874,6 +1914,7 @@ export function ceremony(s, year) {
       nominees: nominees.map((n) => n.title),
       entries: nominees,
       winner: winner.title,
+      studioId: winner.studioId ?? null,
       winnerName: winner.name,
       person: winner.person,
       id: winner.id,

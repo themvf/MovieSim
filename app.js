@@ -1,4 +1,4 @@
-import * as E from "./engine.js?v=0.10.0";
+import * as E from "./engine.js?v=0.10.3";
 import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.10.0";
 const BUILD = "0.10.0";
 const KEY = "moviesim-save-v1",
@@ -336,23 +336,24 @@ function studio() {
     "Effects workshop":
       "Create effects in-house. Each upgrade saves about $90,000 on a $1,000,000 effects budget.",
   };
-  return `<section class="studio-panorama">${studioArt(s)}<div><span class="eyebrow">YOUR PERMANENT HOME</span><h2>${h(s.name)}</h2><p>Rent what you need from day one. Own it when the investment makes sense.</p></div></section><div class="section-title"><h2>Departments</h2><span class="muted small">Better people. Better information.</span></div><div class="upgrade-grid">${Object.entries(
+  return `<section class="studio-panorama">${studioArt(s)}<div><span class="eyebrow">YOUR PERMANENT HOME</span><h2>${h(s.name)}</h2><p>Build your studio with money and reputation. Early improvements need cash; later milestones require prestige too.</p></div></section><div class="section-title"><h2>Department unlocks</h2><span class="muted small">People, insight and better execution</span></div><div class="upgrade-grid">${Object.entries(
     s.departments,
   )
     .map(([name, level]) => upgradeCard(name, level, desc[name], true))
     .join(
       "",
-    )}</div><div class="section-title"><h2>Facilities</h2><span class="muted small">Practical upgrades, visible progress</span></div><div class="upgrade-grid">${Object.entries(
+    )}</div><div class="section-title"><h2>Build your studio lot</h2><span class="muted small">Ownership that lowers future production costs</span></div><div class="upgrade-grid">${Object.entries(
     s.facilities,
   )
     .map(([name, level]) => upgradeCard(name, level, desc[name], false))
     .join("")}</div>`;
 }
 function upgradeCard(name, level, desc, dept) {
-  return `<article class="panel upgrade-card"><div class="upgrade-icon">${dept ? "▤" : "▥"}</div><span class="eyebrow">${dept ? "DEPARTMENT" : "FACILITY"} / ${level ? "LEVEL " + level : "RENTED"}</span><h3>${name}</h3><p>${desc}</p><div class="level-blocks">${Array.from({ length: 4 }, (_, i) => `<i class="${i < level ? "filled" : ""}"></i>`).join("")}</div><div class="card-bottom"><small>+${E.money(dept ? 2 : 3)}/week overhead</small>${level < 4 ? button(`Upgrade · ${E.money(E.upgradeCost(s, name))}`, "upgrade", `data-name="${name}"`, "outline") : pill("Fully upgraded", "mint-pill")}</div></article>`;
+  const u=E.upgradeUnlock(s,name),owned=level ? E.UPGRADE_MILESTONES[name][level-1] : "Renting as needed";
+  return `<article class="panel upgrade-card"><span class="eyebrow">${dept ? "DEPARTMENT" : "FACILITY"} · ${h(name)}</span><small class="muted">Current: ${h(owned)}</small><h3>${u.complete ? "Fully established" : h(u.title)}</h3><p>${u.complete ? desc : h(u.benefit)}</p>${!dept ? `<small class="muted">${desc}</small>` : ""}${u.complete ? pill("All improvements owned","mint-pill") : `<div class="unlock-requirements"><span class="${s.prestige>=u.prestige ? "mint" : "muted"}">${s.prestige>=u.prestige ? "✓" : "○"} ${u.prestige ? `${u.prestige} prestige required · you have ${Math.round(s.prestige)}` : "Available to a new studio"}</span><span>${E.money(u.cost)} investment · +${E.money(dept?2:3)}/week</span></div>${button(s.prestige<u.prestige ? "View unlock requirements" : s.cash<u.cost ? "Review funding needed" : "Review investment →","upgrade",`data-name="${name}"`,"outline full")}`}<details class="unlock-roadmap"><summary>Your path in ${h(name)}</summary>${E.UPGRADE_MILESTONES[name].map((title,i)=>`<p>${i<level ? "✓ " : ""}${h(title)}<small class="block">${dept ? ["Starting team","Money only","15 prestige + investment","35 prestige + investment"][i] : ["Money only","15 prestige + investment","35 prestige + investment","60 prestige + investment"][i]}</small></p>`).join("")}</details></article>`;
 }
 function calendar() {
-  return `<div class="notice-banner">August & December: larger blockbuster audiences, heavier competition. Choose a release date after filming wraps. It locks when you confirm it.</div><div class="calendar-grid">${Array.from(
+  return `<div class="notice-banner">August & December: larger blockbuster audiences, heavier competition. Choose a release date after filming wraps. It locks when you confirm it.</div><section class="panel rival-roster"><h3>The other studios in town</h3>${E.RIVAL_STUDIOS.map(r=>`<p><strong>${h(r.name)}</strong><small class="block">${h(r.focus)}</small></p>`).join("")}</section><div class="calendar-grid">${Array.from(
     { length: 12 },
     (_, i) => {
       const start = Math.floor(s.week / 52) * 52 + Math.ceil((i * 52) / 12),
@@ -365,7 +366,7 @@ function calendar() {
             m.release < end &&
             !m.cancelled,
         );
-      return `<section class="calendar-month ${[7, 11].includes(i) ? "peak" : ""} ${E.date(s.week).month === i ? "current" : ""}"><div><h3>${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i]}</h3>${({1:"ROMANCE",5:"ACTION & SCI-FI",6:"ACTION & SCI-FI",7:"SUMMER / PEAK",9:"HORROR",10:"FAMILY",11:"HOLIDAYS / PEAK"})[i] ? pill(({1:"ROMANCE",5:"ACTION & SCI-FI",6:"ACTION & SCI-FI",7:"SUMMER / PEAK",9:"HORROR",10:"FAMILY",11:"HOLIDAYS / PEAK"})[i], "gold-pill") : ""}</div>${ours.map((m) => `<button data-action="movie" data-id="${m.id}" class="calendar-release ours"><small>YOUR STUDIO · WEEK ${E.date(m.release).week}</small><strong>${h(m.title)}</strong><span>${h(m.genre)}</span></button>`).join("")}${rivals.map((r) => `<div class="calendar-release"><small>WEEK ${E.date(r.week).week} · COMPETITOR</small><strong>${h(r.title)}</strong><span>${r.genre} · ${r.strength >= 75 ? "Major release" : "Independent release"}</span></div>`).join("")}</section>`;
+      return `<section class="calendar-month ${[7, 11].includes(i) ? "peak" : ""} ${E.date(s.week).month === i ? "current" : ""}"><div><h3>${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i]}</h3>${({1:"ROMANCE",5:"ACTION & SCI-FI",6:"ACTION & SCI-FI",7:"SUMMER / PEAK",9:"HORROR",10:"FAMILY",11:"HOLIDAYS / PEAK"})[i] ? pill(({1:"ROMANCE",5:"ACTION & SCI-FI",6:"ACTION & SCI-FI",7:"SUMMER / PEAK",9:"HORROR",10:"FAMILY",11:"HOLIDAYS / PEAK"})[i], "gold-pill") : ""}</div>${ours.map((m) => `<button data-action="movie" data-id="${m.id}" class="calendar-release ours"><small>YOUR STUDIO · WEEK ${E.date(m.release).week}</small><strong>${h(m.title)}</strong><span>${h(m.genre)}</span></button>`).join("")}${rivals.map((r) => `<div class="calendar-release"><small>WEEK ${E.date(r.week).week} · ${h(E.rivalStudio(r).name)}</small><strong>${h(r.title)}</strong><span>${r.genre} · ${r.strength >= 75 ? "Major release" : "Independent release"}</span></div>`).join("")}</section>`;
     },
   ).join("")}</div>`;
 }
@@ -390,7 +391,7 @@ function nomineeRows(entries) {
   return entries
     .map(
       (n) =>
-        `<div class="nominee-row ${n.id ? "studio-nominee" : ""}"><div>${n.name ? `<strong>${h(n.name)}</strong>` : ""}<span>${h(n.title)}</span></div>${n.id ? pill("Your studio", "gold-pill") : pill("Competitor")}</div>`,
+        `<div class="nominee-row ${n.id ? "studio-nominee" : ""}"><div>${n.name ? `<strong>${h(n.name)}</strong>` : ""}<span>${h(n.title)}</span></div>${n.id ? pill("Your studio", "gold-pill") : pill(E.rivalStudio(n).name)}</div>`,
     )
     .join("");
 }
@@ -428,7 +429,7 @@ function ceremonyDialog(year) {
     revealed = index < a.revealed;
   modal(
     `${r.category}`,
-    `<div class="ceremony-mark">♜</div><div class="ceremony-progress">CATEGORY ${index + 1} OF ${a.results.length}</div>${revealed ? `<section class="winner-card"><span class="eyebrow gold">AND THE WINNER IS</span>${r.winnerName ? `<h2>${h(r.winnerName)}</h2>` : ""}<h3>${h(r.winner)}</h3><p>${r.ours ? "Your studio wins · +8 prestige" : "Awarded to a competing studio"}</p></section>${button(index === a.results.length - 1 ? "See the ceremony recap →" : "Next category →", "nextAward", `data-year="${year}" data-category="${index}"`, "primary full")}` : `<h3>The nominees</h3>${nomineeRows(r.entries || r.nominees.map((title) => ({ title })))}${button("Open the envelope · reveal winner", "revealAward", `data-year="${year}" data-category="${index}"`, "primary full")}`}`,
+    `<div class="ceremony-mark">♜</div><div class="ceremony-progress">CATEGORY ${index + 1} OF ${a.results.length}</div>${revealed ? `<section class="winner-card"><span class="eyebrow gold">AND THE WINNER IS</span>${r.winnerName ? `<h2>${h(r.winnerName)}</h2>` : ""}<h3>${h(r.winner)}</h3><p>${r.ours ? "Your studio wins · +8 prestige" : h(E.rivalStudio(r).name)}</p></section>${button(index === a.results.length - 1 ? "See the ceremony recap →" : "Next category →", "nextAward", `data-year="${year}" data-category="${index}"`, "primary full")}` : `<h3>The nominees</h3>${nomineeRows(r.entries || r.nominees.map((title) => ({ title })))}${button("Open the envelope · reveal winner", "revealAward", `data-year="${year}" data-category="${index}"`, "primary full")}`}`,
     "MARCH / THE CEREMONY",
   );
 }
@@ -441,7 +442,7 @@ function awardsResults(year) {
       .slice(0, a.revealed ?? a.results.length)
       .map(
         (r) =>
-          `<div class="ceremony-category ${r.ours ? "winner" : ""}"><span class="eyebrow gold">${r.category}</span>${r.winnerName ? `<h3>${h(r.winnerName)}</h3>` : ""}<strong>${h(r.winner)}</strong><p>${r.ours ? "Your studio · +8 prestige" : "Competing studio"}</p></div>`,
+          `<div class="ceremony-category ${r.ours ? "winner" : ""}"><span class="eyebrow gold">${r.category}</span>${r.winnerName ? `<h3>${h(r.winnerName)}</h3>` : ""}<strong>${h(r.winner)}</strong><p>${r.ours ? "Your studio · +8 prestige" : h(E.rivalStudio(r).name)}</p></div>`,
       )
       .join("")}${button("Continue →", "afterAwards", "", "primary full")}`,
     "THE AWARDS ARCHIVE",
@@ -452,16 +453,16 @@ function productionDecision(m) {
   const choices =
     kind === "creative"
       ? [
-          ["pay", "Crowd-pleasing edit", "Fans +6; critics −3. No added cost."],
+          ["pay", "Crowd-pleasing edit", "Favor audience appeal: a stronger opening and better repeat business, with less critical appeal. No added cost."],
           [
             "split",
             "Challenging director’s edit",
-            "Critics +6; fans −3. No added cost.",
+            "Favor critical appeal: stronger prestige and awards prospects, with softer ticket demand. No added cost.",
           ],
           [
             "cut",
             "Keep the balanced edit",
-            "No score adjustment or added cost.",
+            "Keep the current balance of audience and critical appeal. No added cost.",
           ],
         ]
       : kind === "performance"
@@ -491,7 +492,7 @@ function productionDecision(m) {
             ["split", "Split the difference", "Half the cost, some compromise"],
             ["cut", "Cut the work", "No extra cost. Quality takes a hit."],
           ];
-  return `<section class="decision-box"><span class="eyebrow peach">PRODUCTION NEEDS YOU</span><h3>${h(m.event.title)}</h3><p>${h(m.event.text)}</p><div class="choice-stack">${choices.map(([choice, label, detail]) => button(`${h(label)}<small>${h(detail)}</small>`, "event", `data-id="${m.id}" data-choice="${choice}"`, "choice")).join("")}</div></section>`;
+  return `<section class="decision-box"><span class="eyebrow peach">PRODUCTION NEEDS YOU</span><h3>${h(m.event.title)}</h3><p>${h(m.event.text)}</p>${kind === "creative" ? '<p class="muted small">Fans influence opening ticket sales, repeat business, sequel interest and streaming offers. Critics build prestige and help film and directing award prospects; acting awards also depend on the performance. Neither edit guarantees a hit or a trophy.</p>' : ""}<div class="choice-stack">${choices.map(([choice, label, detail]) => button(`${h(label)}<small>${h(detail)}</small>`, "event", `data-id="${m.id}" data-choice="${choice}"`, "choice")).join("")}</div></section>`;
 }
 function projectAction(m) {
   if (m.event)
@@ -886,12 +887,10 @@ function drawDialog() {
       `<h3>${h(m.title)}</h3><p>You have spent ${E.money(m.spent)}. That money is not returned.</p><p>Contract closeout: <strong>${E.money(E.remaining(m) * 0.15)}</strong><br>Future filming spending avoided: <strong>${E.money(E.remaining(m) * 0.85)}</strong></p><p class="muted">Talent fees already paid are nonrefundable. Outstanding bank debt remains.</p>${button("Shelve movie", "confirmCancel", `data-id="${m.id}"`, "danger full")}`,
       "CANCELLATION REVIEW",
     );
-  if (v.kind === "upgrade")
-    return modal(
-      `Invest in ${h(v.name)}`,
-      `<p>Upfront investment: <strong>${E.money(E.upgradeCost(s, v.name))}</strong></p><p>Weekly operating expenses increase by ${E.money(Object.hasOwn(s.departments, v.name) ? 2 : 3)}. This investment lasts for the rest of your studio’s run.</p>${button("Approve upgrade", "confirmUpgrade", `data-name="${h(v.name)}"`, "primary full")}`,
-      "STUDIO INVESTMENT",
-    );
+  if (v.kind === "upgrade") {
+    const u=E.upgradeUnlock(s,v.name),ready=s.prestige>=u.prestige && s.cash>=u.cost;
+    return modal(h(u.complete ? v.name : u.title),`<p>${h(u.benefit)}</p><div class="finance-lines"><div><span>Prestige required</span><strong>${u.prestige} · You have ${Math.round(s.prestige)}</strong></div><div><span>Upfront investment</span><strong>${E.money(u.cost)}</strong></div><div><span>Your available cash</span><strong>${E.money(s.cash)}</strong></div><div><span>Added weekly overhead</span><strong>${E.money(Object.hasOwn(s.departments,v.name)?2:3)}</strong></div></div><p>${s.prestige<u.prestige ? "Build prestige through strong critical reception and awards, then fund this improvement." : s.cash<u.cost ? "The prestige requirement is met. Build cash or arrange financing before investing." : "Both requirements are met. This improvement is permanent."}</p>${!u.complete ? button("Approve investment","confirmUpgrade",`data-name="${h(v.name)}" ${ready ? "" : "disabled"}`,"primary full") : pill("Already owned")}`,"STUDIO UNLOCK");
+  }
   if (v.kind === "streaming") return streamingDialog(m);
   if (v.kind === "opening") return openingDialog(m);
   if (v.kind === "awardsInvite") return awardsInvite(v.year);
@@ -909,7 +908,7 @@ function drawDialog() {
       at = level.at;
     return modal(
       "Your studio just moved up",
-      `<div class="prestige-reveal"><span class="laurel">✦</span><span class="eyebrow gold">PRESTIGE LEVEL ${v.level + 1}</span><h2>${h(level.name)}</h2><p>${level.description}</p><div class="benefit-list"><div><strong>Talent negotiations</strong><span>Your reputation helps you negotiate lower talent fees.</span></div><div><strong>Distribution offers</strong><span>Distributors offer more cash upfront and a larger share of ticket payments.</span></div><div><strong>More borrowing room</strong><span>Bank credit limit at least ${E.money(8000 + at * 60)}.</span></div></div><p class="muted small">Benefits improve gradually with prestige. Talent and facilities remain available from the start.</p>${button("Back to the lot →", "dismissNotice", "", "primary full")}</div>`,
+      `<div class="prestige-reveal"><span class="laurel">✦</span><span class="eyebrow gold">PRESTIGE LEVEL ${v.level + 1}</span><h2>${h(level.name)}</h2><p>${level.description}</p><div class="benefit-list"><div><strong>Talent negotiations</strong><span>Your reputation helps you negotiate lower talent fees.</span></div><div><strong>Release reach</strong><span>Your reputation helps self-distributed films reach more audiences.</span></div><div><strong>More borrowing room</strong><span>Bank credit limit at least ${E.money(8000 + at * 60)}.</span></div></div><p class="muted small">${at===15 ? "New prestige requirements cleared: specialist departments and expanded facilities." : at===35 ? "New prestige requirements cleared: top-tier departments and advanced facilities." : at===60 ? "New prestige requirements cleared: a full backlot and studio-scale post-production and effects facilities." : "Your reputation keeps improving negotiation and borrowing power."} Each investment still needs cash and the preceding improvements.</p>${button("Explore studio unlocks →", "viewUnlocks", "", "primary full")}${button("Back to the lot", "dismissNotice", "", "outline full")}</div>`,
       "AN INDUSTRY MILESTONE",
     );
   }
@@ -1178,7 +1177,7 @@ function releasePreview(m) {
     rivals = s.rivals.filter((r) => Math.abs(r.week - week) <= 2),
     peak = [7, 11].includes(E.date(week).month);
   $("release-preview").innerHTML =
-    `<div class="notice-banner"><strong>${peak ? "Larger blockbuster audience" : "Normal audience demand"} · ${rivals.length > 2 ? "Crowded" : rivals.length ? "Some competition" : "Quiet window"}</strong></div>${rivals.map((r) => `<div class="award-row"><span>${h(r.title)}<small class="block">${r.genre} · Week ${E.date(r.week).week}</small></span>${pill(r.genre === m.genre ? "Similar audience" : "Different audience", r.genre === m.genre ? "gold-pill" : "")}</div>`).join("") || "<p>No competing releases announced nearby.</p>"}`;
+    `<div class="notice-banner"><strong>${peak ? "Larger blockbuster audience" : "Normal audience demand"} · ${rivals.length > 2 ? "Crowded" : rivals.length ? "Some competition" : "Quiet window"}</strong></div>${rivals.map((r) => `<div class="award-row"><span>${h(r.title)}<small class="block">${h(E.rivalStudio(r).name)} · ${r.genre} · Week ${E.date(r.week).week}</small></span>${pill(r.genre === m.genre ? "Similar audience" : "Different audience", r.genre === m.genre ? "gold-pill" : "")}</div>`).join("") || "<p>No competing releases announced nearby.</p>"}`;
 }
 function bank() {
   const emergency = s.cash < 0;
@@ -1242,6 +1241,8 @@ function handle(e) {
   const a = b.dataset.action,
     id = b.dataset.id;
   switch (a) {
+    case "viewUnlocks":
+      acknowledgeCurrentNotice();close();tab="studio";render();break;
     case "openingSection":
       view.openingTab=b.dataset.section;
       drawDialog();

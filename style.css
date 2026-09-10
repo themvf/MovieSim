@@ -3316,3 +3316,8 @@ summary {
 .opening-report .opening-context { margin-bottom: 16px; }
 .opening-report .opening-context p { margin: 8px 0; line-height: 1.5; }
 .opening-report .opening-context .text-button { padding: 6px 0; font-size: 12px; text-align: left; }
+
+.unlock-requirements { display: grid; gap: 8px; margin: 16px 0; font-size: 13px; }
+.unlock-roadmap { margin-top: 16px; }
+.unlock-roadmap p { margin: 10px 0; font-size: 13px; }
+.rival-roster small { color: #acb9bc; margin-top: 4px; }

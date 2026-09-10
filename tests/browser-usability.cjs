@@ -186,7 +186,7 @@ const fs = require("node:fs");
   });
   await page.waitForSelector(".prestige-reveal");
   assert.match(await page.locator("dialog").innerText(), /On the radar/);
-  assert.match(await page.locator("dialog").innerText(), /Distribution offers/);
+  assert.match(await page.locator("dialog").innerText(), /Release reach/);
   await page.screenshot({ path: "test-results/v02-prestige.png" });
   await click('[data-action="dismissNotice"]');
   await page.reload();
