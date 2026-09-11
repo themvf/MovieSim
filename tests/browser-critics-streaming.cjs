@@ -20,7 +20,9 @@ const assert=require('node:assert/strict');
   localStorage.setItem('moviesim-save-v1',JSON.stringify(s));
  });
  await page.reload();assert.equal(await page.locator('.critic-review').count(),0);
- await click('[data-action="next"]');assert.equal(await page.locator('.critic-review').count(),3);
+ await click('[data-action="next"]');
+ if(await page.locator('[data-action="revealOpening"]').isVisible()){await click('[data-action="revealOpening"]');await click('[data-action="skipOpening"]');await click('[data-action="openingReport"]');}
+ assert.equal(await page.locator('.critic-review').count(),3);
  await page.setViewportSize({width:390,height:650});
  assert.equal(await page.locator('[data-opening-panel="results"]').isVisible(),true);
  assert.equal(await page.locator('[data-opening-panel="reviews"]').isVisible(),false);

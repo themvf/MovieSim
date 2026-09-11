@@ -183,6 +183,7 @@ const fs = require("node:fs");
   await click('[data-action="distribute"][data-deal="partner"]');
   await click('[data-action="close"]');
   for (let i = 0; i < 3; i++) await click('[data-action="next"]');
+  if(await page.locator('[data-action="revealOpening"]').isVisible()){await click('[data-action="revealOpening"]');await click('[data-action="skipOpening"]');await click('[data-action="openingReport"]');}
   await page.waitForSelector(".opening-report");
   const teamCount = await page.evaluate(
     () =>
@@ -241,7 +242,8 @@ const fs = require("node:fs");
       localStorage.setItem("moviesim-save-v1", JSON.stringify(s));
     });
     await page.reload();
-    await page.waitForSelector(".opening-report");
+    if(await page.locator('[data-action="revealOpening"]').isVisible()){await click('[data-action="revealOpening"]');await click('[data-action="skipOpening"]');await click('[data-action="openingReport"]');}
+  await page.waitForSelector(".opening-report");
     if (method === "close") await click('[data-action="close"]');
     else await page.keyboard.press("Escape");
     await page.waitForSelector('[data-action="next"]:visible');

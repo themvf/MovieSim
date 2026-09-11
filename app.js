@@ -1,5 +1,5 @@
-import * as E from "./engine.js?v=0.16.0";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.16.0";
+import * as E from "./engine.js?v=0.17.0";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.17.0";
 const BUILD = "0.10.0";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
@@ -723,10 +723,31 @@ function releaseSignals(m) {
  if((m.releaseFactors?.rival??0)>.4)signals.push(["🎟","Crowded release","More competition"]);
  return `<div class="outcome-tiles">${signals.slice(0,3).map(([icon,title,detail])=>`<div><span aria-hidden="true">${icon}</span><strong>${title}</strong><small>${detail}</small></div>`).join("")}</div>`;
 }
+function premiereDialog(m) {
+ const team=[...m.contracts,m.director].filter(Boolean).map(c=>E.person(s,c.id));
+ modal(h(m.title),`<section class="premiere"><div class="premiere-marquee">★ OPENING WEEK ★</div><div class="premiere-poster">${poster(m,true)}</div><div class="premiere-cast">${team.map(p=>`<span>${portrait(p,36)}<small>${h(p.name)}</small></span>`).join('')}</div><p class="premiere-invitation">The numbers are in.</p><div id="premiere-results" hidden><span class="eyebrow">OPENING WEEK TICKET SALES</span><strong id="premiere-count" class="opening-number">$0</strong>${m.expectations?`<p class="small">Your forecast: ${E.accountMoney(m.expectations.low)}–${E.accountMoney(m.expectations.high)}</p><div class="premiere-track"><span class="premiere-band"></span><i id="premiere-marker"></i></div>`:'<p>No saved forecast for this release.</p>'}<p id="premiere-verdict" role="status" aria-live="polite"></p></div></section>`,'THE PREMIERE');
+ dialog.insertAdjacentHTML('beforeend',`<footer class="deal-footer"><button type="button" class="primary full" data-action="revealOpening">Reveal opening results →</button><button type="button" class="text-button" data-action="skipOpening" hidden>Skip animation</button><button type="button" class="primary full" data-action="openingReport" hidden>View opening report →</button></footer>`);
+}
+function revealOpening(m,skip=false) {
+ const root=dialog.querySelector('.premiere');if(!root)return;
+ const results=$('premiere-results'),counter=$('premiere-count'),verdict=$('premiere-verdict');
+ const reveal=dialog.querySelector('[data-action="revealOpening"]'),skipButton=dialog.querySelector('[data-action="skipOpening"]'),report=dialog.querySelector('[data-action="openingReport"]');
+ if(root.dataset.running&&!skip)return;
+ root.dataset.running='true';reveal.hidden=true;results.hidden=false;skipButton.hidden=false;
+ root.querySelector('.premiere-invitation').hidden=true;results.scrollIntoView({block:'nearest'});
+ const maximum=Math.max(1,m.opening*1.12,(m.expectations?.high??0)*1.2);
+ const band=root.querySelector('.premiere-band');if(band){band.style.left=`${m.expectations.low/maximum*100}%`;band.style.width=`${(m.expectations.high-m.expectations.low)/maximum*100}%`;}
+ const paint=value=>{counter.textContent=E.accountMoney(value);const marker=$('premiere-marker');if(marker)marker.style.left=`${value/maximum*100}%`;};
+ const finish=()=>{if(!root.isConnected)return;root.dataset.done='true';paint(m.opening);const tone=!m.expectations?'met':m.opening<m.expectations.low?'below':m.opening>m.expectations.high?'exceeded':'met';verdict.className=`expectation-status status-${tone}`;verdict.textContent=!m.expectations?'Opening results are in':tone==='below'?'↓ Missed forecast':tone==='exceeded'?'↑ Beat forecast':'✓ Met forecast';skipButton.hidden=true;report.hidden=false;m.openingRevealed=true;save();report.focus({preventScroll:true});};
+ if(skip||matchMedia('(prefers-reduced-motion: reduce)').matches){finish();return;}
+ const start=performance.now();
+ const frame=now=>{if(!root.isConnected||root.dataset.done)return;const progress=Math.min(1,(now-start)/3000);paint(m.opening*(1-Math.pow(1-progress,2)));if(progress<1)requestAnimationFrame(frame);else finish();};requestAnimationFrame(frame);
+}
 function openingDialog(m) {
+  if(!m.openingRevealed || view.replayPremiere)return premiereDialog(m);
   const section=view.openingTab ?? "results";
   modal(h(m.title),`<div class="opening-report">
-    <section data-opening-panel="results" ${section !== "results" ? "hidden" : ""}><div class="opening-hero"><span class="eyebrow">OPENING BOX OFFICE</span><strong class="opening-number">${E.accountMoney(m.opening)}</strong></div>${openingContext(m)}<p class="release-spending">Marketing spent: <strong>${E.accountMoney(m.marketingSpendAtRelease ?? m.campaignSpend)}</strong></p>${releaseSignals(m)}${expectationsReview(m)}<p class="muted small">This movie is still earning. Studio overhead is separate.</p></section>
+    <section data-opening-panel="results" ${section !== "results" ? "hidden" : ""}><div class="opening-hero"><span class="eyebrow">OPENING WEEK BOX OFFICE</span><strong class="opening-number">${E.accountMoney(m.opening)}</strong></div>${button("↻ Replay premiere","replayOpening","","text-button")}${openingContext(m)}<p class="release-spending">Marketing spent: <strong>${E.accountMoney(m.marketingSpendAtRelease ?? m.campaignSpend)}</strong></p>${releaseSignals(m)}${expectationsReview(m)}<p class="muted small">This movie is still earning. Studio overhead is separate.</p></section>
     <section data-opening-panel="reviews" ${section !== "reviews" ? "hidden" : ""}>${criticsPanel(m)}</section>
     <section data-opening-panel="team" ${section !== "team" ? "hidden" : ""}><div class="personal-recap">${careerResults(m)}</div>${button("Consider a sequel", "openingSequel", `data-id="${m.id}"`, "outline full")}</section>
   </div>`,"OPENING NIGHT");
@@ -1250,6 +1271,10 @@ function handle(e) {
   const a = b.dataset.action,
     id = b.dataset.id;
   switch (a) {
+    case "revealOpening":revealOpening(E.movie(s,view.id));break;
+    case "skipOpening":revealOpening(E.movie(s,view.id),true);break;
+    case "openingReport":view.replayPremiere=false;drawDialog();focusDialogHeading();break;
+    case "replayOpening":view.replayPremiere=true;drawDialog();focusDialogHeading();break;
     case "viewUnlocks":
       acknowledgeCurrentNotice();close();tab="studio";render();break;
     case "openingSection":
