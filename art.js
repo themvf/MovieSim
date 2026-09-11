@@ -1,4 +1,4 @@
-import { scopeName } from "./engine.js?v=0.27.0";
+import { scopeName } from "./engine.js?v=0.28.0";
 // Original, code-drawn pixel artwork. No external asset downloads or fonts.
 const palettes = [
   ["#27414c", "#7bbaaf", "#efbf88"],
@@ -20,6 +20,7 @@ export function portrait(p, size = 56) {
   return `<svg class="portrait" width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="Pixel portrait" shape-rendering="crispEdges"><rect width="32" height="32" fill="${palettes[n % 6][0]}"/><path d="M4 32v-7h5v-3h14v3h5v7" fill="${shirt}"/><path d="M13 20h6v6h-6" fill="${skin}"/><path d="M8 7h16v14H8z" fill="${hair}"/>${long ? `<path d="M6 10h4v16H6m16-16h4v16h-4" fill="${hair}"/>` : ""}<path d="M10 9h12v12h-3v2h-6v-2h-3" fill="${skin}"/><path d="M8 7h16v4H8m2-6h12v3H10m-2 3h4v6H8" fill="${hair}"/><path d="M12 14h2v2h-2m6-2h2v2h-2" fill="#28262a"/><path d="M14 19h4v1h-4" fill="#92554b"/><path d="M12 25l4 3 4-3v7h-8" fill="#eee5d2"/></svg>`;
 }
 export function poster(m, large = false) {
+  if(m.narrativePack==='signal-ash')return `<div class="poster signal-poster ${large?'large':''}"><svg viewBox="0 0 200 280" role="img" aria-label="${escapeHtml(m.title)} illustrated poster"><rect width="200" height="280" fill="#10272e"/><circle cx="100" cy="96" r="64" fill="#26464c"/><circle cx="100" cy="96" r="46" fill="none" stroke="#a7cdbb" stroke-width="1"/><path d="M100 16v156M34 96h132" stroke="#d9c18b" stroke-width="1"/><path d="M0 210v-65h19v-29h25v75h14v-48h20v-40h27v108h15v-67h23v-30h24v45h17v-30h16v81" fill="#091a22" stroke="#71918c"/><path d="M87 120l26-42-10 34h15l-32 47 12-39z" fill="#e9ce91"/><text x="100" y="241" text-anchor="middle" fill="#f0dfb5" font-size="17" font-family="Georgia,serif">${escapeHtml(m.title.length>22?m.title.slice(0,21)+'…':m.title)}</text><text x="100" y="259" text-anchor="middle" fill="#9cbdb6" font-size="6" letter-spacing="2">ONE CITY. FOUR LIVES.</text></svg></div>`;
   const photos=["beyond-the-pines","red-horizon","between-worlds","lights-off"];
   if (photos.includes(m.photoPoster)) return `<div class="poster photo-poster ${large ? "large" : ""}"><img src="./assets/posters/${m.photoPoster}.jpg" alt="${escapeHtml(m.title)} movie poster" loading="lazy"></div>`;
 

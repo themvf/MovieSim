@@ -1,3 +1,4 @@
+import { signalSpec, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.28.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -974,6 +975,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
   addPosterFilms(s);
   ensureOpportunities(s);
   addHeadshotActors(s);
+  ensureNarrativeSpec(s);
   for (const r of s.rivals) r.studioId=rivalStudio(r).id;
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
   return s;
@@ -1326,7 +1328,7 @@ export function act(s, type, a = {}) {
   let m = a.id ? required(s, a.id) : null;
   switch (type) {
     case "relationship": return resolveRelationship(s,a);
-    case "storyRewrite": return rewriteStory(s,m,a);
+    case "storyRewrite": return m.narrativePack ? rewriteNarrative(s,m,a) : rewriteStory(s,m,a);
     case "buy": {
       const sc = s.market.find((x) => x.id === a.script);
       if (!sc) throw Error("This script has already sold.");
@@ -1483,6 +1485,7 @@ export function act(s, type, a = {}) {
     }
     case "greenlight": {
       stage(m, ["packaging"]);
+      if(m.narrativePack && !evaluateNarrative(m.narrative).valid)throw Error("Resolve the story connections before greenlight.");
       if (m.contracts.length !== m.roles.length || !m.director)
         throw Error("Cast every role and hire a director first.");
       const duration = amt(a.duration, 4, 20, false);
@@ -1884,7 +1887,7 @@ function finish(s, m) {
       productionFit(m) +
       scheduleInfo(m.duration, m).quality +
       (s.departments.Production - 1) * 2 -
-      m.penalty,
+      m.penalty - (m.narrativePack ? executionPenalty(m.narrative,m.budget) : 0),
     10,
     98,
   );
@@ -2016,7 +2019,7 @@ export function canCampaign(s, m) {
   );
 }
 export function candidate(s, m, category) {
-  const role = category === "Supporting Acting" ? m.roles.length - 1 : 0;
+  const role = category === "Supporting Acting" ? (m.narrativePack ? m.contracts.filter(c=>c.role>0).sort((a,b)=>(m.performances?.[m.contracts.indexOf(b)]??0)-(m.performances?.[m.contracts.indexOf(a)]??0))[0]?.role : m.roles.length - 1) : 0;
   const idx = m.contracts.findIndex((c) => c.role === role);
   const personId =
     category === "Director"
@@ -2333,6 +2336,7 @@ function nextWeek(s) {
   if (s.week % 13 === 0) {
     s.market = [];
     for (let i = 0; i < 8; i++) s.market.push(script(s));
+    ensureNarrativeSpec(s);
     log(s, "A new selection of scripts is available.");
     // Competing studios stay in the background, but can book talent between your films.
     for (const p of s.people) {
@@ -2529,4 +2533,20 @@ export function rewriteStory(s,m,a){
  m.criticBias=(m.criticBias??0)-previous.critics+next.critics;
  m.difficulty=m.difficulty-previous.complexity+next.complexity;
  log(s,`${m.title}: ${a.restore?'restored the purchased draft':'approved a three-act rewrite'} (${money(fee)}).`);
+}
+
+export function ensureNarrativeSpec(s){
+ if(!s.market.some(m=>m.narrativePack==='signal-ash')&&!s.movies.some(m=>m.narrativePack==='signal-ash'))s.market.push(signalSpec());
+}
+function rewriteNarrative(s,m,a){
+ stage(m,['packaging']);
+ const draft=structuredClone(a.restore?m.originalNarrative:a.draft);
+ const result=evaluateNarrative(draft);
+ if(!result.valid)throw Error(result.errors.map(e=>e.reason).join('. '));
+ if(JSON.stringify(draft)===JSON.stringify(m.narrative))throw Error('This draft is already selected.');
+ const fee=a.restore?0:50;
+ if(s.cash<fee)throw Error('A rewrite requires $50,000 available cash.');
+ debit(s,fee,m);
+ m.narrative=draft;m.narrativeRevisions=(m.narrativeRevisions??0)+1;
+ log(s,`${m.title}: ${a.restore?'purchased story restored':'connected story rewrite approved'}.`);
 }
