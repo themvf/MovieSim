@@ -2404,3 +2404,17 @@ export function summary(s) {
     ),
   };
 }
+
+// Authored fictional executives; supplied portraits do not identify real people.
+export const COMPANY_HEADS = [
+ {name:'Vivienne Shaw',company:'Harbor Distribution',role:'Distribution head',priority:'Recognizable stars and dependable release dates',photo:1},
+ {name:'Grant Hollis',company:'Meridian Pictures',role:'Distribution head',priority:'Wide openings and commercial franchises',photo:2},
+ {name:'Rafael Costa',company:'Velvet Lantern Films',role:'Studio head',priority:'Distinctive scripts and awards contenders',photo:3},
+ {name:'Miles Mercer',company:'Night Owl Studios',role:'Studio head',priority:'Original horror and disciplined budgets',photo:4},
+ {name:'Adrian Price',company:'BingeBox',role:'Streaming head',priority:'Exclusive films with broad audience appeal',photo:5},
+ {name:'Walter Briggs',company:'Atlas Pictures',role:'Studio head',priority:'Large-scale spectacle and reliable delivery',photo:6},
+ {name:'Frank Ellison',company:'PictureHouse',role:'Streaming head',priority:'Lasting catalog value and repeat viewers',photo:7},
+ {name:'Felix Ward',company:'Neon Avenue',role:'Studio head',priority:'Emerging talent and contemporary stories',photo:8},
+ {name:'Oscar Linden',company:'Wildwood Films',role:'Studio head',priority:'Filmmaker-led originals and patient development',photo:9},
+ {name:'Gabriel Stone',company:'Stonebridge Studios',role:'Studio head',priority:'Strong ensembles and careful production planning',photo:10},
+];

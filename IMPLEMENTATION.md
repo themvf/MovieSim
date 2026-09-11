@@ -285,3 +285,6 @@ Added both supplied batches (five plus ten) unchanged with authored fictional pr
 
 ## 0.24.0 — Three additional actor portraits
 Added supplied photos 1–3 unchanged with authored fictional profiles, bringing the total to 52 photo actors. Photo 4 exactly matches existing asset 39 and is retained without duplication. Stable IDs preserve existing saves.
+
+## 0.25.0 — Company heads
+Added ten fictional executives with supplied portraits and authored priorities. Studio directory exposes all ten; existing rival roster and distribution/streaming offer reviews show relevant heads. Three additional studios are directory profiles only. Requests, bargaining changes and relationship penalties are not implemented in this portrait update. No save schema or economic changes.

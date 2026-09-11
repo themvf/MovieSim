@@ -1,5 +1,5 @@
-import * as E from "./engine.js?v=0.24.0";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.24.0";
+import * as E from "./engine.js?v=0.25.0";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.25.0";
 const BUILD = "0.10.0";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
@@ -347,7 +347,7 @@ function studio() {
     "Effects workshop":
       "Create effects in-house. Each upgrade saves about $90,000 on a $1,000,000 effects budget.",
   };
-  return `<section class="studio-panorama">${studioArt(s)}<div><span class="eyebrow">YOUR PERMANENT HOME</span><h2>${h(s.name)}</h2><p>Build your studio with money and reputation. Early improvements need cash; later milestones require prestige too.</p></div></section><div class="section-title"><h2>Department unlocks</h2><span class="muted small">People, insight and better execution</span></div><div class="upgrade-grid">${Object.entries(
+  return `${industryDirectory()}<section class="studio-panorama">${studioArt(s)}<div><span class="eyebrow">YOUR PERMANENT HOME</span><h2>${h(s.name)}</h2><p>Build your studio with money and reputation. Early improvements need cash; later milestones require prestige too.</p></div></section><div class="section-title"><h2>Department unlocks</h2><span class="muted small">People, insight and better execution</span></div><div class="upgrade-grid">${Object.entries(
     s.departments,
   )
     .map(([name, level]) => upgradeCard(name, level, desc[name], true))
@@ -364,7 +364,7 @@ function upgradeCard(name, level, desc, dept) {
   return `<article class="panel upgrade-card"><span class="eyebrow">${dept ? "DEPARTMENT" : "FACILITY"} · ${h(name)}</span><small class="muted">Current: ${h(owned)}</small><h3>${u.complete ? "Fully established" : "Unlock: "+h(u.title)}</h3><p>${u.complete ? desc : h(u.benefit)}</p>${!dept ? `<small class="muted">${desc}</small>` : ""}${u.complete ? pill("All improvements owned","mint-pill") : `<div class="unlock-requirements"><span class="${s.prestige>=u.prestige ? "mint" : "muted"}">${s.prestige>=u.prestige ? "✓" : "○"} ${u.prestige ? `${u.prestige} prestige required · you have ${Math.round(s.prestige)}` : "Available now"}</span><span>${E.accountMoney(u.cost)} upfront · ${E.accountMoney(dept?2:3)}/week</span></div>${button(s.prestige<u.prestige ? "View unlock requirements" : s.cash<u.cost ? "Review funding needed" : "Review upgrade","upgrade",`data-name="${name}"`,"outline full")}`}<details class="unlock-roadmap"><summary>View future upgrades</summary>${E.UPGRADE_MILESTONES[name].map((title,i)=>`<p>${i<level ? "✓ " : ""}${h(title)}<small class="block">${dept ? ["Starting team","Money only","15 prestige + investment","35 prestige + investment"][i] : ["Money only","15 prestige + investment","35 prestige + investment","60 prestige + investment"][i]}</small></p>`).join("")}</details></article>`;
 }
 function calendar() {
-  return `<div class="notice-banner">August & December: larger blockbuster audiences, heavier competition. Choose a release date after filming wraps. It locks when you confirm it.</div><section class="panel rival-roster"><h3>The other studios in town</h3>${E.RIVAL_STUDIOS.map(r=>`<p><strong>${h(r.name)}</strong><small class="block">${h(r.focus)}</small></p>`).join("")}</section><div class="calendar-grid">${Array.from(
+  return `<div class="notice-banner">August & December: larger blockbuster audiences, heavier competition. Choose a release date after filming wraps. It locks when you confirm it.</div><section class="panel rival-roster"><h3>The other studios in town</h3>${E.RIVAL_STUDIOS.map(r=>`<section>${companyHead(r.name)}<p class="small">${h(r.focus)}</p></section>`).join("")}</section><div class="calendar-grid">${Array.from(
     { length: 12 },
     (_, i) => {
       const start = Math.floor(s.week / 52) * 52 + Math.ceil((i * 52) / 12),
@@ -773,7 +773,7 @@ function streamingSummary(m) {
 function streamingDialog(m) {
  if(m.streamingDeal!==null||s.ended||s.epilogue)return modal("Streaming",streamingSummary(m),"YOUR FILM");
  const offers=E.streamingOffers(m),selected=offers.find(o=>o.id===view.streamingChoice);
- return modal("Your movie’s next chapter",`<p><strong>${h(m.title)}</strong> · 52-week streaming offers</p><div class="table-wrap"><table class="streaming-comparison"><thead><tr><th>Platform</th><th>💵 Now</th><th>📅 Total</th></tr></thead><tbody>${offers.map(o=>{const t=E.streamingTotals(s,m,o);return `<tr><td><strong>${h(o.name)}</strong><small class="block">${o.id==="exclusive"?"🔒 Upfront license":"📈 Weekly royalties"}</small>${button("Review offer","reviewStreaming",`data-deal="${o.id}"`,"text-button")}</td><td>${E.accountMoney(o.upfront)}</td><td><strong>${E.accountMoney(t.full)}</strong><small class="block">Over 52 weeks</small>${t.weeks<52?`<small class="block peach">Before demo ends: ${E.accountMoney(t.remaining)}</small>`:""}</td></tr>`;}).join("")}</tbody></table></div>${selected?`<section class="panel"><h3>${h(selected.name)}</h3><p>${selected.id==="exclusive"?"🔒 Entire payment now · no royalties during the license.":`📈 First royalty: ${E.accountMoney(selected.weekly)} · payments decline weekly.`}</p>${button("Sign with "+selected.name,"signStreaming",`data-id="${m.id}" data-deal="${selected.id}"`,"primary full")}</section>`:'<p class="muted small">Tap Review offer, then sign your choice.</p>'}<details><summary>Contract terms</summary><p>Licensing resumes after 52 weeks. You keep sequel rights. No recoupment or talent ticket shares apply. Future royalties are not paid early when the demo ends.</p></details>${button("Decide later · no streaming income yet","deferStreaming",`data-id="${m.id}"`,"outline full")}`,"STREAMING OFFERS");
+ return modal("Your movie’s next chapter",`<p><strong>${h(m.title)}</strong> · 52-week streaming offers</p><div class="table-wrap"><table class="streaming-comparison"><thead><tr><th>Platform</th><th>💵 Now</th><th>📅 Total</th></tr></thead><tbody>${offers.map(o=>{const t=E.streamingTotals(s,m,o);return `<tr><td><strong>${h(o.name)}</strong><small class="block">${o.id==="exclusive"?"🔒 Upfront license":"📈 Weekly royalties"}</small>${button("Review offer","reviewStreaming",`data-deal="${o.id}"`,"text-button")}</td><td>${E.accountMoney(o.upfront)}</td><td><strong>${E.accountMoney(t.full)}</strong><small class="block">Over 52 weeks</small>${t.weeks<52?`<small class="block peach">Before demo ends: ${E.accountMoney(t.remaining)}</small>`:""}</td></tr>`;}).join("")}</tbody></table></div>${selected?`<section class="panel"><h3>${h(selected.name)}</h3>${companyHead(selected.name)}<p>${selected.id==="exclusive"?"🔒 Entire payment now · no royalties during the license.":`📈 First royalty: ${E.accountMoney(selected.weekly)} · payments decline weekly.`}</p>${button("Sign with "+selected.name,"signStreaming",`data-id="${m.id}" data-deal="${selected.id}"`,"primary full")}</section>`:'<p class="muted small">Tap Review offer, then sign your choice.</p>'}<details><summary>Contract terms</summary><p>Licensing resumes after 52 weeks. You keep sequel rights. No recoupment or talent ticket shares apply. Future royalties are not paid early when the demo ends.</p></details>${button("Decide later · no streaming income yet","deferStreaming",`data-id="${m.id}"`,"outline full")}`,"STREAMING OFFERS");
 }
 function report(m) {
   const f = m.releaseFactors;
@@ -855,7 +855,7 @@ function drawDialog() {
       example = Math.max(0, 10000 * d.share - d.recoup);
     return modal(
       "Your deal, in dollars",
-      `<h3>${h(d.name)}</h3><div class="finance-lines"><div><span>Cash paid to your studio now</span><strong>${E.money(d.advance)}</strong></div><div><span>Release fee paid by you now</span><strong>${E.money(d.cost)}</strong></div><div><span>If audiences buy $10,000,000 in tickets</span><strong>You receive ${E.money(example)}</strong></div></div><p>${h(d.desc)} Release support funded by the distributor: ${E.money(d.support)}. Amount recovered from your ticket share before further payments: ${E.money(d.recoup)}. The example is additional ticket income after recovery and before talent participation. Optional marketing campaigns remain separate.</p>${button("Choose this deal", "distribute", `data-id="${m.id}" data-deal="${v.deal}"`, "primary full")}`,
+      `<h3>${h(d.name)}</h3>${companyHead(d.name)}<div class="finance-lines"><div><span>Cash paid to your studio now</span><strong>${E.money(d.advance)}</strong></div><div><span>Release fee paid by you now</span><strong>${E.money(d.cost)}</strong></div><div><span>If audiences buy $10,000,000 in tickets</span><strong>You receive ${E.money(example)}</strong></div></div><p>${h(d.desc)} Release support funded by the distributor: ${E.money(d.support)}. Amount recovered from your ticket share before further payments: ${E.money(d.recoup)}. The example is additional ticket income after recovery and before talent participation. Optional marketing campaigns remain separate.</p>${button("Choose this deal", "distribute", `data-id="${m.id}" data-deal="${v.deal}"`, "primary full")}`,
       "DISTRIBUTION REVIEW",
     );
   }
@@ -1820,3 +1820,11 @@ document.addEventListener('focusout',e=>{
  if(!e.target.matches('#offer-form input[name="offer"], #loan-form input[name="amount"]'))return;
  try{const value=E.fromDollars(e.target.value.replaceAll(",", ""));if(Number.isFinite(value)&&value>=0)e.target.value=E.dollarInput(value);}catch{}moneyPreview();
 });
+
+function companyHead(company) {
+ const head=E.COMPANY_HEADS.find(x=>x.company===company);
+ return head?`<div class="company-head"><img src="./assets/executives/head-${head.photo}.jpg" width="72" height="72" alt="${h(head.name)}" loading="lazy"><div><strong>${h(head.name)}</strong><small class="block">${h(head.role)} · ${h(head.company)}</small><p class="small muted">Priorities: ${h(head.priority)}</p></div></div>`:'';
+}
+function industryDirectory() {
+ return `<details class="panel industry-directory"><summary>Meet the company heads</summary><p class="muted small">The people behind the studios, distributors and streaming services.</p>${E.COMPANY_HEADS.map(x=>companyHead(x.company)).join('')}</details>`;
+}
