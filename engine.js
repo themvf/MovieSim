@@ -258,6 +258,18 @@ export function notifyPrestige(s) {
     s.notices.push({ kind: "prestige", level: i });
   s.prestigeLevel = Math.max(s.prestigeLevel ?? 0, level);
 }
+// Fictional game characters using user-supplied headshots; profiles are authored, not photo-derived.
+export function addHeadshotActors(s) {
+ const profiles=[
+ ['Callum Reed',29,'Man',38,74],['Nico Arden',33,'Man',62,81],['Finn Mercer',21,'Man',8,67],
+ ['Sloane Avery',30,'Woman',70,84],['Mara Ellis',26,'Woman',18,77],['Simone Hart',28,'Woman',45,79],
+ ['Talia Brooks',24,'Woman',12,72],['Rowan Bell',27,'Woman',55,82],['Lena West',25,'Woman',30,75],['Adrian Cole',52,'Man',82,89]
+ ];
+ profiles.forEach(([name,age,gender,star,talent],i)=>{
+  const id=`headshot-actor-${i+1}`;if(s.people.some(p=>p.id===id))return;
+  s.people.push(enrichTalent({id,name,kind:'actor',age,gender,star,talent,fee:Math.round(35+star*star*.35),look:117+i*41,photoActor:i+1,history:[],awards:0,bookings:[],retired:false}));
+ });
+}
 export function enrichTalent(p) {
   p.gender ??= ["Woman", "Man", "Nonbinary"][(p.look ?? 0) % 20 < 9 ? 0 : (p.look ?? 0) % 20 < 18 ? 1 : 2];
   if (!p.genres) {
@@ -946,6 +958,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
   }
   addPosterFilms(s);
   ensureOpportunities(s);
+  addHeadshotActors(s);
   for (const r of s.rivals) r.studioId=rivalStudio(r).id;
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
   return s;

@@ -1,4 +1,4 @@
-import { scopeName } from "./engine.js?v=0.18.0";
+import { scopeName } from "./engine.js?v=0.19.0";
 // Original, code-drawn pixel artwork. No external asset downloads or fonts.
 const palettes = [
   ["#27414c", "#7bbaaf", "#efbf88"],
@@ -9,6 +9,7 @@ const palettes = [
   ["#413d2e", "#bead6f", "#a2c7bf"],
 ];
 export function portrait(p, size = 56) {
+  if(Number.isInteger(p.photoActor)&&p.photoActor>=1&&p.photoActor<=10)return `<img class="portrait actor-headshot" src="./assets/actors/headshot-${p.photoActor}.jpg" width="${size}" height="${size}" alt="${escapeHtml(p.name)} headshot" loading="lazy">`;
   const n = p.look || 0,
     skin = ["#e9b38b", "#b67655", "#714b3c", "#d69c75", "#9a644b"][n % 5],
     hair = ["#272627", "#593c32", "#c0935f", "#3a2929", "#d4c5ae"][
