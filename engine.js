@@ -277,7 +277,8 @@ export function addHeadshotActors(s) {
  ['Malcolm Drake',37,'Man',51,81],['Warren Sterling',57,'Man',67,87],
  ['Emmy Lin',22,'Woman',8,69],['Ayla Reed',25,'Woman',24,76],['Hazel Brooks',23,'Woman',14,73],
  ['Piper Lane',26,'Woman',33,78],['Rosalie Finch',24,'Woman',19,74],['Dahlia Moore',31,'Woman',55,83],
- ['Alina Crest',28,'Woman',42,80],['Freya Nash',25,'Woman',29,77],['Evan Solis',30,'Man',38,79],['Hugo Bennett',54,'Man',62,86]
+ ['Alina Crest',28,'Woman',42,80],['Freya Nash',25,'Woman',29,77],['Evan Solis',30,'Man',38,79],['Hugo Bennett',54,'Man',62,86],
+ ['Conrad Mercer',56,'Man',64,85],['Estelle Rowan',32,'Woman',48,82],['Lyra Sutton',25,'Woman',17,74]
  ];
  profiles.forEach(([name,age,gender,star,talent],i)=>{
   const id=`headshot-actor-${i+1}`;if(s.people.some(p=>p.id===id))return;
