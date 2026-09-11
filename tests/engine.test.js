@@ -63,7 +63,7 @@ function tick(s) {
   s.notices = [];
   if (s.ended) return;
   for (const m of s.movies)
-    if (m.event) E.act(s, "event", { id: m.id, choice: "split" });
+    if (m.event) E.act(s, "event", { id: m.id, choice: m.event.kind === "crisis" ? "pay" : "split" });
   E.act(s, "next");
 }
 function finish(s, m) {

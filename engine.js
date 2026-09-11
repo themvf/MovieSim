@@ -1174,12 +1174,12 @@ export function criticReviews(m) {
   ];
   return CRITICS.map((c,i)=>({...c,score:Math.round(clamp(scores[i],5,99)),quote:quotes[i]}));
 }
-export function streamingOffers(m) {
+export function streamingOffers(m, s = null) {
   const weekly = Math.max(2,m.gross*.0017) * (.7+(m.fans ?? 60)/200);
   return [
     { id: "exclusive", name: "BingeBox", label: "Exclusive streaming license", upfront: roundAmount(weekly*32), weekly: 0, term: 52 },
     { id: "royalty", name: "PictureHouse", label: "Smaller payment + weekly royalties", upfront: roundAmount(weekly*5), weekly: weekly*1.1, term: 52 },
-  ];
+  ].map(o=>s?relationshipOffer(s,o):o);
 }
 export function catalogIncome(s,m) {
   if (m.streamingDeal === null) return 0;
@@ -1325,6 +1325,7 @@ export function act(s, type, a = {}) {
     throw Error("Review emergency financing before making another decision.");
   let m = a.id ? required(s, a.id) : null;
   switch (type) {
+    case "relationship": return resolveRelationship(s,a);
     case "buy": {
       const sc = s.market.find((x) => x.id === a.script);
       if (!sc) throw Error("This script has already sold.");
@@ -1529,6 +1530,23 @@ export function act(s, type, a = {}) {
       if (!m.event) throw Error("There is no production decision pending.");
       if (!["pay", "cut", "split"].includes(a.choice))
         throw Error("Choose a response.");
+      if(m.event.kind === 'crisis'){
+        const cost=m.event.cost;
+        let ally=null;
+        if(a.choice==='split'){
+          ally=COMPANY_HEADS.find(h=>executiveRelationship(s,h.company).trust>=75&&!executiveRelationship(s,h.company).blocked);
+          if(!ally)throw Error('You need an available company ally with 75 trust.');
+        }
+        const charge=a.choice==='pay'?cost:a.choice==='split'?cost/2:0;
+        if(s.cash<charge)throw Error('Not enough cash to fund this response.');
+        debit(s,charge,m);
+        if(ally){const r=executiveRelationship(s,ally.company);s.relationships??={};s.relationships[ally.company]={...r,trust:r.trust-25,last:`Helped rescue ${m.title}; the favor used 25 trust.`};}
+        if(a.choice==='cut')m.penalty+=m.event.damage;
+        m.productionDecisions??=[];
+        const outcome=a.choice==='cut'?`Accepted a permanent ${m.event.damage}-point production quality penalty.`:ally?`${ally.name} covered half the crisis cost; 25 trust spent.`:'Paid the full crisis cost to protect the film.';
+        m.productionDecisions.push({week:s.week,kind:'crisis',choice:a.choice,outcome});
+        log(s,`${m.title}: ${outcome}`);m.event=null;break;
+      }
       if(m.event.kind === "social"){
         if(a.choice==="pay")debit(s,50,m);
         const change=a.choice==="pay"?roll(s,-2,2):a.choice==="split"?roll(s,-5,5):roll(s,-9,1);
@@ -1660,6 +1678,7 @@ export function act(s, type, a = {}) {
         );
       const deals = distribution(s, m),
         d = deals[a.deal];
+      if(d.blocked) throw Error(`Negotiations reopen in ${d.blocked} weeks.`);
       m.deal = a.deal;
       m.share = d.share;
       m.advance = d.advance;
@@ -1693,8 +1712,9 @@ export function act(s, type, a = {}) {
     case "streamingDeal": {
       stage(m,["catalog"]);
       if (m.streamingDeal !== null) throw Error("This film already has a streaming arrangement.");
-      const offer=streamingOffers(m).find(o=>o.id===a.deal);
+      const offer=streamingOffers(m,s).find(o=>o.id===a.deal);
       if (!offer) throw Error("Choose a streaming offer.");
+      if(offer.blocked) throw Error(`Negotiations reopen in ${offer.blocked} weeks.`);
       m.streamingDeal={...offer,signedWeek:s.week,endWeek:s.week+offer.term};
       s.cash+=offer.upfront; m.receipts+=offer.upfront; m.catalog+=offer.upfront;
       s.notices=s.notices.filter(n=>!(n.kind==="streaming" && n.id===m.id));
@@ -1807,7 +1827,7 @@ export function distribution(s, m) {
     m.scale === "Small" ? 1800 : m.scale === "Mid-budget" ? 5000 : 14500;
   const demand = clamp(0.7 + castDraw(s, m) / 100, 0.7, 1.7);
   const price = market * demand * (m.economyVersion >= 2 ? Math.sqrt(deliveryFactor(m)) : 1);
-  return {
+  const offers = {
     secure: {
       name: "Harbor Distribution",
       advance: roundAmount(price * 0.2),
@@ -1842,6 +1862,7 @@ export function distribution(s, m) {
       desc: "You fund booking, publicity and delivery. Reach improves with your Marketing department and studio reputation.",
     },
   };
+  return Object.fromEntries(Object.entries(offers).map(([k,o])=>[k,k==="self"?o:relationshipOffer(s,o)]));
 }
 function finish(s, m) {
   const craft = productionCraft(m);
@@ -2217,6 +2238,10 @@ function nextWeek(s) {
           damage: roll(s, 6, 12),
         };
         const kind = roll(s, 0, m.economyVersion>=3?3:2);
+        if(kind===0){
+          m.event.kind='crisis';m.event.cost=Math.round(m.weekly*1.6+100);m.event.damage=18;
+          m.event.text+=' The full repair now exceeds the contingency. An available executive ally can cover half, but will expect you to spend considerable goodwill.';
+        }
         if (kind === 1)
           m.event = {
             kind: "creative",
@@ -2418,3 +2443,47 @@ export const COMPANY_HEADS = [
  {name:'Oscar Linden',company:'Wildwood Films',role:'Studio head',priority:'Filmmaker-led originals and patient development',photo:9},
  {name:'Gabriel Stone',company:'Stonebridge Studios',role:'Studio head',priority:'Strong ensembles and careful production planning',photo:10},
 ];
+
+export function executiveRelationship(s, company) {
+ const head=COMPANY_HEADS.find(h=>h.company===company);
+ if(!head) throw Error('Unknown company.');
+ const stored=s.relationships?.[company]??{};
+ const trust=Number.isFinite(stored.trust)?clamp(stored.trust,0,100):50;
+ const blocked=Math.max(0,(stored.blockedUntil??0)-s.week);
+ const epoch=Math.floor(s.week/12);
+ const request=['campaign','screening','introduction'][(epoch+head.photo)%3];
+ return {...stored,trust,blocked,epoch,request,label:blocked?'New business paused':trust>=75?'Trusted ally':trust>=60?'Warm':trust<35?'Strained':'Professional',cost:request==='campaign'?150:request==='screening'?75:100,available:stored.resolvedEpoch!==epoch&&!blocked,nextMeeting:Math.max(0,(stored.meetingUntil??0)-s.week)};
+}
+export function relationshipOffer(s,o) {
+ if(!COMPANY_HEADS.some(h=>h.company===o.name))return o;
+ const r=executiveRelationship(s,o.name),factor=r.trust>=75?1.15:r.trust>=60?1.05:r.trust<35?.75:1;
+ return {...o,...(o.advance!==undefined?{advance:Math.round(o.advance*factor*100)/100}:{upfront:Math.round(o.upfront*factor*100)/100}),blocked:r.blocked,relationshipFactor:factor};
+}
+export function resolveRelationship(s,a) {
+ const r=executiveRelationship(s,a.company),head=COMPANY_HEADS.find(h=>h.company===a.company);
+ const choices=['accept','counter','decline','repair','opportunity'];
+ if(!choices.includes(a.choice))throw Error('Choose a relationship response.');
+ let trust=r.trust,cash=0,blockedUntil=r.blockedUntil??0,extra={},message='';
+ if(a.choice==='repair'){
+  if(r.nextMeeting)throw Error(`Another meeting is available in ${r.nextMeeting} weeks.`);
+  if(trust>=75&&!r.blocked)throw Error('Your relationship is already strong.');
+  cash=-50;trust=Math.min(100,trust+10);blockedUntil=Math.max(s.week,blockedUntil-4);extra.meetingUntil=s.week+8;message='A resolution meeting rebuilt 10 trust and shortened any refusal by four weeks.';
+ }else if(a.choice==='opportunity'){
+  if(trust<75||r.blocked)throw Error('This introduction requires 75 trust and open negotiations.');
+  if(r.opportunityUsed)throw Error('This company has already made its introduction.');
+  cash=125;trust-=10;extra.opportunityUsed=true;message='A sponsor introduction secured $125,000 for your studio; calling in the favor used 10 trust.';
+ }else{
+  if(!r.available)throw Error('This request is not available.');
+  extra.resolvedEpoch=r.epoch;
+  if(a.choice==='accept'){cash=-r.cost;trust=Math.min(100,trust+15);message='You funded the request and earned 15 trust.';}
+  if(a.choice==='counter'){
+   if(trust<60)throw Error('A compromise requires 60 trust.');
+   cash=-r.cost*.5;trust=Math.min(100,trust+5);message='Your compromise was accepted for half the cost; trust rose by 5.';
+  }
+  if(a.choice==='decline'){trust=Math.max(0,trust-20);blockedUntil=s.week+8;message='The request was refused. Trust fell by 20; new business is paused for eight weeks.';}
+ }
+ if(s.cash+cash<0)throw Error('Not enough available cash for this commitment.');
+ s.cash+=cash;s.relationships??={};s.relationships[a.company]={...r,...extra,trust,blockedUntil,last:message};
+ log(s,`${head.name} (${head.company}): ${message}`);
+ return message;
+}

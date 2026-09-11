@@ -3406,3 +3406,5 @@ summary {
 .executive-identity{display:flex;align-items:center;gap:16px;margin:16px 0;min-width:0}.executive-identity>div{min-width:0}.company-head img{width:96px;height:112px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid #ffffff30}.company-head h3{font-family:Georgia,serif;font-size:26px;line-height:1.15;margin:0 0 8px;color:#f7f1e5}.company-head .executive-title{font-size:13px;line-height:1.5;color:var(--executive-accent);margin:0}
 .executive-priority{border-top:1px solid #ffffff20;padding-top:12px}.executive-priority>span{font-size:9px;letter-spacing:1.4px;color:#b5c2ca}.executive-priority p{font-size:13px;line-height:1.5;margin:6px 0 0;color:#dce3e6}.industry-directory{margin-bottom:18px}
 @media(max-width:400px){.company-head{padding:14px}.company-head img{width:76px;height:94px}.executive-identity{gap:12px}.company-head h3{font-size:23px}}
+
+.relationship-panel{border-top:1px solid #ffffff30;margin-top:16px;padding-top:14px}.relationship-panel meter{display:block;width:100%;height:16px;margin:8px 0}.relationship-panel button{margin:6px 0}.relationship-panel p{line-height:1.5}

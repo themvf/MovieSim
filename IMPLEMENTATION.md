@@ -291,3 +291,7 @@ Added ten fictional executives with supplied portraits and authored priorities. 
 
 ## 0.25.1 — Executive cards
 Prominent bordered executive cards with company header, larger portrait, name, formal role title, and separated business priorities. Shared across directory and deal reviews, with category accents for studios, distributors and streamers.
+
+## 0.26.0 — Executive relationships and crisis favors
+Persistent 0–100 company trust, request cycles every 12 weeks, trust-gated counteroffers, paid repair meetings with eight-week cooldown, eight-week refusals, and upfront deal adjustments (-25%, +5%, +15%). Existing signed agreements remain unchanged. One-time sponsor introductions unlock at 75 trust. Production repair crises permit full funding, a 25-trust ally favor covering half, or an 18-point permanent quality penalty. Outcomes appear in the log and release report. All ten heads participate; specific requests currently share three rotating templates. Broader individual story arcs, talent relationship systems and multi-film contractual promises remain future work.
+Validation: relationship unit coverage for invalid/duplicate actions, affordability, refusal expiry, modifiers, crisis rescue and blocked streaming agreements; browser reload/repair/mobile checks; existing full game smoke check.
