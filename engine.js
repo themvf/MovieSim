@@ -2451,13 +2451,18 @@ export function executiveRelationship(s, company) {
  const trust=Number.isFinite(stored.trust)?clamp(stored.trust,0,100):50;
  const blocked=Math.max(0,(stored.blockedUntil??0)-s.week);
  const epoch=Math.floor(s.week/12);
+ const requestUntil=stored.requestUntil??(Number.isInteger(stored.resolvedEpoch)?(stored.resolvedEpoch+1)*12+11:0);
+ const nextRequest=Math.max(0,requestUntil-s.week,blocked);
  const request=['campaign','screening','introduction'][(epoch+head.photo)%3];
- return {...stored,trust,blocked,epoch,request,label:blocked?'New business paused':trust>=75?'Trusted ally':trust>=60?'Warm':trust<35?'Strained':'Professional',cost:request==='campaign'?150:request==='screening'?75:100,available:stored.resolvedEpoch!==epoch&&!blocked,nextMeeting:Math.max(0,(stored.meetingUntil??0)-s.week)};
+ return {...stored,trust,blocked,epoch,request,label:blocked?'New business paused':trust>=75?'Trusted ally':trust>=60?'Warm':trust<35?'Strained':'Professional',cost:request==='campaign'?150:request==='screening'?75:100,requestUntil,nextRequest,available:nextRequest===0,nextMeeting:Math.max(0,(stored.meetingUntil??0)-s.week)};
 }
 export function relationshipOffer(s,o) {
  if(!COMPANY_HEADS.some(h=>h.company===o.name))return o;
  const r=executiveRelationship(s,o.name),factor=r.trust>=75?1.15:r.trust>=60?1.05:r.trust<35?.75:1;
- return {...o,...(o.advance!==undefined?{advance:Math.round(o.advance*factor*100)/100}:{upfront:Math.round(o.upfront*factor*100)/100}),blocked:r.blocked,relationshipFactor:factor};
+ const adjusted=o.advance!==undefined?{advance:Math.round(o.advance*factor*100)/100}:{upfront:Math.round(o.upfront*factor*100)/100};
+ // Recoupable partner funding follows the actual advance; guaranteed deals stay non-recoupable.
+ if(o.advance!==undefined&&o.recoup>0)adjusted.recoup=Math.round((adjusted.advance+(o.support??0))*100)/100;
+ return {...o,...adjusted,blocked:r.blocked,relationshipFactor:factor};
 }
 export function resolveRelationship(s,a) {
  const r=executiveRelationship(s,a.company),head=COMPANY_HEADS.find(h=>h.company===a.company);
@@ -2474,7 +2479,7 @@ export function resolveRelationship(s,a) {
   cash=125;trust-=10;extra.opportunityUsed=true;message='A sponsor introduction secured $125,000 for your studio; calling in the favor used 10 trust.';
  }else{
   if(!r.available)throw Error('This request is not available.');
-  extra.resolvedEpoch=r.epoch;
+  extra.resolvedEpoch=r.epoch;extra.requestUntil=s.week+12;
   if(a.choice==='accept'){cash=-r.cost;trust=Math.min(100,trust+15);message='You funded the request and earned 15 trust.';}
   if(a.choice==='counter'){
    if(trust<60)throw Error('A compromise requires 60 trust.');

@@ -45,3 +45,26 @@ test('streaming refusal blocks new agreements without changing film or cash',()=
  assert.equal(JSON.stringify(s),before);
  assert.equal(E.streamingOffers(m,s)[0].blocked,8);
 });
+test('partner recoupment equals adjusted funding at every trust tier',()=>{
+ const s=E.newGame(7);
+ for(const trust of [30,50,65,80]){
+ s.relationships={'Meridian Pictures':{trust}};
+ const o=E.relationshipOffer(s,{name:'Meridian Pictures',advance:150,support:220,recoup:370});
+ assert.equal(o.recoup,o.advance+220);
+ }
+ assert.equal(E.relationshipOffer(s,{name:company,advance:150,support:220,recoup:0}).recoup,0);
+});
+test('requests wait twelve weeks after response across calendar boundaries and reload',()=>{
+ const s=E.newGame(7);s.week=11;E.act(s,'relationship',{company,choice:'accept'});
+ s.week=12;assert.equal(E.executiveRelationship(s,company).nextRequest,11);
+ assert.throws(()=>E.act(s,'relationship',{company,choice:'accept'}));
+ s.week=22;assert.equal(E.executiveRelationship(JSON.parse(JSON.stringify(s)),company).available,false);
+ s.week=23;assert.equal(E.executiveRelationship(s,company).available,true);
+ E.act(s,'relationship',{company,choice:'counter'});
+ assert.equal(E.executiveRelationship(s,company).nextRequest,12);
+});
+test('legacy epoch requests receive a conservative stable cooldown',()=>{
+ const s=E.newGame(7);s.week=12;s.relationships={[company]:{trust:65,resolvedEpoch:0}};
+ assert.equal(E.executiveRelationship(s,company).available,false);
+ s.week=23;assert.equal(E.executiveRelationship(s,company).available,true);
+});
