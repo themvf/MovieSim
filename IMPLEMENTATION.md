@@ -274,3 +274,5 @@ Validation: 101 simulation tests, full lifecycle browser smoke, and mobile check
 ## 0.20.0 — Additional actor headshots
 Added ten more supplied JPGs unchanged with ten authored fictional actor profiles (twenty photo actors total). Stable IDs add the new actors once to existing saves. Verified all twenty images load, mobile career layout, preserved save cash/week, 101 tests, and full browser smoke test.
 
+## 0.21.0 — Seven additional actor headshots
+Added seven new supplied images unchanged with fictional actor profiles. Photos 8–10 exactly match existing assets 20, 19 and 18, so existing actors are retained without duplication. Total: 27 photo actors. Stable IDs preserve existing saves.

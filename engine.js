@@ -266,7 +266,10 @@ export function addHeadshotActors(s) {
  ['Talia Brooks',24,'Woman',12,72],['Rowan Bell',27,'Woman',55,82],['Lena West',25,'Woman',30,75],['Adrian Cole',52,'Man',82,89],
  ['Damon Cross',32,'Man',48,78],['Marcus Wynn',49,'Man',65,86],['Elara Quinn',25,'Woman',15,73],
  ['Jasper Holt',23,'Man',10,69],['Rhea Sterling',31,'Woman',40,80],['Arden Fox',27,'Woman',22,76],
- ['Celia Vaughn',38,'Woman',58,83],['Vivian Ash',35,'Woman',72,87],['Miriam Locke',56,'Woman',60,88],['Evelyn Frost',64,'Woman',78,91]
+ ['Celia Vaughn',38,'Woman',58,83],['Vivian Ash',35,'Woman',72,87],['Miriam Locke',56,'Woman',60,88],['Evelyn Frost',64,'Woman',78,91],
+ ['Theo Calder',22,'Man',9,71],['Graham Whitmore',55,'Man',68,86],['Beckett Rhodes',34,'Man',45,78],
+ ['Owen Marlow',28,'Man',26,74],['Vincent Hale',51,'Man',58,84],['Desmond Pierce',60,'Man',75,89],
+ ['Claudia Wren',48,'Woman',63,87]
  ];
  profiles.forEach(([name,age,gender,star,talent],i)=>{
   const id=`headshot-actor-${i+1}`;if(s.people.some(p=>p.id===id))return;
