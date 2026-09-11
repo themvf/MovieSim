@@ -269,7 +269,10 @@ export function addHeadshotActors(s) {
  ['Celia Vaughn',38,'Woman',58,83],['Vivian Ash',35,'Woman',72,87],['Miriam Locke',56,'Woman',60,88],['Evelyn Frost',64,'Woman',78,91],
  ['Theo Calder',22,'Man',9,71],['Graham Whitmore',55,'Man',68,86],['Beckett Rhodes',34,'Man',45,78],
  ['Owen Marlow',28,'Man',26,74],['Vincent Hale',51,'Man',58,84],['Desmond Pierce',60,'Man',75,89],
- ['Claudia Wren',48,'Woman',63,87]
+ ['Claudia Wren',48,'Woman',63,87],
+ ['Dorian Wells',27,'Man',21,75],['Sylvie Monroe',34,'Woman',46,82],['Julian Park',30,'Man',36,79],
+ ['Nora Chan',29,'Woman',54,84],['Amelie Grant',24,'Woman',12,72],['Serena Hayes',32,'Woman',61,86],
+ ['Iona Clarke',26,'Woman',28,77]
  ];
  profiles.forEach(([name,age,gender,star,talent],i)=>{
   const id=`headshot-actor-${i+1}`;if(s.people.some(p=>p.id===id))return;
