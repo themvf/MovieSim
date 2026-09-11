@@ -1326,6 +1326,7 @@ export function act(s, type, a = {}) {
   let m = a.id ? required(s, a.id) : null;
   switch (type) {
     case "relationship": return resolveRelationship(s,a);
+    case "storyRewrite": return rewriteStory(s,m,a);
     case "buy": {
       const sc = s.market.find((x) => x.id === a.script);
       if (!sc) throw Error("This script has already sold.");
@@ -2491,4 +2492,41 @@ export function resolveRelationship(s,a) {
  s.cash+=cash;s.relationships??={};s.relationships[a.company]={...r,...extra,trust,blockedUntil,last:message};
  log(s,`${head.name} (${head.company}): ${message}`);
  return message;
+}
+
+export function storyOutline(m){
+ return m.story?.acts??['discovery','betrayal','reconcile'];
+}
+export function storyChoices(s,m,act,acts=storyOutline(m)){
+ const choices=[
+ [{id:'discovery',title:'A discovery draws the lead into the conflict',text:'The protagonist follows a clue that threatens their ordinary life.'},{id:'bond',title:'A promise makes the conflict personal',text:'The protagonist commits to protecting someone close to them.'},{id:'ensemble',title:'Several lives collide',text:'Separate protagonists become entangled in the same conflict.',lock:s.departments.Development<2?'Requires Development level 2':''}],
+ [{id:'betrayal',title:'An ally reveals a hidden agenda',text:'Trust breaks, forcing the protagonist to reconsider whom to believe.'},{id:'sacrifice',title:'Success demands a personal sacrifice',text:'Protecting the promise now means giving up something precious.',lock:acts[0]!=='bond'?'Requires the promise in Act I':''},{id:'convergence',title:'The separate stories become one',text:'The ensemble discovers that their struggles share a single cause.',lock:acts[0]!=='ensemble'?'Requires several lives in Act I':''}],
+ [{id:'reconcile',title:'Resolve the conflict and rebuild trust',text:'The protagonist confronts the conflict and earns a hopeful reconciliation.'},{id:'tragic',title:'Win at a devastating personal cost',text:'The sacrifice resolves the conflict, but the protagonist cannot return to their old life.',lock:acts[1]!=='sacrifice'?'Requires personal sacrifice in Act II':''},{id:'ambiguous',title:'Leave the final answer to the audience',text:'Resolve the immediate struggle while leaving its meaning unsettled.',lock:s.prestige<30?'Requires 30 studio prestige':''}]
+ ];return choices[act]??[];
+}
+export function storyAssessment(m){
+ const acts=storyOutline(m),ambiguous=acts[2]==='ambiguous',tragic=acts[2]==='tragic',ensemble=acts[0]==='ensemble';
+ return {audience:ambiguous?-4:tragic?-2:0,critics:ambiguous?4:tragic?2:0,complexity:ensemble?4:0,notes:ambiguous?'An unresolved interpretation trades some broad audience appeal for critical interest.':tragic?'The earned sacrifice favors a darker emotional payoff over broad appeal.':'A clear resolution offers a balanced audience and critical approach.'};
+}
+export function rewriteStory(s,m,a){
+ stage(m,['packaging']);
+ const old=storyOutline(m),acts=a.restore?['discovery','betrayal','reconcile']:a.acts;
+ if(!Array.isArray(acts)||acts.length!==3)throw Error('Choose all three acts.');
+ for(let i=0;i<3;i++){
+  const choice=storyChoices(s,m,i,acts).find(c=>c.id===acts[i]);
+  if(!choice)throw Error('Unknown story choice.');
+  if(choice.lock&&acts[i]!==old[i])throw Error(choice.lock);
+  if(choice.lock&&i>0&&acts.slice(0,i).some((v,j)=>v!==old[j]))throw Error(choice.lock);
+ }
+ if(acts.every((v,i)=>v===old[i]))throw Error('This draft is already selected.');
+ const fee=a.restore?0:50;
+ if(s.cash<fee)throw Error('A rewrite requires $50,000 available cash.');
+ debit(s,fee,m);
+ const previous=m.story?storyAssessment(m):{audience:0,critics:0,complexity:0};
+ m.story={acts:[...acts],revisions:(m.story?.revisions??0)+1};
+ const next=storyAssessment(m);
+ m.audienceBias=(m.audienceBias??0)-previous.audience+next.audience;
+ m.criticBias=(m.criticBias??0)-previous.critics+next.critics;
+ m.difficulty=m.difficulty-previous.complexity+next.complexity;
+ log(s,`${m.title}: ${a.restore?'restored the purchased draft':'approved a three-act rewrite'} (${money(fee)}).`);
 }

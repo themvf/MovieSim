@@ -120,7 +120,7 @@ const fs = require("node:fs");
     if (m.stage === "ready") break;
     if (m.event) {
       await click('[data-action="nextDecision"]');
-      await click('[data-action="event"][data-choice="split"]');
+      await click('[data-action="event"][data-choice="pay"]');
       await click('[data-action="close"]');
     } else await click('[data-action="next"]');
   }
