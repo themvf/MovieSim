@@ -288,3 +288,6 @@ Added supplied photos 1–3 unchanged with authored fictional profiles, bringing
 
 ## 0.25.0 — Company heads
 Added ten fictional executives with supplied portraits and authored priorities. Studio directory exposes all ten; existing rival roster and distribution/streaming offer reviews show relevant heads. Three additional studios are directory profiles only. Requests, bargaining changes and relationship penalties are not implemented in this portrait update. No save schema or economic changes.
+
+## 0.25.1 — Executive cards
+Prominent bordered executive cards with company header, larger portrait, name, formal role title, and separated business priorities. Shared across directory and deal reviews, with category accents for studios, distributors and streamers.

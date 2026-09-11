@@ -1,5 +1,5 @@
-import * as E from "./engine.js?v=0.25.0";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.25.0";
+import * as E from "./engine.js?v=0.25.1";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.25.1";
 const BUILD = "0.10.0";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
@@ -1823,7 +1823,9 @@ document.addEventListener('focusout',e=>{
 
 function companyHead(company) {
  const head=E.COMPANY_HEADS.find(x=>x.company===company);
- return head?`<div class="company-head"><img src="./assets/executives/head-${head.photo}.jpg" width="72" height="72" alt="${h(head.name)}" loading="lazy"><div><strong>${h(head.name)}</strong><small class="block">${h(head.role)} · ${h(head.company)}</small><p class="small muted">Priorities: ${h(head.priority)}</p></div></div>`:'';
+ const type=head?.role==='Distribution head'?'distribution':head?.role==='Streaming head'?'streaming':'studio';
+ const title={distribution:'President of Distribution',streaming:'Head of Film Acquisitions',studio:'Studio President'}[type];
+ return head?`<article class="company-head executive-${type}" aria-label="${h(head.name)}, ${h(title)}, ${h(head.company)}"><div class="executive-company"><span>${h(head.company)}</span><small>${type==='streaming'?'STREAMING':type==='distribution'?'DISTRIBUTION':'FILM STUDIO'}</small></div><div class="executive-identity"><img src="./assets/executives/head-${head.photo}.jpg" width="96" height="112" alt="${h(head.name)}" loading="lazy"><div><h3>${h(head.name)}</h3><p class="executive-title">${h(title)}</p></div></div><div class="executive-priority"><span>BUSINESS PRIORITIES</span><p>${h(head.priority)}</p></div></article>`:'';
 }
 function industryDirectory() {
  return `<details class="panel industry-directory"><summary>Meet the company heads</summary><p class="muted small">The people behind the studios, distributors and streaming services.</p>${E.COMPANY_HEADS.map(x=>companyHead(x.company)).join('')}</details>`;

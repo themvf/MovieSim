@@ -3399,4 +3399,10 @@ summary {
 
 .actor-headshot {object-fit:cover;object-position:center;image-rendering:auto!important;flex-shrink:0;border-radius:5px;}
 
-.company-head{display:flex;align-items:center;gap:14px;margin:18px 0;min-width:0}.company-head img{object-fit:cover;border-radius:6px;flex-shrink:0}.company-head>div{min-width:0;overflow-wrap:anywhere}.company-head p{margin:6px 0}.industry-directory{margin-bottom:18px}
+/* Executive identity cards shared by company directory and deal reviews. */
+.company-head{--executive-accent:#e3bc78;display:block;margin:18px 0;padding:18px;min-width:0;border:1px solid #657078;border-top:3px solid var(--executive-accent);border-radius:10px;background:linear-gradient(135deg,#26343c,#17232b);box-shadow:0 6px 18px #0002;overflow-wrap:anywhere}
+.executive-distribution{--executive-accent:#f4b388}.executive-streaming{--executive-accent:#8cc6df}
+.executive-company{display:flex;flex-direction:column;gap:6px;padding-bottom:14px;border-bottom:1px solid #ffffff20}.executive-company>span{font-size:16px;font-weight:700;color:var(--executive-accent)}.executive-company small{font-size:10px;letter-spacing:1.6px;color:#c1cbd0}
+.executive-identity{display:flex;align-items:center;gap:16px;margin:16px 0;min-width:0}.executive-identity>div{min-width:0}.company-head img{width:96px;height:112px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid #ffffff30}.company-head h3{font-family:Georgia,serif;font-size:26px;line-height:1.15;margin:0 0 8px;color:#f7f1e5}.company-head .executive-title{font-size:13px;line-height:1.5;color:var(--executive-accent);margin:0}
+.executive-priority{border-top:1px solid #ffffff20;padding-top:12px}.executive-priority>span{font-size:9px;letter-spacing:1.4px;color:#b5c2ca}.executive-priority p{font-size:13px;line-height:1.5;margin:6px 0 0;color:#dce3e6}.industry-directory{margin-bottom:18px}
+@media(max-width:400px){.company-head{padding:14px}.company-head img{width:76px;height:94px}.executive-identity{gap:12px}.company-head h3{font-size:23px}}
