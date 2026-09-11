@@ -263,7 +263,10 @@ export function addHeadshotActors(s) {
  const profiles=[
  ['Callum Reed',29,'Man',38,74],['Nico Arden',33,'Man',62,81],['Finn Mercer',21,'Man',8,67],
  ['Sloane Avery',30,'Woman',70,84],['Mara Ellis',26,'Woman',18,77],['Simone Hart',28,'Woman',45,79],
- ['Talia Brooks',24,'Woman',12,72],['Rowan Bell',27,'Woman',55,82],['Lena West',25,'Woman',30,75],['Adrian Cole',52,'Man',82,89]
+ ['Talia Brooks',24,'Woman',12,72],['Rowan Bell',27,'Woman',55,82],['Lena West',25,'Woman',30,75],['Adrian Cole',52,'Man',82,89],
+ ['Damon Cross',32,'Man',48,78],['Marcus Wynn',49,'Man',65,86],['Elara Quinn',25,'Woman',15,73],
+ ['Jasper Holt',23,'Man',10,69],['Rhea Sterling',31,'Woman',40,80],['Arden Fox',27,'Woman',22,76],
+ ['Celia Vaughn',38,'Woman',58,83],['Vivian Ash',35,'Woman',72,87],['Miriam Locke',56,'Woman',60,88],['Evelyn Frost',64,'Woman',78,91]
  ];
  profiles.forEach(([name,age,gender,star,talent],i)=>{
   const id=`headshot-actor-${i+1}`;if(s.people.some(p=>p.id===id))return;

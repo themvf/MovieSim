@@ -270,3 +270,7 @@ Validation: 101 simulation tests, mobile premiere test including shifted/delayed
 ## UI 0.19.0 — ten supplied actor headshots
 Added all ten supplied JPGs unchanged as local actor assets. Added ten fictional actor profiles with authored names, ages, ratings and career levels; these are game characters, not identifications of the pictured people. The shared portrait renderer uses their photos throughout the game, with existing pixel portraits preserved for other talent. New games include the actors; existing saves receive them once by stable IDs, without changing existing people, movie contracts, money, week or random state.
 Validation: 101 simulation tests, full lifecycle browser smoke, and mobile checks loading all ten images, opening a headshot profile, and verifying legacy-save injection without duplication or changed finances/time. Asset total about 1.8 MB.
+
+## 0.20.0 — Additional actor headshots
+Added ten more supplied JPGs unchanged with ten authored fictional actor profiles (twenty photo actors total). Stable IDs add the new actors once to existing saves. Verified all twenty images load, mobile career layout, preserved save cash/week, 101 tests, and full browser smoke test.
+
