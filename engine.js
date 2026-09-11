@@ -1,4 +1,4 @@
-import { signalSpec, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.28.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.29.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -1485,7 +1485,7 @@ export function act(s, type, a = {}) {
     }
     case "greenlight": {
       stage(m, ["packaging"]);
-      if(m.narrativePack && !evaluateNarrative(m.narrative).valid)throw Error("Resolve the story connections before greenlight.");
+      if(m.narrativePack && ((m.narrative?.pack??"signal-ash")!==m.narrativePack || !evaluateNarrative(m.narrative).valid))throw Error("Resolve the story connections before greenlight.");
       if (m.contracts.length !== m.roles.length || !m.director)
         throw Error("Cast every role and hire a director first.");
       const duration = amt(a.duration, 4, 20, false);
@@ -2536,11 +2536,12 @@ export function rewriteStory(s,m,a){
 }
 
 export function ensureNarrativeSpec(s){
- if(!s.market.some(m=>m.narrativePack==='signal-ash')&&!s.movies.some(m=>m.narrativePack==='signal-ash'))s.market.push(signalSpec());
+ for(const spec of authoredSpecs())if(!s.market.some(m=>m.narrativePack===spec.narrativePack)&&!s.movies.some(m=>m.narrativePack===spec.narrativePack))s.market.push(spec);
 }
 function rewriteNarrative(s,m,a){
  stage(m,['packaging']);
  const draft=structuredClone(a.restore?m.originalNarrative:a.draft);
+ if((draft?.pack??"signal-ash")!==m.narrativePack)throw Error("Keep this movie’s story pack.");
  const result=evaluateNarrative(draft);
  if(!result.valid)throw Error(result.errors.map(e=>e.reason).join('. '));
  if(JSON.stringify(draft)===JSON.stringify(m.narrative))throw Error('This draft is already selected.');

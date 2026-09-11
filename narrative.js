@@ -1,3 +1,4 @@
+import { GENRE_PACKS } from "./genre-packs.js?v=0.29.0";
 // Pure, deterministic story rules. Fictional character state never changes hired talent.
 export const STEPS = ['Setup', 'Complication', 'Response', 'Resolution', 'Cost', 'Villain fate'];
 export const CAST = [
@@ -65,25 +66,31 @@ export const CARDS = [
  card('custody','Voss surrenders to protective custody','Voss helps stop the overload, then gives themself up.',['turned'],['arrested'])]
 ];
 export function evaluate(draft){
+ const pack=packFor(draft), cast=pack.characters, cards=pack.cards, labels=pack.labels;
  const tags=new Set(), errors=[], selected=[], links=[];
  if(!draft||!Array.isArray(draft.characters)||draft.characters.length!==4||!Array.isArray(draft.beats)||draft.beats.length!==6)return {valid:false,errors:[{step:0,reason:'Choose four characters and six story beats.'}],selected:[],tags:[],effects:0,links:[],weakness:'Draft is incomplete.'};
- draft.characters.forEach((id,i)=>{const c=CAST[i].options.find(c=>c.id===id);if(!c)errors.push({step:-1,reason:'Choose a valid '+CAST[i].title});else c.tags.forEach(t=>tags.add(t));});
+ draft.characters.forEach((id,i)=>{const c=cast[i].options.find(c=>c.id===id);if(!c)errors.push({step:-1,reason:'Choose a valid '+cast[i].title});else c.tags.forEach(t=>tags.add(t));});
  const initial=new Set(tags);let effects=0;
  const states=[];
- CARDS.forEach((cards,i)=>{
+ cards.forEach((cards,i)=>{
   states.push([...tags]);const c=cards.find(c=>c.id===draft.beats[i]);selected.push(c);
   if(!c){errors.push({step:i,reason:'Choose a story beat.'});return;}
   const missing=c.needs.filter(t=>!tags.has(t));
-  if(missing.length){errors.push({step:i,reason:'Needs '+missing.map(t=>LABELS[t]??t).join(', ')});return;}
+  if(missing.length){errors.push({step:i,reason:'Needs '+missing.map(t=>labels[t]??t).join(', ')});return;}
   c.needs.forEach(t=>{const source=selected.slice(0,i).findIndex(p=>p?.add.includes(t));if(source>=0)links.push({from:source,to:i,tag:t});});
   c.add.forEach(t=>tags.add(t));
-  if(c.id==='arrest'&&draft.characters[3]==='journalist')tags.add('anchorPayoff');
+  if(pack.id==='signal-ash'&&c.id==='arrest'&&draft.characters[3]==='journalist')tags.add('anchorPayoff');
   effects+=c.effects??0;
  });
- const weakness=!tags.has('anchorPayoff')?'Eli has no decisive action in this draft. Give the supporting character a response or consequence.':!tags.has('allyPayoff')?'Mara has no decisive payoff. The practical ally needs more than an introduction.':initial.has('trustFlaw')&&!tags.has('trust')?'Alex’s difficulty trusting people remains unchallenged by the chosen response.':tags.has('bondBroken')&&tags.has('trust')?'Alex learns to trust, then loses Mara. This needs a convincing rupture in the final scenes.':'Both supporting characters influence the outcome; the next challenge is delivering these moments in production.';
- return {valid:errors.length===0,errors,selected,tags:[...tags],states,effects,links,weakness,pressure:effects>=700?'High':effects>=300?'Moderate':'Contained'};
+ const weakness=!tags.has('anchorPayoff')?`${cast[3].name} has no decisive action in this draft. Give the supporting character a response or consequence.`:!tags.has('allyPayoff')?`${cast[2].name} has no decisive payoff. The practical ally needs more than an introduction.`:initial.has(pack.arc.tag)&&!tags.has(pack.arc.resolved)?pack.arc.text:tags.has('bondBroken')&&tags.has(pack.arc.resolved)?`${cast[0].name} changes, but loses the bond with ${cast[2].name}. The final scenes need to explain that rupture.`:pack.positive;
+ return {valid:errors.length===0,errors,selected,tags:[...tags],states,effects,department:pack.department,departmentLabel:pack.departmentLabel,links,weakness,pressure:effects>=700?'High':effects>=300?'Moderate':'Contained'};
 }
 export const LABELS={science:'Mara as scientist',legacy:'retired guardian',identity:'a secret identity',powered:'established powers',city:'a city threat',weapon:'an established weapon',hostage:'Mara in danger',evidence:'surviving evidence',insider:'an inside contact',countermeasure:'Mara’s countermeasure',proof:'secured proof',media:'Eli as journalist',rescued:'Mara rescued',access:'access to the network',evacuated:'an evacuation',world:'a global threat',personal:'a personal connection',trust:'a response built on trust',redeemable:'a redeemable antagonist',contained:'the network stopped',victory:'a decisive victory',escapeRoute:'a diversion that permits escape',turned:'Voss helped in the finale',villainFree:'Voss still controls the network'};
-export function choices(draft,step){const e=evaluate(draft),tags=e.states?.[step]??[];return CARDS[step].map(c=>({...c,lock:c.needs.filter(t=>!tags.includes(t)).map(t=>LABELS[t]??t).join(' + ')}));}
-export function executionPenalty(draft,budget){return Math.min(8,Math.max(0,(evaluate(draft).effects-(budget?.effects??0))/100));}
+export function choices(draft,step){const pack=packFor(draft),e=evaluate(draft),tags=e.states?.[step]??[];return (pack.cards[step]??[]).map(c=>({...c,lock:c.needs.filter(t=>!tags.includes(t)).map(t=>pack.labels[t]??t).join(' + ')}));}
+export function executionPenalty(draft,budget){const e=evaluate(draft);return Math.min(8,Math.max(0,(e.effects-(budget?.[e.department]??0))/100));}
 export function signalSpec(){return {id:'spec-signal-ash',title:'Signal Ash',genre:'Action',subgenre:'Superhero',scale:'Mid-budget',quality:72,difficulty:62,price:125,premise:'A reluctant engineer must stop a former mentor from turning the city’s power grid into a weapon. The scientist who helped build it may be the only person who can shut it down.',roles:['Lead · Alex Rowan','Antagonist · Silas Voss','Supporting · Mara Vale','Supporting · Eli Chen'],art:122,narrativePack:'signal-ash',narrative:originalDraft(),originalNarrative:originalDraft()};}
+
+const SIGNAL_PACK={id:'signal-ash',title:'Signal Ash',genre:'Action',theme:'superhero',headline:'One city. Four lives. Your version.',tagline:'ONE CITY. FOUR LIVES.',department:'effects',departmentLabel:'Effects',characters:CAST,cards:CARDS,labels:LABELS,steps:STEPS,questions:['What starts this movie?','What breaks the original plan?','What does Alex choose to do?','How is the conflict resolved?','What does the outcome take away?','What remains of Voss’s threat?'],arc:{tag:'trustFlaw',resolved:'trust',text:'Alex’s difficulty trusting people remains unchallenged by the chosen response.'},positive:'Both supporting characters influence the outcome; the next challenge is delivering these moments in production.'};
+export const PACKS=[SIGNAL_PACK,...GENRE_PACKS];
+export function packFor(draft){const id=draft?.pack??'signal-ash';const pack=PACKS.find(p=>p.id===id);if(!pack)throw Error('Unknown story pack.');return pack;}
+export function authoredSpecs(){return [signalSpec(),...GENRE_PACKS.map(p=>{const draft={pack:p.id,...structuredClone(p.original)};return {id:'spec-'+p.id,title:p.title,genre:p.genre,subgenre:p.subgenre,scale:p.scale,quality:p.quality,difficulty:p.difficulty,price:p.price,premise:p.premise,roles:p.characters.map((c,i)=>(i===0?'Lead':i===1?'Opposition':'Supporting')+' · '+c.name),art:122,narrativePack:p.id,narrative:draft,originalNarrative:structuredClone(draft)};})];}
