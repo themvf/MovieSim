@@ -1,5 +1,5 @@
-import * as E from "./engine.js?v=0.17.0";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.17.0";
+import * as E from "./engine.js?v=0.18.0";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.18.0";
 const BUILD = "0.10.0";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),
@@ -264,6 +264,7 @@ function scripts() {
 }
 function talentAccolades(p) {
   const honors = E.talentHonors(s, p);
+  if(!honors.nominations.length&&!honors.wins)return "";
   return `<div class="talent-accolades">${pill(`${honors.nominations.length} nomination${honors.nominations.length === 1 ? "" : "s"}`, "gold-pill")}${pill(`${honors.wins} award${honors.wins === 1 ? "" : "s"} won`, "gold-pill")}</div>`;
 }
 function talentAwardsHistory(p) {
@@ -438,7 +439,7 @@ function ceremonyDialog(year) {
     revealed = index < a.revealed;
   modal(
     `${r.category}`,
-    `<div class="ceremony-mark" aria-label="Award">🏆</div><div class="ceremony-progress">CATEGORY ${index + 1} OF ${a.results.length}</div>${revealed ? `<section class="winner-card"><span class="eyebrow gold">${r.ours?"YOUR STUDIO WINS":"AND THE WINNER IS"}</span>${r.person ? portrait(E.person(s,r.person),72):""}${r.winnerName ? `<h2>${h(r.winnerName)}</h2>` : ""}<h3>${h(r.winner)}</h3><p>${r.ours ? "Your studio wins · +8 prestige" : h(E.rivalStudio(r).name)}</p></section>${button(index === a.results.length - 1 ? "See the ceremony recap →" : `Next: ${a.results[index+1]?.category ?? "Recap"} →`, "nextAward", `data-year="${year}" data-category="${index}"`, "primary full")}` : `<h3>The nominees</h3>${nomineeRows(r.entries || r.nominees.map((title) => ({ title })))}${button("Open the envelope · reveal winner", "revealAward", `data-year="${year}" data-category="${index}"`, "primary full")}`}`,
+    `<div class="award-steps" aria-label="Category ${index+1} of ${a.results.length}">${a.results.map((x,i)=>`<span class="${i===index?'current':i<index?'complete':''}">${i+1}</span>`).join('')}</div>${revealed ? `<section class="winner-card ${r.ours?'studio-winner':'rival-winner'}"><span class="eyebrow gold">${r.ours?"🏆 YOUR STUDIO WINS":"AND THE WINNER IS"}</span>${r.person ? portrait(E.person(s,r.person),72):""}${r.winnerName ? `<h2>${h(r.winnerName)}</h2>` : ""}<h3>${h(r.winner)}</h3><p>${r.ours ? "Studio prestige +8" : h(E.rivalStudio(r).name)}</p>${r.person&&E.person(s,r.person)?`<small>${E.person(s,r.person).awards===1?'First career award':`${E.person(s,r.person).awards} career awards`}</small>`:''}${!r.ours?(r.entries??[]).filter(n=>n.id).map(n=>`<small class="block">Your nominee: ${h(n.name??n.title)}</small>`).join(''):''}</section>${button(index === a.results.length - 1 ? "See the ceremony recap →" : `Next: ${a.results[index+1]?.category ?? "Recap"} →`, "nextAward", `data-year="${year}" data-category="${index}"`, "primary full")}` : `<h3>The nominees</h3>${nomineeRows(r.entries || r.nominees.map((title) => ({ title })))}${button("Open the envelope · reveal winner", "revealAward", `data-year="${year}" data-category="${index}"`, "primary full")}`}`,
     "MARCH / THE CEREMONY",
   );
 }
@@ -734,14 +735,19 @@ function revealOpening(m,skip=false) {
  const reveal=dialog.querySelector('[data-action="revealOpening"]'),skipButton=dialog.querySelector('[data-action="skipOpening"]'),report=dialog.querySelector('[data-action="openingReport"]');
  if(root.dataset.running&&!skip)return;
  root.dataset.running='true';reveal.hidden=true;results.hidden=false;skipButton.hidden=false;
- root.querySelector('.premiere-invitation').hidden=true;results.scrollIntoView({block:'nearest'});
+ root.querySelector('.premiere-invitation').hidden=true;root.classList.add('counting');dialog.querySelector('.modal-body').scrollTop=0;paintInitial();
+ function paintInitial(){counter.textContent='$0';}
  const maximum=Math.max(1,m.opening*1.12,(m.expectations?.high??0)*1.2);
  const band=root.querySelector('.premiere-band');if(band){band.style.left=`${m.expectations.low/maximum*100}%`;band.style.width=`${(m.expectations.high-m.expectations.low)/maximum*100}%`;}
  const paint=value=>{counter.textContent=E.accountMoney(value);const marker=$('premiere-marker');if(marker)marker.style.left=`${value/maximum*100}%`;};
  const finish=()=>{if(!root.isConnected)return;root.dataset.done='true';paint(m.opening);const tone=!m.expectations?'met':m.opening<m.expectations.low?'below':m.opening>m.expectations.high?'exceeded':'met';verdict.className=`expectation-status status-${tone}`;verdict.textContent=!m.expectations?'Opening results are in':tone==='below'?'↓ Missed forecast':tone==='exceeded'?'↑ Beat forecast':'✓ Met forecast';skipButton.hidden=true;report.hidden=false;m.openingRevealed=true;save();report.focus({preventScroll:true});};
  if(skip||matchMedia('(prefers-reduced-motion: reduce)').matches){finish();return;}
- const start=performance.now();
- const frame=now=>{if(!root.isConnected||root.dataset.done)return;const progress=Math.min(1,(now-start)/3000);paint(m.opening*(1-Math.pow(1-progress,2)));if(progress<1)requestAnimationFrame(frame);else finish();};requestAnimationFrame(frame);
+ let previous=null,elapsed=0;
+ const frame=now=>{if(!root.isConnected||root.dataset.done)return;
+ if(previous!==null&&!document.hidden)elapsed+=Math.min(64,Math.max(0,now-previous));
+ previous=now;const progress=Math.min(1,elapsed/3000);paint(m.opening*(1-Math.pow(1-progress,2)));
+ if(progress<1)requestAnimationFrame(frame);else finish();};
+ requestAnimationFrame(()=>requestAnimationFrame(frame));
 }
 function openingDialog(m) {
   if(!m.openingRevealed || view.replayPremiere)return premiereDialog(m);
@@ -1037,7 +1043,7 @@ function casting(m, director) {
           aud = m.auditions[E.auditionKey(p, role)],
           booked = !E.available(p, s.week, s.week + plan.duration),
           cast = m.contracts.some((c) => c.id === p.id);
-        return `<article class="casting-card"><div class="person-heading">${portrait(p, 52)}<div><h3>${h(p.name)}</h3>${talentBadge(p)}<p class="muted small">${h(p.gender)} · Age ${p.age}${p.kind === "actor" ? ` · Playing age ${Math.max(18,p.age-5)}–${p.age+5}` : ""}</p></div>${button("Career ↗", "person", `data-person="${p.id}"`, "text-button")}</div>${talentAccolades(p)}${q.personal ? `<p class="fresh-note">🌟 Loved ${h(q.personal)} · half-rate offer for this role</p>` : q.passion ? '<p class="fresh-note">Passion project · special reduced fee</p>' : ""}<details class="talent-secondary"><summary>Strengths & ratings</summary>${genreStrengths(p)}${talentRatings(p, genre)}</details><div class="casting-metrics"><span>Expected fee<b>${E.money(q.low)}–${E.money(q.high)}</b>${q.grossShare ? `<small>Plus ${Math.round(q.grossShare * 100)}% of studio ticket receipts</small>` : ""}</span><span>${director ? "Director audition" : "Audition for this role"}<b>${aud === undefined ? "Not yet held" : ratingRange(E.talentEstimate(s, p, aud))}</b></span></div>${E.freshFace(p) ? '<p class="fresh-note">Still building recognition beyond independent films.</p>' : ""}<div class="card-bottom"><small class="${booked ? "peach" : "muted"}">${q.refusal ? h(q.refusal) : cast ? "Already in this cast" : booked ? `Unavailable during your ${plan.duration}-week shoot` : q.option ? "Sequel option available" : "Available for your shoot"}</small>${q.refusal ? pill("Not interested") : cast ? "" : booked ? pill("Schedule conflict") : aud === undefined ? E.auditionAllowance(s,m,director ? "director" : role).remaining === 0 ? pill("Weekly limit reached") : button("Hold audition", "audition", `data-id="${m.id}" data-person="${p.id}" data-role="${role}"`, "outline") : button("Negotiate →", "offer", `data-id="${m.id}" data-person="${p.id}" data-role="${role}"`, "outline")}</div></article>`;
+        return `<article class="casting-card"><div class="person-heading">${portrait(p, 52)}<div><h3>${h(p.name)}</h3>${talentBadge(p)}<p class="muted small">${h(p.gender)} · Age ${p.age}${p.kind === "actor" ? ` · Playing age ${Math.max(18,p.age-5)}–${p.age+5}` : ""}</p></div>${button("Career ↗", "person", `data-person="${p.id}"`, "text-button")}</div>${talentAccolades(p)}${q.personal ? `<p class="fresh-note">🌟 Loved ${h(q.personal)} · half-rate offer for this role</p>` : q.passion ? '<p class="fresh-note">Passion project · special reduced fee</p>' : ""}${genreStrengths(p)}<details class="talent-secondary"><summary>Full ratings</summary>${talentRatings(p, genre)}</details><div class="casting-metrics"><span>Expected fee<b>${E.money(q.low)}–${E.money(q.high)}</b>${q.grossShare ? `<small>Plus ${Math.round(q.grossShare * 100)}% of studio ticket receipts</small>` : ""}</span>${aud === undefined ? "" : `<span>Audition <b>${ratingRange(E.talentEstimate(s,p,aud))}</b></span>`}</div><div class="card-bottom"><small class="${booked ? "peach" : "muted"}">${q.refusal ? h(q.refusal) : cast ? "Already in this cast" : booked ? `Unavailable during your ${plan.duration}-week shoot` : q.option ? "Sequel option available" : "✓ Available"}</small>${q.refusal ? pill("Not interested") : cast ? "" : booked ? pill("Schedule conflict") : aud === undefined ? E.auditionAllowance(s,m,director ? "director" : role).remaining === 0 ? pill("Weekly limit reached") : button("Hold audition", "audition", `data-id="${m.id}" data-person="${p.id}" data-role="${role}"`, "outline") : button("Negotiate →", "offer", `data-id="${m.id}" data-person="${p.id}" data-role="${role}"`, "outline")}</div></article>`;
       })
       .join("")}</div>`,
     director ? "DIRECTOR SEARCH" : "CASTING ROOM",
