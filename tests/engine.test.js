@@ -80,7 +80,7 @@ test("new runs have distinct talent and deterministic saved seeds", () => {
   assert.deepEqual(E.newGame(7), E.newGame(7));
   assert.notDeepEqual(E.newGame(7).people, E.newGame(8).people);
   assert.equal(E.newGame(7).cash, 6000);
-  assert.equal(new Set(E.newGame(7).people.map((p) => p.name)).size, 66);
+  assert.equal(new Set(E.newGame(7).people.map((p) => p.name)).size, 81);
 });
 test("purchase keeps the real script quality separate from unrevealed film quality", () => {
   const s = E.newGame(7),

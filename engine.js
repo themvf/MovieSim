@@ -272,7 +272,12 @@ export function addHeadshotActors(s) {
  ['Claudia Wren',48,'Woman',63,87],
  ['Dorian Wells',27,'Man',21,75],['Sylvie Monroe',34,'Woman',46,82],['Julian Park',30,'Man',36,79],
  ['Nora Chan',29,'Woman',54,84],['Amelie Grant',24,'Woman',12,72],['Serena Hayes',32,'Woman',61,86],
- ['Iona Clarke',26,'Woman',28,77]
+ ['Iona Clarke',26,'Woman',28,77],
+ ['Tristan Shaw',33,'Man',43,79],['Arthur Voss',68,'Man',76,90],['Naomi Sinclair',35,'Woman',59,84],
+ ['Malcolm Drake',37,'Man',51,81],['Warren Sterling',57,'Man',67,87],
+ ['Emmy Lin',22,'Woman',8,69],['Ayla Reed',25,'Woman',24,76],['Hazel Brooks',23,'Woman',14,73],
+ ['Piper Lane',26,'Woman',33,78],['Rosalie Finch',24,'Woman',19,74],['Dahlia Moore',31,'Woman',55,83],
+ ['Alina Crest',28,'Woman',42,80],['Freya Nash',25,'Woman',29,77],['Evan Solis',30,'Man',38,79],['Hugo Bennett',54,'Man',62,86]
  ];
  profiles.forEach(([name,age,gender,star,talent],i)=>{
   const id=`headshot-actor-${i+1}`;if(s.people.some(p=>p.id===id))return;

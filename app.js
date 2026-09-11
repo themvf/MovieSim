@@ -1,5 +1,5 @@
-import * as E from "./engine.js?v=0.22.0";
-import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.22.0";
+import * as E from "./engine.js?v=0.23.0";
+import { portrait, poster, studioArt, escapeHtml as h } from "./art.js?v=0.23.0";
 const BUILD = "0.10.0";
 const KEY = "moviesim-save-v1",
   app = document.querySelector("#app"),

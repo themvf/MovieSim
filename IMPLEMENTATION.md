@@ -279,3 +279,6 @@ Added seven new supplied images unchanged with fictional actor profiles. Photos 
 
 ## 0.22.0 — Seven additional actor portraits
 Added seven supplied portraits unchanged with authored fictional actor profiles, bringing the total to 34 photo actors. No exact asset duplicates found. Stable IDs add the profiles once to existing saves.
+
+## 0.23.0 — Fifteen additional actor portraits
+Added both supplied batches (five plus ten) unchanged with authored fictional profiles, bringing the total to 49 photo actors. No exact asset duplicates found against existing portraits or between batches. Stable IDs preserve existing actors and saves.
