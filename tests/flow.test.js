@@ -46,7 +46,7 @@ test("fast advancement matches manual simulation and stops for every production 
     assert.deepEqual(s, replay);
     stops++;
   }
-  assert.ok(stops <= 3);
+  assert.ok(stops <= 4); // One additional, bounded crew-burnout decision.
   assert.equal(m.stage, "ready");
   const before = structuredClone(s);
   assert.equal(E.act(s, "nextEvent").weeks, 0);
