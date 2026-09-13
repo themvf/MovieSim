@@ -1,5 +1,8 @@
-import * as SF from "./scifi.js?v=0.30.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.30.0";
+import * as P from "./personality.js?v=0.31.0";
+export const ensurePersonalities=P.ensure;
+export const workingStyle=P.style;
+import * as SF from "./scifi.js?v=0.31.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.31.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -593,6 +596,7 @@ export function migrateSave(s) {
     s.notices = s.notices.filter((n) => n.kind !== "awards");
   }
   s.version = VERSION;
+  P.ensure(s);
   return s;
 }
 export const CAMPAIGNS = [
@@ -979,6 +983,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
   addHeadshotActors(s);
   ensureNarrativeSpec(s);
   for (const r of s.rivals) r.studioId=rivalStudio(r).id;
+  P.ensure(s);
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
   return s;
 }
@@ -1114,7 +1119,8 @@ export function quote(s, p, m, role = 0) {
   const passion = passionProject(p,m);
   const discount = personal ? .5 : passion ? 0.6 :
     p.kind === "actor" && m.difficulty >= 75 && p.talent >= 65 ? 0.76 : 1;
-  const base = p.fee * discount * (1 - s.prestige / 500);
+  const rapport=Math.max(-20,Math.min(20,p.personality?.rapport??0));
+  const base = p.fee * discount * (1 - s.prestige / 500) * (1-rapport/400);
   return {
     passion,
     personal: personal?.film??null,
@@ -1166,7 +1172,7 @@ export function criticReviews(m) {
   if(m.scifiReception) return CRITICS.map((c,i)=>{const score=m.scifiReception.criticScores[i],subject=['writing and performances','direction and production craft','characters and performances'][i];return {...c,score,quote:score>=75?`The ${subject} give this science-fiction concept a convincing life on screen.`:score<50?`The ${subject} struggle to carry the movie’s ambitions.`:`The ${subject} show promise, but the execution is uneven.`};});
   const base = m.criticBaseline ?? m.critics ?? 60;
   const acting = m.performances?.length ? m.performances.reduce((v,x)=>v+x,0)/m.performances.length : m.quality ?? 60;
-  const script = m.scriptQuality ?? 60, craft = m.craft ?? 60, fans = m.fans ?? 60;
+  const script = m.storyExecution ?? m.scriptQuality ?? 60, craft = m.craft ?? 60, fans = m.fans ?? 60;
   const scores = [
     base + (script-base)*.3 + (acting-base)*.15 + ((m.difficulty ?? 60)-60)*.1,
     base + (craft-base)*.35 + (fans-base)*.2 + (["Action","Sci-fi","Horror"].includes(m.genre)?4:-2),
@@ -1281,6 +1287,7 @@ function addMovie(s, sc, parent = null, developing = false) {
     cancelled: false,
   };
   delete m.scifiReception;
+  delete m.peopleStory;delete m.fanCommunity;delete m.directorApproach;delete m.storyExecution;
   if(m.scifiCards) m.premise=SF.premise(m.scifiCards);
   m.scriptQuality = sc.scriptQuality ?? sc.quality;
   debit(s, sc.price);
@@ -1332,6 +1339,9 @@ export function act(s, type, a = {}) {
     throw Error("Review emergency financing before making another decision.");
   let m = a.id ? required(s, a.id) : null;
   switch (type) {
+    case "actorPromise": {const p=P.pledge(s,a.person);log(s,`${p.name}: a ${p.personality.goal} role promised within 26 weeks.`,"action");return p;}
+    case "directorApproach": {stage(m,["packaging"]);if(!m.director||!["back","balanced"].includes(a.choice))throw Error("Hire a director and choose an approach.");m.directorApproach={person:m.director.id,choice:a.choice};return m;}
+    case "fanResponse": P.respond(s,m,a.choice);log(s,`${m.title}: ${m.fanCommunity.response}`);return m;
     case "relationship": return resolveRelationship(s,a);
     case "scifiRewrite": {
       stage(m,["packaging"]);
@@ -1528,6 +1538,7 @@ export function act(s, type, a = {}) {
       m.start = s.week;
       m.release = null;
       m.stage = "filming";
+      P.lock(s,m);
       const costs = productionCosts(s, m, b, duration);
       m.productionTotal = costs.total;
       m.weekly = costs.weekly;
@@ -1884,16 +1895,19 @@ export function distribution(s, m) {
   return Object.fromEntries(Object.entries(offers).map(([k,o])=>[k,k==="self"?o:relationshipOffer(s,o)]));
 }
 function finish(s, m) {
-  const craft = productionCraft(m);
+  const approach=P.adjustments(m);
+  const craft = clamp(productionCraft(m)+approach.craft);
   const performances = m.contracts.map((c) =>
     clamp(m.auditions[`${c.role}:${c.id}`] + (()=>{const credits=person(s,c.id).majorCredits??0;const spread=m.economyVersion>=3?(credits>=4?8:credits?12:18):12;return roll(s,-spread,spread);})()),
   );
+  for(let i=0;i<performances.length;i++)performances[i]=clamp(performances[i]+approach.acting+(m.peopleStory?.actors.find(a=>a.id===m.contracts[i].id)?.supported?4:0));
   m.performances = performances;
   m.directorPerformance = clamp(
-    directorAbility(person(s, m.director.id), m.genre) + roll(s, -10, 10),
+    directorAbility(person(s, m.director.id), m.genre) + roll(s, -10, 10)+approach.direction,
   );
   m.craft = craft;
-  const scriptQuality = m.scriptQuality ?? 60;
+  const scriptQuality = clamp((m.scriptQuality ?? 60)+approach.story);
+  if(m.peopleStory)m.storyExecution=scriptQuality;
   m.quality = clamp(
     scriptQuality * 0.25 +
       (performances.reduce((a, v) => a + v, 0) / performances.length) * 0.3 +
@@ -1922,7 +1936,7 @@ function finish(s, m) {
     99,
   );
   if(m.scifiCards){
-    m.scifiReception=SF.evaluate(m,m.fans-m.quality-(m.audienceBias??0),m.critics-m.quality-(m.criticBias??0));
+    m.scifiReception=SF.evaluate({...m,scriptQuality:m.storyExecution??m.scriptQuality},m.fans-m.quality-(m.audienceBias??0),m.critics-m.quality-(m.criticBias??0));
     m.fans=m.scifiReception.fans;m.critics=m.scifiReception.critics;
   }
   m.criticBaseline = m.critics;
@@ -2013,6 +2027,7 @@ function opening(s, m) {
     fee: d.fee,
     performance: m.directorPerformance ?? m.critics,
   });
+  P.release(s,m,text=>log(s,text,"success"));
   s.prestige = clamp(s.prestige + Math.max(0, m.critics - 60) / 9);
   log(
     s,
@@ -2200,6 +2215,8 @@ function nextWeek(s) {
       `Choose distribution for ${due.title} before its locked release date.`,
     );
   s.week++;
+  P.ensure(s);
+  P.tick(s,text=>log(s,text,"action"));
   ensureOpportunities(s);
   if(s.week%52===0 && activeTrends(s).length<2){const available=TREND_TYPES.filter(t=>!activeTrends(s).some(x=>x.name===t.name));if(available.length){const t=pick(s,available);s.marketTrends.push({...t,start:s.week,end:s.week+104+roll(s,0,78),strength:.45});log(s,`Moviegoers are craving ${t.name.toLowerCase()}.`,"action");}}
   debit(s, overhead(s));
@@ -2320,6 +2337,7 @@ function nextWeek(s) {
           "success",
         );
       }
+      gross*=P.demand(m,s.week);
       m.boxWeeks.push(gross);
       m.gross += gross;
       const entitlement = gross * m.share;
@@ -2383,6 +2401,7 @@ function nextWeek(s) {
     }
     for (let i = 0; i < 4; i++)
       s.people.push(talent(s, i === 3 ? "director" : "actor"));
+    P.ensure(s);
     log(s, "New talent has arrived. Another year of movie history begins.");
   }
   const shark = s.debt.find(l => l.shark && l.due <= s.week);
