@@ -21,5 +21,6 @@ export function collect(s) {
     if(m.fans>=90)publish(s,m.id+':fans','Audience favorite',`Moviegoers rally around ${m.title}`,`Audience score: ${Math.round(m.fans)}/100. The fans have their favorite.`,m.id,'♥');
     if(m.awards?.length)publish(s,m.id+':award','Awards night',`${m.title} takes home silver`,'The film has joined your studio’s award winners.',m.id,'★');
   }
+  for(const [id,r] of Object.entries(s.clients??{}))for(const [i,x] of r.history.entries())if(x.outcome==='delivered')publish(s,'client:'+id+':'+i,'Industry partnerships',`${x.title} delivers on its brief`,`A successful commission earned the studio $${Math.round(x.payment*1000).toLocaleString('en-US')}.`,x.movie,'✓');
   for(const level of [25,50,75,100])if(s.prestige>=level)publish(s,'prestige:'+level,'Studio milestone',`${s.name} reaches ${level} prestige`,'The studio’s standing in the industry has reached a new milestone.',null,'✦');
 }

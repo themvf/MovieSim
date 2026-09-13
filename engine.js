@@ -1,16 +1,17 @@
-import * as PRESS from "./press.js?v=0.34.0";
-import * as CH from "./chemistry.js?v=0.34.0";
-import * as C from "./commissions.js?v=0.34.0";
-import * as D from "./delays.js?v=0.34.0";
+import * as CL from "./clients.js?v=0.35.0";
+import * as PRESS from "./press.js?v=0.35.0";
+import * as CH from "./chemistry.js?v=0.35.0";
+import * as C from "./commissions.js?v=0.35.0";
+import * as D from "./delays.js?v=0.35.0";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.34.0";
+import * as P from "./personality.js?v=0.35.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.34.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.34.0";
+import * as SF from "./scifi.js?v=0.35.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.35.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -606,6 +607,7 @@ export function migrateSave(s) {
   s.version = VERSION;
   P.ensure(s);
   C.ensure(s);
+  CL.ensure(s);
   CH.ensure(s);
   PRESS.collect(s);
   return s;
@@ -996,6 +998,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
   for (const r of s.rivals) r.studioId=rivalStudio(r).id;
   P.ensure(s);
   C.ensure(s);
+  CL.ensure(s);
   CH.ensure(s);
   PRESS.collect(s);
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
@@ -1355,7 +1358,10 @@ export function act(s, type, a = {}) {
   let m = a.id ? required(s, a.id) : null;
   switch (type) {
     case "commissionAccept": C.accept(s);return;
-    case "commissionBind": C.bind(s,m);return;
+    case "commissionBind": if(m&&Object.values(s.clients??{}).some(r=>r.deal?.movie===m.id))throw Error('This film is already committed to another client.');C.bind(s,m);return;
+    case "clientAccept": CL.accept(s,a.client);return;
+    case "clientBind": CL.bind(s,a.client,m);return;
+    case "clientDecline": CL.decline(s,a.client);return;
     case "commissionExtend": C.extend(s);return;
     case "commissionDecline": C.decline(s);return;
     case "actorPromise": {const p=P.pledge(s,a.person);log(s,`${p.name}: a ${p.personality.goal} role promised within 26 weeks.`,"action");return p;}
@@ -2053,6 +2059,7 @@ function opening(s, m) {
   });
   P.release(s,m,text=>log(s,text,"success"));
   C.deliver(s,m,text=>log(s,text,"success"));
+  CL.deliver(s,m,text=>log(s,text,"success"));
   s.prestige = clamp(s.prestige + Math.max(0, m.critics - 60) / 9);
   log(
     s,
@@ -2243,6 +2250,7 @@ function nextWeek(s) {
   P.ensure(s);
   P.tick(s,text=>log(s,text,"action"));
   C.tick(s,text=>log(s,text,"action"));
+  CL.tick(s,text=>log(s,text,"action"));
   ensureOpportunities(s);
   if(s.week%52===0 && activeTrends(s).length<2){const available=TREND_TYPES.filter(t=>!activeTrends(s).some(x=>x.name===t.name));if(available.length){const t=pick(s,available);s.marketTrends.push({...t,start:s.week,end:s.week+104+roll(s,0,78),strength:.45});log(s,`Moviegoers are craving ${t.name.toLowerCase()}.`,"action");}}
   debit(s, overhead(s));
