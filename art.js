@@ -1,5 +1,5 @@
-import { packFor } from "./narrative.js?v=0.39.0";
-import { scopeName } from "./engine.js?v=0.39.0";
+import { packFor } from "./narrative.js?v=0.40.0";
+import { scopeName } from "./engine.js?v=0.40.0";
 // Original, code-drawn pixel artwork. No external asset downloads or fonts.
 const palettes = [
   ["#27414c", "#7bbaaf", "#efbf88"],

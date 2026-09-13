@@ -3496,3 +3496,4 @@ dialog:has(.narrative-report){width:min(1040px,calc(100vw - 28px));max-width:104
 .advance-tools{margin:12px 0}.advance-tools small{font-size:12px;color:#b1c2cb;max-width:330px}
 .advance-tools [aria-disabled="true"]{opacity:.55}
 .action-footer:has(.advance-tools){flex-wrap:wrap}.action-footer .advance-tools{flex-basis:100%;margin:0}
+.brief-estimate{border-left:3px solid #91e3c0;background:#132a31;padding:12px;margin:14px 0}.brief-estimate>small{font-size:12px;color:#b1c2cb}.brief-estimate details{margin:8px 0}.brief-estimate label{margin:8px 0}

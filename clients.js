@@ -1,18 +1,19 @@
 // Recurring industry clients. Rewards are in thousands of dollars.
 export const CLIENTS = [
- {id:'starlight',name:'Mira Sol',initials:'MS',company:'Starlight Cinemas',role:'Cinema owner',start:0,weeks:32,payment:450,bonus:100,cooldown:10,
-  title:'An adventure close to home',cards:[['setting','Earth'],['tone','Adventurous']],
+ {id:'starlight',name:'Mira Sol',initials:'MS',company:'Starlight Cinemas',role:'Cinema owner',start:0,weeks:18,payment:562.5,bonus:125,cooldown:10,
+  tier:'Premiere commitment',premium:25,reason:'The cinema has booked an opening-night event. The date cannot move.',title:'An adventure close to home',cards:[['setting','Earth'],['tone','Adventurous']],
   pitch:'Give me Earth, a big adventure, and a reason for people to leave their sofas.',success:'That brought a little life back to the lobby. I have another slot for you.',failure:'I held that slot for your film. Next time, promise me a date you can keep.'},
- {id:'lantern',name:'Tomas Reed',initials:'TR',company:'Lantern Film Society',role:'Festival programmer',start:4,weeks:44,payment:700,bonus:150,cooldown:16,
-  title:'A machine with something to say',cards:[['concept','Artificial Intelligence'],['tone','Thoughtful']],score:'critics',minimum:75,
+ {id:'lantern',name:'Tomas Reed',initials:'TR',company:'Lantern Film Society',role:'Festival programmer',start:4,weeks:18,payment:875,bonus:187.5,cooldown:16,
+  tier:'Premiere commitment',premium:25,reason:'The festival programme closes on this date. No late entries.',title:'A machine with something to say',cards:[['concept','Artificial Intelligence'],['tone','Thoughtful']],score:'critics',minimum:75,
   pitch:'An AI story that leaves the room arguing. Bring the idea—and the execution.',success:'The discussion went on after we turned the lights off. Bring me your next idea.',failure:'The ambition was there. The film did not meet the brief. Let’s take some time.'},
- {id:'midnight',name:'Kit Mercer',initials:'KM',company:'Midnight Signal',role:'Late-night film host',start:8,weeks:36,payment:550,bonus:125,cooldown:12,
-  title:'Nowhere to turn',cards:[['complication','Isolation'],['tone','Dark']],score:'fans',minimum:65,
+ {id:'midnight',name:'Kit Mercer',initials:'KM',company:'Midnight Signal',role:'Late-night film host',start:8,weeks:14,payment:825,bonus:187.5,cooldown:12,
+  tier:'Rush order',premium:50,rush:true,reason:'A late-night showcase needs a replacement film. Its broadcast date is fixed.',title:'Nowhere to turn',cards:[['complication','Isolation'],['tone','Dark']],score:'fans',minimum:65,
   pitch:'Trap them somewhere dark. My audience loves shouting advice at the screen.',success:'They yelled at the screen. Then they asked when your next one was coming.',failure:'My regulars were counting on this one. I’ll give the slot to someone else for a while.'},
 ];
 export function ensure(s){s.clients??={};for(const c of CLIENTS)s.clients[c.id]??={wins:0,strikes:0,nextOffer:c.start,deal:null,history:[],last:c.pitch};}
 export function definition(id){const c=CLIENTS.find(c=>c.id===id);if(!c)throw Error('Unknown client.');return c;}
-export function available(s,id){const c=definition(id),r=s.clients?.[id];return !!r&&!r.deal&&r.strikes<2&&s.week>=r.nextOffer&&s.week+c.weeks<260;}
+export function unlocked(s,id){return !definition(id).rush||((s.marsTravel?.wins??0)+Object.values(s.clients??{}).reduce((n,r)=>n+(r.wins??0),0)>0);}
+export function available(s,id){const c=definition(id),r=s.clients?.[id];return !!r&&unlocked(s,id)&&!r.deal&&r.strikes<2&&s.week>=r.nextOffer&&s.week+c.weeks<260;}
 export function occupied(s,m){return s.marsTravel?.deal?.movie===m.id||Object.values(s.clients??{}).some(r=>r.deal?.movie===m.id);}
 export function eligible(s,m){return !!m&&m.genre==='Sci-fi'&&['development','packaging'].includes(m.stage)&&!!m.scifiCards&&!occupied(s,m);}
 export function matches(m,c){return c.cards.every(([section,card])=>m.scifiCards?.[section]?.includes(card));}

@@ -1,0 +1,13 @@
+const {chromium}=require('playwright'),assert=require('node:assert/strict');
+(async()=>{const c=(await import('/tmp/moviesim-browser/node_modules/@sparticuz/chromium/build/index.js')).default,b=await chromium.launch({headless:true,executablePath:await c.executablePath(),args:c.args}),p=await b.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));const click=async q=>p.locator(q+':visible').last().click();
+await p.goto('http://127.0.0.1:4173');await click('[data-action="commission"]');
+assert.match(await p.locator('.brief-estimate').innerText(),/16 weeks/);assert.match(await p.locator('.brief-estimate').innerText(),/6 weeks of buffer/);
+await p.locator('.brief-estimate summary').click();await p.locator('#brief-duration').selectOption('12');assert.match(await p.locator('.brief-estimate').innerText(),/2 weeks of buffer/);
+await click('[data-action="commissionAccept"]');let save=await p.evaluate(()=>JSON.parse(localStorage.getItem('moviesim-save-v1')));assert.equal(save.marsTravel.deal.due-save.week,22);
+await p.locator('#brief-duration').selectOption('4');save=await p.evaluate(()=>JSON.parse(localStorage.getItem('moviesim-save-v1')));assert.equal(save.marsTravel.deal.due-save.week,22);
+await click('[data-action="commissionExtend"]');save=await p.evaluate(()=>JSON.parse(localStorage.getItem('moviesim-save-v1')));assert.equal(save.marsTravel.deal.payment,450);assert.equal(save.marsTravel.deal.due-save.week,24);
+await click('[data-action="close"]');await click('[data-action="client"][data-client="starlight"]');assert.match(await p.locator('dialog').innerText(),/18 weeks/);assert.match(await p.locator('dialog').innerText(),/\$562,500/);assert.match(await p.locator('.brief-estimate').innerText(),/2 weeks of buffer/);
+await p.screenshot({path:'test-results/deadline40-mobile.png'});assert.equal(await p.locator('dialog').evaluate(x=>x.scrollWidth>x.clientWidth+1),false);
+await p.locator('.brief-estimate summary').click();await p.locator('#brief-scale').selectOption('Blockbuster');assert.match(await p.locator('.brief-estimate').innerText(),/2 weeks beyond deadline/);
+await click('[data-action="close"]');await click('[data-action="client"][data-client="midnight"]');assert.match(await p.locator('dialog').innerText(),/unlock rush orders/);assert.equal(await p.locator('[data-action="clientAccept"]').count(),0);
+await p.setViewportSize({width:1280,height:900});assert.equal(await p.locator('dialog').evaluate(x=>x.scrollWidth>x.clientWidth+1),false);assert.deepEqual(errors,[]);await b.close();console.log('PASS: planning estimates, fixed acceptance date, extension cost, scope risk, rush lock, mobile/desktop.');})().catch(e=>{console.error(e);process.exit(1)});
