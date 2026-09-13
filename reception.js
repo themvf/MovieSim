@@ -89,3 +89,17 @@ export function evaluate(m,sections,fanNoise=0,criticNoise=0){
  return {version:2,values,adjustment,execution,demands:w,groups:result,fans:Math.round(result.reduce((n,g)=>n+g.score*g.share,0)),critics,criticScores:[critics,critics,critics],criticBreakdown,coherence:h,interpretation:interpretation(m.endingCards,m.scifiCards),feedback:[],continuity,promise,repetition};
 }
 export const retention=(fans,critics)=>cap(.65+.003*(fans-60)+.001*(critics-60),.35,.90);
+
+// Read-only explanations also work for version-2 reports saved before observations existed.
+export function observations(m){
+ const r=m.scifiReception;if(r?.version!==2)return [];
+ const result=[];const dimensions={story:'Writing',acting:'Performances',direction:'Direction',craft:'Production craft'};
+ const demands=r.demands??{};const ranked=Object.keys(dimensions).sort((a,b)=>(r.values[b]+r.adjustment)-(r.values[a]+r.adjustment));
+ const strongest=ranked[0],weakest=ranked.at(-1);
+ result.push(`${dimensions[strongest]} were the strongest delivered element (${Math.round(cap(r.values[strongest]+r.adjustment))}/100).`);
+ const relevant=chosen(m.endingCards).sort((a,b)=>b.w[keys.indexOf(weakest)]-a.w[keys.indexOf(weakest)])[0];
+ if(weakest!==strongest)result.push(`${relevant?relevant.name+' depends partly on '+dimensions[weakest].toLowerCase():dimensions[weakest]}: ${Math.round(cap(r.values[weakest]+r.adjustment))}/100, the film’s weakest delivered element.`);
+ if(r.coherence?.rules?.length)result.push(r.coherence.rules[0][0]+'.');
+ else {const g=[...r.groups].sort((a,b)=>Math.abs(b.breakdown?.affinity??0)-Math.abs(a.breakdown?.affinity??0))[0];if(g?.breakdown?.affinity)result.push(`${(m.endingCards??[]).join(' + ')} ${g.breakdown.affinity>0?'appealed to':'left less closure for'} ${g.name.toLowerCase()}.`);}
+ return result.slice(0,3);
+}

@@ -400,3 +400,13 @@ Critics weight story 40%, direction 25%, acting 20%, craft 15%, then receive coh
 New-model theatrical retention uses clamp(.65 + .003*(fans−60) + .001*(critics−60), .35, .90). Opening economics remain intact, including the existing review influence. Endings carry to sequels, can be revised before filming, and do not alter the original film. Returning the same lead actor after Lead Dies receives −6 continuity; resolving an open predecessor with closure receives +4. This is an explicit first-pass actor-based continuity proxy: prequels, revival explanations and persistent fictional-character identities are not yet available. Production snapshots reset for sequels. Older films retain version-1 scoring, and saves keep BUILD 0.10.0 / engine version 5.
 
 Validation: 195 passing engine tests, including real production/release, save migration, sequel reset, immutable reports, invalid-action atomicity, category normalization, execution tradeoffs, bounded arithmetic, contextual interpretations and retention. tests/browser-cinema37.cjs passes at 390px and desktop, verifying tap selection, title persistence, saved endings, actual production/release, score disclosures and no page errors. Physical iPhone playtesting and balance feedback remain useful.
+
+## 0.38.0 — Essential playtest fixes
+
+Card films now derive their premise, casting briefs and subgenre from their selected ingredients. Revisions update that identity. Save migration repairs descriptive text while preserving the mechanical subgenre of films already in production or released. Project summaries show selected endings, and version-2 release reports explain strengths and weaknesses from archived results without rerolling scores.
+
+Cinema Collection exposes every category on mobile, keeps card words intact, collapses production/campaign settings, shows progress and disables advancement with an accurate selection prompt. Crew burnout offers two meaningful tradeoffs: recovery time with stronger loyalty or a simplified shoot with a quality cost. Legacy crew actions map to supported choices.
+
+New version-2 test screenings sample the saved audience result with research-dependent uncertainty; forecasts disclose that range. Existing paid screenings retain their values and identify the legacy model. Save BUILD and engine schema stay unchanged.
+
+Validation: all 200 simulation tests pass, including identity/rewrite consistency across genres, save preservation, screening bounds and crew tradeoffs. The mobile/desktop Cinema Collection browser journey passes with real production/release and no page errors; the 390px screenshot was visually checked. Original playtest assessments are archived in docs/playtest-usability.md and docs/playtest-fun.md.

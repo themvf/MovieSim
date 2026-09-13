@@ -6,7 +6,7 @@ export const INCIDENTS=[
  {title:'The effects sequence needs another pass',text:'The images are not convincing yet. The team needs time to rebuild the sequence, or we need a simpler version.',options:[['wait','Allow another effects pass',2,0],['rework','Simplify the sequence',1,2],['coverage','Use a less ambitious cut',0,5]]},
  {title:'Weather has stopped the exterior shoot',text:'We cannot safely film the planned exteriors. We can wait, move the scene indoors, or tell it differently.',options:[['wait','Wait for safe conditions',2,0],['rework','Restage the scene indoors',1,2],['coverage','Rewrite using existing footage',0,5]]},
 ];
-INCIDENTS.push({title:'The crew is running on empty',text:'We have been stretching every day. Give us recovery time, simplify the remaining scenes, or accept the cost of pushing on.',options:[['wait','Rest the crew · loyalty +6',2,0],['rework','Simplify the remaining shoot · loyalty +1',0,2],['coverage','Push through · loyalty −6',0,4]]});
+INCIDENTS.push({title:'The crew is running on empty',text:'We have been stretching every day. Give us recovery time, or simplify the remaining scenes.',options:[['wait','Rest the crew · loyalty +6',2,0],['rework','Simplify the remaining shoot · loyalty +1',0,2]]});
 export function start(m){m.delayPlan={version:1,count:0,remaining:0,elapsed:0,holdingPaid:0,history:[]};}
 export function due(m){const d=m.delayPlan;return d&&d.count<(m.scale==='Blockbuster'?2:1)&&m.progress>=Math.max(2,Math.floor(m.duration*(d.count ? .7 : .35)))&&m.progress<m.duration;}
 export function incident(m){const d=m.delayPlan;let index=(hash(m.id)+d.count)%5;if(index===3&&!['Sci-fi','Action'].includes(m.genre))index=0;d.count++;return {kind:'delay',index,title:INCIDENTS[index].title,text:INCIDENTS[index].text};}

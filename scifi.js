@@ -1,4 +1,4 @@
-import {GENRE_CARDS} from "./card-genres.js?v=0.37.0";
+import {GENRE_CARDS} from "./card-genres.js?v=0.38.0";
 // Sci-fi card experiment v1. Pure evaluation; no random draws during reporting.
 export const SECTIONS = [
  ['setting','Setting','Where does it happen?',['Earth','Deep Space','Alien World','Space Station','Colony']],
@@ -39,4 +39,21 @@ export function evaluate(m,fanNoise=0,criticNoise=0){
  const critics=Math.round(criticScores.reduce((a,b)=>a+b,0)/criticScores.length);
  const feedback=selected(m.scifiCards,m.genre??"Sci-fi").map(c=>({...c,value:Math.round(clamp(values[c.dimension]+adjustment)),label:DIMENSIONS[c.dimension]}));
  return {version:1,values,adjustment,groups,fans,critics,criticScores,feedback};
+}
+
+// Descriptive card identity; does not invent an occupation or relationship.
+export function identity(d,genre='Sci-fi'){
+ const has=(key,value)=>d[key]?.includes(value),lead=d.characters?.[0]??'People';
+ const actors={Family:'A family member',Friends:'A member of the friendship group',Rivals:'One of the rivals',Misfits:'An outsider in the group',Strangers:'One of the strangers',Investigators:'An investigator',Outsiders:'An outsider',Explorers:'An explorer',Scientists:'A scientist',Soldiers:'A soldier',Civilians:'A civilian'};
+ const goals={Discover:'make a discovery',Survive:'survive',Escape:'escape',Protect:'protect others','Return Home':'return home',Investigate:'uncover the truth',Confront:'confront the threat',Belong:'find belonging',Win:'win',Impress:'make an impression',Reconcile:'reconcile','Get Home':'get home'};
+ const places={Earth:'on Earth','Deep Space':'in deep space','Alien World':'on an alien world','Space Station':'aboard a space station',Colony:'in a colony','Small Town':'in a small town','Remote House':'at a remote house',Wilderness:'in the wilderness',Institution:'inside an institution',City:'in a city',Workplace:'at work','Big City':'in a big city',Vacation:'on vacation','Family Gathering':'at a family gathering'};
+ const cast=(d.characters??[]).map(x=>x==='Family'?'a family':x==='Friends'?'a group of friends':x.toLowerCase()).join(' and ');
+ const goal=(d.objective??[]).map(x=>goals[x]??x.toLowerCase()).join(' and ');
+ const place=(d.setting??[]).map(x=>places[x]??x.toLowerCase()).join(' and ');
+ const premise= `The story follows ${cast} ${place} as they try to ${goal}. ${genre==='Comedy'?'The trouble starts with':genre==='Horror'?'They face':'At the center is'} ${(d.concept??[]).map(x=>x.toLowerCase()).join(' and ')}, complicated by ${(d.complication??[]).map(x=>x.toLowerCase()).join(' and ')}.`;
+ let subgenre;
+ if(genre==='Comedy')subgenre=has('setting','Workplace')?'Workplace':has('tone','Satirical')?'Satire':has('characters','Family')?'Family comedy':has('characters','Friends')?'Buddy comedy':'Fish out of water';
+ if(genre==='Horror')subgenre=has('concept','Creature')?'Creature feature':has('concept','Obsession')?'Psychological horror':has('concept','Haunting')&&has('setting','Remote House')?'Haunted house':has('concept','Haunting')||has('concept','Curse')?'Supernatural':'Survival';
+ if(genre==='Sci-fi')subgenre=has('concept','Time Travel')?'Time travel':has('concept','Alien Life')?'First contact':has('setting','Earth')?'Near future':'Space';
+ return {premise,subgenre,roleDescriptions:[`${actors[lead]??'A member of the central group'} trying to ${goal}`,`Another perspective within the ${lead.toLowerCase()} story`, `A supporting character affected by ${(d.complication??[]).join(' and ').toLowerCase()}`]};
 }
