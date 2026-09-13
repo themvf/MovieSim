@@ -1,18 +1,19 @@
-import * as LIFE from "./studio-life.js?v=0.36.0";
-import * as CL from "./clients.js?v=0.36.0";
-import * as PRESS from "./press.js?v=0.36.0";
-import * as CH from "./chemistry.js?v=0.36.0";
-import * as C from "./commissions.js?v=0.36.0";
-import * as D from "./delays.js?v=0.36.0";
+import * as REC from "./reception.js?v=0.37.0";
+import * as LIFE from "./studio-life.js?v=0.37.0";
+import * as CL from "./clients.js?v=0.37.0";
+import * as PRESS from "./press.js?v=0.37.0";
+import * as CH from "./chemistry.js?v=0.37.0";
+import * as C from "./commissions.js?v=0.37.0";
+import * as D from "./delays.js?v=0.37.0";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.36.0";
+import * as P from "./personality.js?v=0.37.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.36.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.36.0";
+import * as SF from "./scifi.js?v=0.37.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.37.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -447,6 +448,7 @@ export function productionCosts(s, m, b, duration) {
 }
 const DEBT_EPSILON = 1e-10; // Internal thousands: far below one cent; only arithmetic residue.
 function validMovieFinances(m) {
+  if(m.endingCards && (!m.scifiCards || !REC.valid(m.endingCards) || !REC.PROMISES.includes(m.publicPromise??"As written"))) return false;
   if(m.scifiCards && (!SF.genres.includes(m.genre) || !SF.validate(m.scifiCards,m.genre))) return false;
   if (
     m.marketingConfirmed !== undefined &&
@@ -1306,7 +1308,7 @@ function addMovie(s, sc, parent = null, developing = false) {
     awards: [],
     cancelled: false,
   };
-  delete m.scifiReception;
+  delete m.scifiReception;delete m.receptionContext;
   delete m.delayPlan;delete m.sponsorIncome;
   delete m.life;delete m.passion;delete m.cult;delete m.releaseDeal;delete m.castChemistry;delete m.peopleStory;delete m.fanCommunity;delete m.directorApproach;delete m.storyExecution;
   if(m.scifiCards) m.premise=SF.premise(m.scifiCards,m.genre);
@@ -1381,9 +1383,11 @@ export function act(s, type, a = {}) {
     case "scifiRewrite": {
       stage(m,["development","packaging"]);
       if(!SF.genres.includes(m.genre) || !SF.validate(a.cards,m.genre)) throw Error("Choose 1–2 different cards in every section.");
-      if(JSON.stringify(m.scifiCards)===JSON.stringify(a.cards)) return m;
+      const endings=a.endingCards??m.endingCards,promise=a.publicPromise??m.publicPromise??'As written';
+      if(endings&&!REC.valid(endings)||!REC.PROMISES.includes(promise))throw Error('Choose 1–2 compatible ending cards and a campaign promise.');
+      if(JSON.stringify(m.scifiCards)===JSON.stringify(a.cards)&&JSON.stringify(endings)===JSON.stringify(m.endingCards)&&promise===(m.publicPromise??'As written')) return m;
       if(s.cash<50)throw Error("You need $50,000 to approve revised cards.");
-      debit(s,50);m.spent+=50;delete m.narrativePack;delete m.narrative;delete m.originalNarrative;m.scifiCards=structuredClone(a.cards);m.premise=SF.premise(a.cards,m.genre);return m;
+      debit(s,50);m.spent+=50;delete m.narrativePack;delete m.narrative;delete m.originalNarrative;m.scifiCards=structuredClone(a.cards);if(endings)m.endingCards=structuredClone(endings);m.publicPromise=promise;m.premise=SF.premise(a.cards,m.genre);return m;
     }
     case "storyRewrite": if(m.scifiCards) throw Error("Use the sci-fi card board to revise this film."); return m.narrativePack ? rewriteNarrative(s,m,a) : rewriteStory(s,m,a);
     case "buy": {
@@ -1405,6 +1409,7 @@ export function act(s, type, a = {}) {
         .slice(0, 60);
       if (!title) throw Error("Give your movie a title.");
       if(a.scifiCards && (!SF.genres.includes(a.genre) || !SF.validate(a.scifiCards,a.genre))) throw Error("Choose 1–2 different cards in every section.");
+      if(a.endingCards&&(!a.scifiCards||!REC.valid(a.endingCards))||a.publicPromise&&!REC.PROMISES.includes(a.publicPromise))throw Error('Choose 1–2 compatible ending cards and a campaign promise.');
       if(a.pitch)LIFE.checkPitch(s,a.pitch,a.genre,a.scifiCards);
       const cost=100*(SCALES.indexOf(a.scale)+1)*LIFE.scriptMultiplier(s,a.genre);
       if(s.cash<cost) throw Error("Not enough cash to commission this screenplay.");
@@ -1422,6 +1427,7 @@ export function act(s, type, a = {}) {
             : ["Lead", "Supporting"],
       });
       Object.assign(sc, freshStory(s, a.subgenre));
+      if(a.endingCards){sc.endingCards=structuredClone(a.endingCards);sc.publicPromise=a.publicPromise??"As written";}
       if(a.scifiCards){ sc.scifiCards=structuredClone(a.scifiCards);sc.premise=SF.premise(a.scifiCards,a.genre); }
       m = addMovie(s, sc, null, true);
       if(a.pitch)LIFE.attachPitch(s,m,a.pitch);
@@ -1579,7 +1585,7 @@ export function act(s, type, a = {}) {
       m.stage = "filming";
       P.lock(s,m);
       CH.lock(s,m);
-      LIFE.lock(s,m);
+      LIFE.lock(s,m);if(m.endingCards)m.receptionContext=REC.snapshot(s,m);
       D.start(m);
       const costs = productionCosts(s, m, b, duration);
       m.productionTotal = costs.total;
@@ -1981,7 +1987,8 @@ function finish(s, m) {
     99,
   );
   if(m.scifiCards){
-    m.scifiReception=SF.evaluate({...m,scriptQuality:m.storyExecution??m.scriptQuality},m.fans-m.quality-(m.audienceBias??0),m.critics-m.quality-(m.criticBias??0));
+    const delivered={...m,scriptQuality:m.storyExecution??m.scriptQuality},fn=m.fans-m.quality-(m.audienceBias??0),cn=m.critics-m.quality-(m.criticBias??0);
+    m.scifiReception=m.endingCards?REC.evaluate(delivered,SF.sections(m.genre),fn,cn):SF.evaluate(delivered,fn,cn);
     m.fans=m.scifiReception.fans;m.critics=m.scifiReception.critics;
   }
   LIFE.finish(m);
@@ -2356,7 +2363,7 @@ function nextWeek(s) {
     if (m.stage === "scheduled" && s.week >= m.release) opening(s, m);
     if (m.stage === "theaters") {
       const age = s.week - m.theaterStart,
-        hold = 0.35 + m.fans / 200;
+        hold = m.scifiReception?.version===2?REC.retention(m.fans,m.critics):0.35 + m.fans / 200;
       let gross =
         age === 0
           ? m.opening
