@@ -1,15 +1,16 @@
-import * as CH from "./chemistry.js?v=0.33.0";
-import * as C from "./commissions.js?v=0.33.0";
-import * as D from "./delays.js?v=0.33.0";
+import * as PRESS from "./press.js?v=0.34.0";
+import * as CH from "./chemistry.js?v=0.34.0";
+import * as C from "./commissions.js?v=0.34.0";
+import * as D from "./delays.js?v=0.34.0";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.33.0";
+import * as P from "./personality.js?v=0.34.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.33.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.33.0";
+import * as SF from "./scifi.js?v=0.34.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.34.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -606,6 +607,7 @@ export function migrateSave(s) {
   P.ensure(s);
   C.ensure(s);
   CH.ensure(s);
+  PRESS.collect(s);
   return s;
 }
 export const CAMPAIGNS = [
@@ -995,6 +997,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
   P.ensure(s);
   C.ensure(s);
   CH.ensure(s);
+  PRESS.collect(s);
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
   return s;
 }
@@ -1194,7 +1197,7 @@ export function criticReviews(m) {
     craft < 50 ? "Big-screen ambitions, small-screen execution. I wanted more from the craft." : fans > 75 ? "The crowd came for a movie and got a very good night out." : craft > 75 ? "The craft earns its close-up. Somebody put that production budget on the screen." : "A respectable ride. My popcorn showed more dramatic range.",
     acting > 75 ? "The performances stayed with me after the credits. That is the part you cannot buy with a trailer." : script < 55 ? "I kept turning the page, hoping the story would catch up." : fans < 50 ? "There is a story here. Finding a reason to care proved harder." : "Enough character to keep me watching. Not quite enough to haunt the journey home.",
   ];
-  return CRITICS.map((c,i)=>({...c,score:Math.round(clamp(scores[i],5,99)),quote:quotes[i]}));
+  return CRITICS.map((c,i)=>({...c,score:Math.round(clamp(scores[i],5,100)),quote:quotes[i]}));
 }
 export function streamingOffers(m, s = null) {
   const weekly = Math.max(2,m.gross*.0017) * (.7+(m.fans ?? 60)/200);
@@ -2444,6 +2447,7 @@ function nextWeek(s) {
       return;
     }
   }
+  PRESS.collect(s);
   const year = date(s.week).year;
   if (s.week % 52 === 44) s.notices.push({ kind: "awardsHeadsUp", year });
   if (s.week >= 52 && s.week % 52 === 3) nominations(s, year - 1);

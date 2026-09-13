@@ -30,7 +30,7 @@ export function evaluate(m,fanNoise=0,criticNoise=0){
  const sum=groups.reduce((a,g)=>a+g.weight,0);groups.forEach(g=>g.share=g.weight/sum);
  const fans=Math.round(groups.reduce((a,g)=>a+g.score*g.share,0));
  const criticWeights=[{story:.5,acting:.25,direction:.2,craft:.05},{story:.15,acting:.15,direction:.3,craft:.4},{story:.3,acting:.4,direction:.25,craft:.05}];
- const criticScores=criticWeights.map(w=>Math.round(clamp(Object.keys(values).reduce((n,k)=>n+w[k]*values[k],0)+adjustment+criticNoise+(m.criticBias??0))));
+ const criticScores=criticWeights.map(w=>Math.round(Math.max(5,Math.min(100,Object.keys(values).reduce((n,k)=>n+w[k]*values[k],0)+adjustment+criticNoise+(m.criticBias??0)))));
  const critics=Math.round(criticScores.reduce((a,b)=>a+b,0)/criticScores.length);
  const feedback=selected(m.scifiCards).map(c=>({...c,value:Math.round(clamp(values[c.dimension]+adjustment)),label:DIMENSIONS[c.dimension]}));
  return {version:1,values,adjustment,groups,fans,critics,criticScores,feedback};
