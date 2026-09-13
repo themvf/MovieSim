@@ -174,3 +174,9 @@ Moving release dates is excluded from the demo; whether to add it later is not y
 - The central movie-management flow works comfortably on a phone-sized screen.
 
 These are validation goals for the prototype, not claims that implementation or testing has already occurred.
+
+## Sci-fi card experiment — September 2026
+
+The sci-fi experiment replaces preauthored plots as the main original-development path with broad mix-and-match ingredients. Choose one or two ordered cards from each of six sections: Setting, Characters, Sci-fi concept, Objective, Complication, Tone. The first is primary and the second supports it. Keep the existing authored drafts available for old saves and comparison. The experiment's report connects reception to actual simulated execution and separates audience approval from ticket sales and studio profitability. See IMPLEMENTATION.md 0.30.0 for scope and limitations.
+
+Future priorities retained from player feedback: memorable talent personalities, shared history, distinct studio identity, and consequences that extend beyond one movie. These are design priorities, not shipped features of this card experiment.

@@ -1,4 +1,5 @@
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.29.0";
+import * as SF from "./scifi.js?v=0.30.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.30.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -433,6 +434,7 @@ export function productionCosts(s, m, b, duration) {
 }
 const DEBT_EPSILON = 1e-10; // Internal thousands: far below one cent; only arithmetic residue.
 function validMovieFinances(m) {
+  if(m.scifiCards && (m.genre!=="Sci-fi" || !SF.validate(m.scifiCards))) return false;
   if (
     m.marketingConfirmed !== undefined &&
     typeof m.marketingConfirmed !== "boolean"
@@ -1161,6 +1163,7 @@ export const CRITICS = [
 ];
 export function criticReviews(m) {
   if (m.reviews) return m.reviews;
+  if(m.scifiReception) return CRITICS.map((c,i)=>{const score=m.scifiReception.criticScores[i],subject=['writing and performances','direction and production craft','characters and performances'][i];return {...c,score,quote:score>=75?`The ${subject} give this science-fiction concept a convincing life on screen.`:score<50?`The ${subject} struggle to carry the movie’s ambitions.`:`The ${subject} show promise, but the execution is uneven.`};});
   const base = m.criticBaseline ?? m.critics ?? 60;
   const acting = m.performances?.length ? m.performances.reduce((v,x)=>v+x,0)/m.performances.length : m.quality ?? 60;
   const script = m.scriptQuality ?? 60, craft = m.craft ?? 60, fans = m.fans ?? 60;
@@ -1277,6 +1280,8 @@ function addMovie(s, sc, parent = null, developing = false) {
     awards: [],
     cancelled: false,
   };
+  delete m.scifiReception;
+  if(m.scifiCards) m.premise=SF.premise(m.scifiCards);
   m.scriptQuality = sc.scriptQuality ?? sc.quality;
   debit(s, sc.price);
   s.movies.push(m);
@@ -1328,7 +1333,13 @@ export function act(s, type, a = {}) {
   let m = a.id ? required(s, a.id) : null;
   switch (type) {
     case "relationship": return resolveRelationship(s,a);
-    case "storyRewrite": return m.narrativePack ? rewriteNarrative(s,m,a) : rewriteStory(s,m,a);
+    case "scifiRewrite": {
+      stage(m,["packaging"]);
+      if(!m.scifiCards || !SF.validate(a.cards)) throw Error("Choose 1–2 different cards in every section.");
+      if(JSON.stringify(m.scifiCards)===JSON.stringify(a.cards)) return m;
+      debit(s,50);m.spent+=50;m.scifiCards=structuredClone(a.cards);m.premise=SF.premise(a.cards);return m;
+    }
+    case "storyRewrite": if(m.scifiCards) throw Error("Use the sci-fi card board to revise this film."); return m.narrativePack ? rewriteNarrative(s,m,a) : rewriteStory(s,m,a);
     case "buy": {
       const sc = s.market.find((x) => x.id === a.script);
       if (!sc) throw Error("This script has already sold.");
@@ -1347,6 +1358,9 @@ export function act(s, type, a = {}) {
         .trim()
         .slice(0, 60);
       if (!title) throw Error("Give your movie a title.");
+      if(a.scifiCards && (a.genre!=="Sci-fi" || !SF.validate(a.scifiCards))) throw Error("Choose 1–2 different cards in every section.");
+      const cost=100*(SCALES.indexOf(a.scale)+1);
+      if(s.cash<cost) throw Error("Not enough cash to commission this screenplay.");
       const sc = script(s);
       Object.assign(sc, {
         title,
@@ -1361,6 +1375,7 @@ export function act(s, type, a = {}) {
             : ["Lead", "Supporting"],
       });
       Object.assign(sc, freshStory(s, a.subgenre));
+      if(a.scifiCards){ sc.scifiCards=structuredClone(a.scifiCards);sc.premise=SF.premise(a.scifiCards); }
       m = addMovie(s, sc, null, true);
       break;
     }
@@ -1906,6 +1921,10 @@ function finish(s, m) {
     5,
     99,
   );
+  if(m.scifiCards){
+    m.scifiReception=SF.evaluate(m,m.fans-m.quality-(m.audienceBias??0),m.critics-m.quality-(m.criticBias??0));
+    m.fans=m.scifiReception.fans;m.critics=m.scifiReception.critics;
+  }
   m.criticBaseline = m.critics;
   m.reviews = criticReviews(m);
   m.critics = Math.round(m.reviews.reduce((v,r)=>v+r.score,0)/m.reviews.length);
