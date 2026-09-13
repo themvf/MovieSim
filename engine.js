@@ -1,14 +1,15 @@
-import * as C from "./commissions.js?v=0.32.1";
-import * as D from "./delays.js?v=0.32.1";
+import * as CH from "./chemistry.js?v=0.33.0";
+import * as C from "./commissions.js?v=0.33.0";
+import * as D from "./delays.js?v=0.33.0";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.32.1";
+import * as P from "./personality.js?v=0.33.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.32.1";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.32.1";
+import * as SF from "./scifi.js?v=0.33.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.33.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -604,6 +605,7 @@ export function migrateSave(s) {
   s.version = VERSION;
   P.ensure(s);
   C.ensure(s);
+  CH.ensure(s);
   return s;
 }
 export const CAMPAIGNS = [
@@ -992,6 +994,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
   for (const r of s.rivals) r.studioId=rivalStudio(r).id;
   P.ensure(s);
   C.ensure(s);
+  CH.ensure(s);
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
   return s;
 }
@@ -1296,7 +1299,7 @@ function addMovie(s, sc, parent = null, developing = false) {
   };
   delete m.scifiReception;
   delete m.delayPlan;delete m.sponsorIncome;
-  delete m.peopleStory;delete m.fanCommunity;delete m.directorApproach;delete m.storyExecution;
+  delete m.castChemistry;delete m.peopleStory;delete m.fanCommunity;delete m.directorApproach;delete m.storyExecution;
   if(m.scifiCards) m.premise=SF.premise(m.scifiCards);
   m.scriptQuality = sc.scriptQuality ?? sc.quality;
   debit(s, sc.price);
@@ -1553,6 +1556,7 @@ export function act(s, type, a = {}) {
       m.release = null;
       m.stage = "filming";
       P.lock(s,m);
+      CH.lock(s,m);
       D.start(m);
       const costs = productionCosts(s, m, b, duration);
       m.productionTotal = costs.total;
@@ -1916,8 +1920,9 @@ function finish(s, m) {
   const performances = m.contracts.map((c) =>
     clamp(m.auditions[`${c.role}:${c.id}`] + (()=>{const credits=person(s,c.id).majorCredits??0;const spread=m.economyVersion>=3?(credits>=4?8:credits?12:18):12;return roll(s,-spread,spread);})()),
   );
-  for(let i=0;i<performances.length;i++)performances[i]=clamp(performances[i]+approach.acting+(m.peopleStory?.actors.find(a=>a.id===m.contracts[i].id)?.supported?4:0));
+  for(let i=0;i<performances.length;i++)performances[i]=clamp(performances[i]+CH.adjustment(m,m.contracts[i].id)+approach.acting+(m.peopleStory?.actors.find(a=>a.id===m.contracts[i].id)?.supported?4:0));
   m.performances = performances;
+  CH.finish(s,m,text=>log(s,text,"action"));
   m.directorPerformance = clamp(
     directorAbility(person(s, m.director.id), m.genre) + roll(s, -10, 10)+approach.direction,
   );

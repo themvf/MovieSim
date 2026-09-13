@@ -362,3 +362,8 @@ Validation: 156 simulation tests, including actual opening/payment accounting, d
 
 ## 0.32.1 — Film profitability visibility
 Movie details, slate cards and sci-fi reports show red losses, green profits, and neutral break-even labels. Net result uses studio receipts minus total film spending; studio overhead remains separate. Updates on each render as earnings arrive. Save build and economics unchanged.
+
+## 0.33.0 — Cast chemistry test build
+Actors have deterministic working styles. Casting previews compare candidates with attached co-stars, excluding the role being replaced. At greenlight, pair contributions lock; each actor's average contribution adjusts delivered performance by at most four points. At wrap, pairs averaging 60+ in delivered performances gain one trust point; others lose one. Pair history is capped at ±4, records the last shared film, and carries into new projects. Movie screens explain locked contributions and wrap outcomes; actor profiles remember collaborators. No retroactive effects on films already shooting or finished, no extra fees, and no cast refusals in this first version. Sequels get new snapshots while retaining studio pair history.
+
+Validation: all 160 engine tests pass; browser checks cover mobile layout, casting previews, wrap outcomes and save reload with no page errors. Also fixed clipping of movie net earnings on mobile. BUILD remains 0.10.0 to preserve existing saves.

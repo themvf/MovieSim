@@ -3461,3 +3461,7 @@ dialog:has(.narrative-report){width:min(1040px,calc(100vw - 28px));max-width:104
 
 /* Film-level earnings: labels also communicate status without color. */
 .film-result{display:inline-block;font-size:13px;font-weight:600}.film-result strong{color:inherit;white-space:nowrap}.film-result.film-loss,.sf-finances .film-loss strong{color:#ff9c95}.film-result.film-profit,.sf-finances .film-profit strong{color:#9de3b0}.film-result.film-even,.sf-finances .film-even strong{color:#d4dde2}.film-result-stat{padding:12px;border:1px solid #52616b;border-radius:8px;min-width:0}.film-result-stat .film-result strong{display:block;font-size:20px;margin-top:6px}.film-result-stat small{display:block;color:#b2bec6;font-size:11px;margin-top:6px}
+
+.chemistry-note{padding:12px;margin:12px 0;border-left:3px solid #afbdde;background:#192d38;border-radius:5px;font-size:13px}.chemistry-note p{margin:7px 0}.chemistry-note small{color:#b2bec6;display:block}.chemistry-pair{padding:12px 0;border-bottom:1px solid #3e515d}.chemistry-pair p{font-size:13px;margin:7px 0}.chemistry-panel{overflow-wrap:anywhere}
+
+.detail-stats .film-result-stat{grid-column:1/-1;order:4}.film-result-stat .film-result strong{white-space:normal;overflow-wrap:anywhere}

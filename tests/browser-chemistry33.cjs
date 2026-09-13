@@ -1,0 +1,20 @@
+const {chromium}=require('playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict');
+(async()=>{
+ const c=(await import(process.env.CHROMIUM_PACKAGE||'/tmp/moviesim-browser/node_modules/@sparticuz/chromium/build/index.js')).default;
+ const b=await chromium.launch({headless:true,executablePath:await c.executablePath(),args:c.args});
+ const p=await b.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ const source=fs.readFileSync('tests/chemistry.test.js','utf8');const fixture=source.slice(source.indexOf('function fixture()'),source.indexOf('function wrap('));
+ await p.goto('http://127.0.0.1:4173');
+ await p.evaluate(async fixture=>{const E=await import('./engine.js?v=0.33.0');const {s}=new Function('E',fixture+'return fixture();')(E);s.notices=[];localStorage.setItem('moviesim-save-v1',JSON.stringify(s));localStorage.setItem('moviesim-build','0.10.0');},fixture);
+ const click=async q=>p.locator(q+':visible').first().click();await p.reload();await click('[data-action="movie"]');
+ assert((await p.locator('.chemistry-panel').innerText()).includes('Who brings out their best?'));
+ await p.locator('.chemistry-panel').scrollIntoViewIfNeeded();await p.screenshot({path:'test-results/chemistry33-mobile.png'});
+ assert.equal(await p.locator('dialog').evaluate(el=>el.scrollWidth>el.clientWidth+1),false);
+ await click('[data-action="casting"]');assert(await p.locator('.chemistry-note').count()>0);assert((await p.locator('.chemistry-note').first().innerText()).includes('chemistry'));
+ await p.setViewportSize({width:1360,height:1000});await p.screenshot({path:'test-results/chemistry33-casting-desktop.png'});
+ await p.evaluate(async()=>{const E=await import('./engine.js?v=0.33.0'),s=JSON.parse(localStorage.getItem('moviesim-save-v1')),m=s.movies[0];E.act(s,'greenlight',{id:m.id,sets:300,crew:350,effects:200,duration:8});for(let i=0;i<60&&m.stage!=='ready';i++){if(m.event)E.act(s,'event',{id:m.id,choice:m.event.kind==='delay'?'wait':'pay'});s.notices=[];E.act(s,'next');}s.notices=[];localStorage.setItem('moviesim-save-v1',JSON.stringify(s));});
+ await p.reload();if(!await p.locator('.chemistry-panel').count()){if(await p.locator('dialog').isVisible())await click('[data-action="close"]');await click('[data-action="movie"]');}assert((await p.locator('.chemistry-panel').innerText()).includes('Shared Orbit'));assert((await p.locator('.chemistry-panel').innerText()).includes('Chemistry locked'));
+ await p.locator('.chemistry-panel').scrollIntoViewIfNeeded();await p.screenshot({path:'test-results/chemistry33-wrap-desktop.png'});
+ assert.deepEqual(errors,[]);await b.close();console.log('PASS: mobile movie chemistry, casting previews, locked wrap outcomes, save reload, no page errors.');
+})().catch(e=>{console.error(e);process.exit(1);});
