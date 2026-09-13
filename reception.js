@@ -62,6 +62,21 @@ const groups=[
  ['Closure seekers',[.45,.25,.20,.10],['closure','hope']],
  ['Surprise seekers',[.40,.15,.30,.15],['change','mystery']],
 ];
+// Shared with choice-time guidance so previews cannot drift from reception rules.
+const endingAffinity=(ends,likes,index)=>cap(avg(ends.map(c=>c.tags.some(t=>likes.includes(t))?4:(index===3&&c.tags.includes('open'))?-4:0)),-6,6);
+export function guidance(cards,sections,endings=[]){
+ const demands=demand(cards,sections,endings),labels={story:'Writing',acting:'Performances',direction:'Direction',craft:'Production craft'};
+ const total=Object.values(demands).reduce((a,b)=>a+b,0),max=Math.max(...Object.values(demands));
+ const focus=total?keys.filter(k=>Math.abs(demands[k]-max)<1e-9):[];
+ const affinities=groups.map(([name,,likes],i)=>({name,value:endingAffinity(chosen(endings),likes,i)}));
+ const preferred=affinities.filter(g=>g.value>0).sort((a,b)=>b.value-a.value),caution=affinities.find(g=>g.value<0);
+ const strongest=preferred.filter(g=>g.value===preferred[0]?.value);
+ return {demands,focus,affinities,
+  demandText:focus.length?`Needs ${focus.map(k=>labels[k].toLowerCase()).join(' + ')}`:'Choose a card to see its creative demand',
+  audienceText:!chosen(endings).length?'Choose an ending to see audience appeal':strongest.length?`Ending appeal: ${strongest.map(g=>g.name.toLowerCase()).join(' + ')}`:caution?`Less closure for ${caution.name.toLowerCase()}`:'No strong ending preference',
+  cautionText:caution&&strongest.length?`Less closure for ${caution.name.toLowerCase()}`:null,
+  note:'Creative priorities, not predicted scores. Production still matters.'};
+}
 export function evaluate(m,sections,fanNoise=0,criticNoise=0){
  if(!valid(m.endingCards))throw Error('Choose 1–2 compatible ending cards.');
  const values={story:m.scriptQuality??60,acting:avg(m.performances??[]),direction:m.directorPerformance??60,craft:m.craft??60};
@@ -73,7 +88,7 @@ export function evaluate(m,sections,fanNoise=0,criticNoise=0){
  const continuity=context.returningLead&&context.parentEndings?.includes('Lead Dies')?-6:context.parentEndings?.some(x=>['Unfinished Business','Lead Disappears','Threat Escapes'].includes(x))&&tags.includes('closure')?4:0;
  const repetition=context.repetition??0;
  const result=groups.map(([name,gw,likes],i)=>{
- const affinity=cap(avg(ends.map(c=>c.tags.some(t=>likes.includes(t))?4:(i===3&&c.tags.includes('open'))?-4:0)),-6,6);
+ const affinity=endingAffinity(ends,likes,i);
  const skill=keys.reduce((n,k,j)=>n+values[k]*(.5*w[k]+.5*gw[j]),0)+adjustment;
  const breakdown={execution:skill,coherence:h.value,affinity,promise,continuity,repetition:-repetition,uncertainty:cap(fanNoise,-2,2)};
  const score=Math.round(cap(Object.values(breakdown).reduce((a,b)=>a+b,0)));
@@ -94,9 +109,9 @@ export const retention=(fans,critics)=>cap(.65+.003*(fans-60)+.001*(critics-60),
 export function observations(m){
  const r=m.scifiReception;if(r?.version!==2)return [];
  const result=[];const dimensions={story:'Writing',acting:'Performances',direction:'Direction',craft:'Production craft'};
- const demands=r.demands??{};const ranked=Object.keys(dimensions).sort((a,b)=>(r.values[b]+r.adjustment)-(r.values[a]+r.adjustment));
+ const ranked=Object.keys(dimensions).sort((a,b)=>(r.values[b]+r.adjustment)-(r.values[a]+r.adjustment));
  const strongest=ranked[0],weakest=ranked.at(-1);
- result.push(`${dimensions[strongest]} were the strongest delivered element (${Math.round(cap(r.values[strongest]+r.adjustment))}/100).`);
+ result.push(`${dimensions[strongest]} ${strongest==='acting'?'were':'was'} the strongest delivered element (${Math.round(cap(r.values[strongest]+r.adjustment))}/100).`);
  const relevant=chosen(m.endingCards).sort((a,b)=>b.w[keys.indexOf(weakest)]-a.w[keys.indexOf(weakest)])[0];
  if(weakest!==strongest)result.push(`${relevant?relevant.name+' depends partly on '+dimensions[weakest].toLowerCase():dimensions[weakest]}: ${Math.round(cap(r.values[weakest]+r.adjustment))}/100, the film’s weakest delivered element.`);
  if(r.coherence?.rules?.length)result.push(r.coherence.rules[0][0]+'.');

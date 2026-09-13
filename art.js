@@ -1,5 +1,5 @@
-import { packFor } from "./narrative.js?v=0.38.0";
-import { scopeName } from "./engine.js?v=0.38.0";
+import { packFor } from "./narrative.js?v=0.39.0";
+import { scopeName } from "./engine.js?v=0.39.0";
 // Original, code-drawn pixel artwork. No external asset downloads or fonts.
 const palettes = [
   ["#27414c", "#7bbaaf", "#efbf88"],
@@ -60,4 +60,24 @@ export function escapeHtml(v) {
         c
       ],
   );
+}
+
+// Five distinct Comedy settings: recognizable silhouettes at phone-card size.
+// Text labels remain outside the artwork, so decoration is hidden from screen readers.
+export function settingCardArt(genre,row,col){
+ if(genre!=='Comedy'||row!==0)return null;
+ const scenes=[
+  // Workplace: office window, desk, monitor and task chair.
+  `<path d="M22 23h47v35H22z" fill="#365761"/><path d="M45 23v35M22 40h47" stroke="#96c9bd" stroke-width="3"/><path d="M17 87h93M26 87v23m75-23v23" stroke="#efcd94" stroke-width="5"/><rect x="66" y="51" width="37" height="26" rx="3" fill="#90c7bd"/><path d="M84 77v10M75 87h18" stroke="#90c7bd" stroke-width="4"/><path d="M36 63h15v24H36z" fill="#d89886"/><path d="M33 93h23m-12 0v18" stroke="#d89886" stroke-width="5"/>`,
+  // Small town: two low houses, a winding street and a tree.
+  `<path d="M47 120 65 74h13l19 46" fill="#45636a"/><path d="M12 61h39v36H12z" fill="#d89886"/><path d="M7 61 31 40 56 61z" fill="#efcd94"/><path d="M24 73h12v24H24z" fill="#243d46"/><path d="M83 57h31v31H83z" fill="#90c7bd"/><path d="M78 57 98 37 119 57z" fill="#efcd94"/><path d="M94 68h9v11h-9" fill="#243d46"/><path d="M66 51v29" stroke="#efcd94" stroke-width="4"/><circle cx="66" cy="41" r="13" fill="#90c7bd"/>`,
+  // Big city: tall skyline and a tiny cab.
+  `<path d="M13 102V51h25v51m4 0V26h29v76m5 0V42h22v60m5 0V63h17v39" fill="#45636a" stroke="#90c7bd" stroke-width="2"/><path d="M55 26V15" stroke="#efcd94" stroke-width="3"/><path d="M20 63h10m-10 12h10m20-36h12m-12 13h12m-12 13h12m20-10h8m-8 14h8" stroke="#efcd94" stroke-width="4"/><path d="M38 108v-9h10l5-10h22l7 10h11v9z" fill="#efcd94"/><circle cx="51" cy="109" r="5" fill="#182e36"/><circle cx="81" cy="109" r="5" fill="#182e36"/>`,
+  // Vacation: sunset, sea, parasol and a reclining chair.
+  `<circle cx="92" cy="34" r="15" fill="#efcd94"/><path d="M10 66q13-8 26 0t26 0t26 0t30 0M10 76q13-8 26 0t26 0t26 0t30 0" fill="none" stroke="#90c7bd" stroke-width="3"/><path d="M10 100q55-19 108 1v19H10" fill="#45636a"/><path d="M44 43v61" stroke="#efcd94" stroke-width="3"/><path d="M15 49q29-43 58 0z" fill="#d89886"/><path d="M44 27q-10 8-10 22h20q0-14-10-22" fill="#efcd94"/><path d="m71 85 9 17h28m-28 0-6 11m24-11 6 11" fill="none" stroke="#90c7bd" stroke-width="4"/>`,
+  // Family gathering: shared table, three people and bunting.
+  `<path d="M10 23q54 23 108 0" fill="none" stroke="#efcd94" stroke-width="2"/><path d="m22 28 7 14 9-10m18 4 8 14 8-14m18-4 9 10 7-14" fill="#d89886"/><circle cx="30" cy="60" r="10" fill="#90c7bd"/><circle cx="64" cy="55" r="10" fill="#efcd94"/><circle cx="99" cy="60" r="10" fill="#d89886"/><path d="M17 88V78q13-16 26 0v10M51 83V73q13-16 26 0v10M86 88V78q13-16 26 0v10" fill="#45636a"/><ellipse cx="64" cy="89" rx="49" ry="13" fill="#90c7bd"/><path d="M29 95v18m70-18v18" stroke="#90c7bd" stroke-width="5"/><ellipse cx="64" cy="88" rx="13" ry="5" fill="#efcd94"/>`
+ ];
+ if(!scenes[col])return null;
+ return `<svg class="genre-card-art setting-card-art" viewBox="0 0 128 128" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><rect width="128" height="128" rx="12" fill="#203740"/>${scenes[col]}</svg>`;
 }

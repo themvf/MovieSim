@@ -1,19 +1,19 @@
-import * as REC from "./reception.js?v=0.38.0";
-import * as LIFE from "./studio-life.js?v=0.38.0";
-import * as CL from "./clients.js?v=0.38.0";
-import * as PRESS from "./press.js?v=0.38.0";
-import * as CH from "./chemistry.js?v=0.38.0";
-import * as C from "./commissions.js?v=0.38.0";
-import * as D from "./delays.js?v=0.38.0";
+import * as REC from "./reception.js?v=0.39.0";
+import * as LIFE from "./studio-life.js?v=0.39.0";
+import * as CL from "./clients.js?v=0.39.0";
+import * as PRESS from "./press.js?v=0.39.0";
+import * as CH from "./chemistry.js?v=0.39.0";
+import * as C from "./commissions.js?v=0.39.0";
+import * as D from "./delays.js?v=0.39.0";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.38.0";
+import * as P from "./personality.js?v=0.39.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.38.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.38.0";
+import * as SF from "./scifi.js?v=0.39.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.39.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -921,6 +921,60 @@ export function advanceToEvent(s) {
       break;
   }
   return { weeks: s.week - start, cashChange: s.cash - cash };
+}
+// Read-only guard for the optional multi-week control. Single-week play remains available.
+export function decisionStop(s) {
+  if (s.ended || s.epilogue || s.week >= END) return "The studio run has ended.";
+  if (s.cash < 0) return "Review emergency financing.";
+  if (s.notices.length) return "Review your new announcement.";
+  if (s.movies.some(m => m.fanCommunity?.ready && !m.fanCommunity.choice && !m.fanCommunity.presented)) return "Your fans have a new reaction.";
+  const event = s.movies.find(m => m.event);
+  if (event) return `Resolve the production decision on ${event.title}.`;
+  const actionable = s.movies.find(m => ["packaging", "ready"].includes(m.stage));
+  if (actionable) return actionable.stage === "packaging"
+    ? `Finish casting and greenlight ${actionable.title}.`
+    : `Prepare ${actionable.title} for release.`;
+  if (s.life?.poach && !s.life.poach.choice) return "Respond to the rival talent offer.";
+  if (s.movies.some(m => m.cult?.ready && !m.cult.choice)) return "Choose how to respond to the cult following.";
+  const deals = [s.marsTravel?.deal, ...Object.values(s.clients ?? {}).map(r => r.deal)].filter(Boolean);
+  if (deals.some(d => !d.movie)) return "Attach a movie to your accepted commission.";
+  if (deals.some(d => d.due - s.week <= 4)) return "A commission deadline is within four weeks. Review its release plan.";
+  if (s.people.some(p => p.personality?.promise && !p.personality.promise.movie && p.personality.promise.due - s.week <= 2))
+    return "A promised role is due soon.";
+  if (s.movies.some(m => m.passion && ["development", "packaging"].includes(m.stage) && m.passion.due - s.week <= 2))
+    return "A passion project must start filming soon.";
+  if (s.life?.pitches.some(p => !p.movie && !p.passed && p.expires - s.week <= 2 && p.expires >= s.week))
+    return "A filmmaker pitch expires soon.";
+  if (s.debt.some(l => l.shark && l.due - s.week <= 2)) return "The loan-shark payment is due soon.";
+  // Deliberately exclude uncertain film receipts: stop before relying on them to stay solvent.
+  const outgoing = overhead(s) + s.movies.filter(m => m.stage === "filming").reduce((n,m) => n + (m.delayPlan?.remaining > 0 ? D.pauseCost(m) : m.weekly), 0)
+    + s.debt.filter(l => !l.shark).reduce((n,l) => n + Math.min(l.principal,l.balance) + l.balance * (l.apr ?? .12) / 52, 0);
+  if (s.cash < outgoing) return "Cash may not cover the next week. Review financing.";
+  return null;
+}
+export function advanceToDecision(s) {
+  const start = s.week, cash = s.cash;
+  let reason = decisionStop(s);
+  while (!reason && s.week - start < 12 && s.week < END) {
+    const stages = s.movies.map(m => `${m.id}:${m.stage}`).join("|");
+    const market = s.market.map(m => m.id).join("|");
+    const pitches = (s.life?.pitches ?? []).length;
+    const press = (s.press?.articles ?? []).length;
+    const previousLog = s.log[0];
+    const offers = CL.CLIENTS.filter(c => CL.available(s,c.id)).map(c => c.id).join("|") + ":" + C.offer(s);
+    nextWeek(s);
+    notifyPrestige(s);
+    reason = decisionStop(s);
+    if (!reason && stages !== s.movies.map(m => `${m.id}:${m.stage}`).join("|")) reason = "A movie has reached its next stage.";
+    if (!reason && pitches !== (s.life?.pitches ?? []).length) reason = "A filmmaker has a new pitch.";
+    if (!reason && offers !== CL.CLIENTS.filter(c => CL.available(s,c.id)).map(c => c.id).join("|") + ":" + C.offer(s)) reason = "An industry commission is available.";
+    if (!reason && press !== (s.press?.articles ?? []).length) reason = "Your studio made the news.";
+    if (!reason && market !== s.market.map(m => m.id).join("|")) reason = "New scripts are available.";
+    const previousIndex = previousLog ? s.log.indexOf(previousLog) : -1;
+    const freshLog = previousIndex < 0 ? s.log : s.log.slice(0, previousIndex);
+    if (!reason && freshLog.some(x => ["action", "success"].includes(x.type))) reason = "An important studio update has arrived.";
+  }
+  return {weeks:s.week-start, cashChange:s.cash-cash, reason:reason ?? "Twelve weeks advanced. Review your studio."};
 }
 function script(s) {
   const genre = pick(s, Object.keys(GENRES)),
@@ -1890,6 +1944,8 @@ export function act(s, type, a = {}) {
       while (!award.completed) revealAward(s, a.year);
       break;
     }
+    case "nextDecision":
+      return advanceToDecision(s);
     case "nextEvent":
       return advanceToEvent(s);
     case "next":
