@@ -1,14 +1,14 @@
-import * as C from "./commissions.js?v=0.32.0";
-import * as D from "./delays.js?v=0.32.0";
+import * as C from "./commissions.js?v=0.32.1";
+import * as D from "./delays.js?v=0.32.1";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.32.0";
+import * as P from "./personality.js?v=0.32.1";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.32.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.32.0";
+import * as SF from "./scifi.js?v=0.32.1";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.32.1";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;

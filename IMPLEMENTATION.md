@@ -359,3 +359,6 @@ Sci-fi sequels expose Change sequel cards immediately during development and thr
 Release dates are still selected after wrap, so filming delays put commission commitments at risk rather than shifting an already signed distribution release. General post-wrap rescheduling and other sponsor characters are outside this first slice.
 
 Validation: 156 simulation tests, including actual opening/payment accounting, deadline boundary, no pre-release payout, extension eligibility, rejection atomicity, failures and repeat offers, true pauses, holding costs, other-project progress, booking conflicts, save persistence, immediate sequel edits, and original-film isolation. Browser tests verify mobile/desktop offer acceptance, extension, card creation and attachment, automatic director popup, response return to the project desk, pause reload, real theatrical release/payment, and sequel editing during development. Existing sci-fi and personality browser lifecycles pass. Physical-device and human balance tests remain outstanding.
+
+## 0.32.1 — Film profitability visibility
+Movie details, slate cards and sci-fi reports show red losses, green profits, and neutral break-even labels. Net result uses studio receipts minus total film spending; studio overhead remains separate. Updates on each render as earnings arrive. Save build and economics unchanged.
