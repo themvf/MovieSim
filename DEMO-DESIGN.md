@@ -184,3 +184,7 @@ Future priorities retained from player feedback: memorable talent personalities,
 ## Personality experiment — September 2026
 
 The next playable slice connects actor genre ambitions, stable director working styles, and audience follow-up after release. People retain promises and shared history across films. Decisions offer explicit benefits and tradeoffs; fan conversations are optional and limited to one per newly produced film. No additional staffing screen, compulsory publicity event, or broad scandal system is introduced. See IMPLEMENTATION.md 0.31.0 for the implemented boundaries.
+
+## Industry commitments and calendar setbacks — September 2026
+
+Mars Travel provides the first playable recurring outside commission, with a concrete card requirement, release deadline, fixed payment, extension choice and remembered delivery history. New production setbacks advance calendar time and trade creative compromises against waiting. Money is not a universal solution; talent schedules and overhead make delays consequential. Sci-fi sequel concepts can be edited from development onward. Existing signed releases and already-filming projects remain compatible; no general release-date rescheduling is introduced in this slice. See IMPLEMENTATION.md 0.32.0 for rules, costs and testing.

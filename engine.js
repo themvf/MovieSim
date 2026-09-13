@@ -1,8 +1,14 @@
-import * as P from "./personality.js?v=0.31.0";
+import * as C from "./commissions.js?v=0.32.0";
+import * as D from "./delays.js?v=0.32.0";
+export const ensureCommissions=C.ensure;
+export const commissionAvailable=C.offer;
+export const commissionEligible=C.eligible;
+export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
+import * as P from "./personality.js?v=0.32.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.31.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.31.0";
+import * as SF from "./scifi.js?v=0.32.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.32.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -597,6 +603,7 @@ export function migrateSave(s) {
   }
   s.version = VERSION;
   P.ensure(s);
+  C.ensure(s);
   return s;
 }
 export const CAMPAIGNS = [
@@ -984,6 +991,7 @@ export function newGame(seed = Date.now() >>> 0, name = "Silverline Pictures") {
   ensureNarrativeSpec(s);
   for (const r of s.rivals) r.studioId=rivalStudio(r).id;
   P.ensure(s);
+  C.ensure(s);
   log(s, "The keys are yours. Five years to build a studio worth remembering.");
   return s;
 }
@@ -1023,13 +1031,13 @@ export const overhead = (s) =>
   Object.values(s.departments).reduce((a, v) => a + (v - 1) * 2, 0) +
   Object.values(s.facilities).reduce((a, v) => a + v * 3, 0);
 export const remaining = (m) =>
-  m.stage === "filming" ? m.weekly * Math.max(0, m.duration - m.progress) : 0;
+  m.stage === "filming" ? m.weekly * Math.max(0, m.duration - m.progress) + (m.delayPlan?.remaining??0)*m.weekly*.1 : 0;
 export const burn = (s) =>
   overhead(s) +
   loanPayment(s) +
   s.movies
     .filter((m) => m.stage === "filming")
-    .reduce((a, m) => a + m.weekly, 0);
+    .reduce((a, m) => a + D.pauseCost(m), 0);
 export function available(p, start, end) {
   return !p.retired && !p.bookings.some((b) => start < b.end && end > b.start);
 }
@@ -1287,6 +1295,7 @@ function addMovie(s, sc, parent = null, developing = false) {
     cancelled: false,
   };
   delete m.scifiReception;
+  delete m.delayPlan;delete m.sponsorIncome;
   delete m.peopleStory;delete m.fanCommunity;delete m.directorApproach;delete m.storyExecution;
   if(m.scifiCards) m.premise=SF.premise(m.scifiCards);
   m.scriptQuality = sc.scriptQuality ?? sc.quality;
@@ -1339,15 +1348,20 @@ export function act(s, type, a = {}) {
     throw Error("Review emergency financing before making another decision.");
   let m = a.id ? required(s, a.id) : null;
   switch (type) {
+    case "commissionAccept": C.accept(s);return;
+    case "commissionBind": C.bind(s,m);return;
+    case "commissionExtend": C.extend(s);return;
+    case "commissionDecline": C.decline(s);return;
     case "actorPromise": {const p=P.pledge(s,a.person);log(s,`${p.name}: a ${p.personality.goal} role promised within 26 weeks.`,"action");return p;}
     case "directorApproach": {stage(m,["packaging"]);if(!m.director||!["back","balanced"].includes(a.choice))throw Error("Hire a director and choose an approach.");m.directorApproach={person:m.director.id,choice:a.choice};return m;}
     case "fanResponse": P.respond(s,m,a.choice);log(s,`${m.title}: ${m.fanCommunity.response}`);return m;
     case "relationship": return resolveRelationship(s,a);
     case "scifiRewrite": {
-      stage(m,["packaging"]);
-      if(!m.scifiCards || !SF.validate(a.cards)) throw Error("Choose 1–2 different cards in every section.");
+      stage(m,["development","packaging"]);
+      if(m.genre!=="Sci-fi" || !SF.validate(a.cards)) throw Error("Choose 1–2 different cards in every section.");
       if(JSON.stringify(m.scifiCards)===JSON.stringify(a.cards)) return m;
-      debit(s,50);m.spent+=50;m.scifiCards=structuredClone(a.cards);m.premise=SF.premise(a.cards);return m;
+      if(s.cash<50)throw Error("You need $50,000 to approve revised cards.");
+      debit(s,50);m.spent+=50;delete m.narrativePack;delete m.narrative;delete m.originalNarrative;m.scifiCards=structuredClone(a.cards);m.premise=SF.premise(a.cards);return m;
     }
     case "storyRewrite": if(m.scifiCards) throw Error("Use the sci-fi card board to revise this film."); return m.narrativePack ? rewriteNarrative(s,m,a) : rewriteStory(s,m,a);
     case "buy": {
@@ -1539,6 +1553,7 @@ export function act(s, type, a = {}) {
       m.release = null;
       m.stage = "filming";
       P.lock(s,m);
+      D.start(m);
       const costs = productionCosts(s, m, b, duration);
       m.productionTotal = costs.total;
       m.weekly = costs.weekly;
@@ -1558,6 +1573,7 @@ export function act(s, type, a = {}) {
     }
     case "event": {
       if (!m.event) throw Error("There is no production decision pending.");
+      if(m.event.kind==="delay"){log(s,D.resolve(s,m,a.choice==="pay"?"wait":a.choice==="split"?"rework":a.choice==="cut"?"coverage":a.choice),"action");break;}
       if (!["pay", "cut", "split"].includes(a.choice))
         throw Error("Choose a response.");
       if(m.event.kind === 'crisis'){
@@ -2028,6 +2044,7 @@ function opening(s, m) {
     performance: m.directorPerformance ?? m.critics,
   });
   P.release(s,m,text=>log(s,text,"success"));
+  C.deliver(s,m,text=>log(s,text,"success"));
   s.prestige = clamp(s.prestige + Math.max(0, m.critics - 60) / 9);
   log(
     s,
@@ -2217,6 +2234,7 @@ function nextWeek(s) {
   s.week++;
   P.ensure(s);
   P.tick(s,text=>log(s,text,"action"));
+  C.tick(s,text=>log(s,text,"action"));
   ensureOpportunities(s);
   if(s.week%52===0 && activeTrends(s).length<2){const available=TREND_TYPES.filter(t=>!activeTrends(s).some(x=>x.name===t.name));if(available.length){const t=pick(s,available);s.marketTrends.push({...t,start:s.week,end:s.week+104+roll(s,0,78),strength:.45});log(s,`Moviegoers are craving ${t.name.toLowerCase()}.`,"action");}}
   debit(s, overhead(s));
@@ -2229,10 +2247,13 @@ function nextWeek(s) {
   s.debt = s.debt.filter((l) => l.balance > DEBT_EPSILON);
   for (const m of s.movies) {
     if (m.stage === "development" && s.week >= m.ready) m.stage = "packaging";
-    if (m.stage === "filming") {
+    if (m.stage === "filming" && m.delayPlan?.remaining>0) {
+      const holding=D.pauseCost(m);debit(s,holding,m);m.delayPlan.holdingPaid+=holding;m.delayPlan.remaining--;m.delayPlan.elapsed++;
+    } else if (m.stage === "filming") {
       debit(s, m.weekly, m);
       m.progress++;
       if (m.progress >= m.duration) finish(s, m);
+      else if(D.due(m)){m.event=D.incident(m);log(s,`${person(s,m.director.id).name} needs to discuss a delay on ${m.title}.`,"action");}
       else if (
         m.progress > 1 &&
         m.progress < m.duration - 1 &&
