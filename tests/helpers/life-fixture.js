@@ -1,0 +1,7 @@
+import * as E from '../../engine.js';import * as SF from '../../scifi.js';
+export function cards(genre='Sci-fi'){return Object.fromEntries(SF.sections(genre).map(s=>[s.id,[s.cards[0]]]));}
+export function film(s,genre='Sci-fi',pitch){E.act(s,'original',{title:'A '+genre+' Story',genre,subgenre:E.GENRES[genre][0],scale:'Small',scifiCards:cards(genre),pitch});const m=s.movies.at(-1);for(let i=0;i<3;i++){s.notices=[];E.act(s,'next');}return m;}
+export function cast(s,m,lead){const actors=s.people.filter(p=>p.kind==='actor'&&p.id!==lead?.id).sort((a,b)=>a.fee-b.fee);for(let role=0;role<m.roles.length;role++){const p=role===0&&lead?lead:actors[lead?role-1:role];E.act(s,'audition',{id:m.id,person:p.id,role});E.act(s,'hire',{id:m.id,person:p.id,role,offer:E.quote(s,p,m,role).high});}const d=s.people.filter(p=>p.kind==='director').sort((a,b)=>a.fee-b.fee)[0];E.act(s,'audition',{id:m.id,person:d.id});E.act(s,'hire',{id:m.id,person:d.id,offer:E.quote(s,d,m).high});}
+export function greenlight(s,m){E.act(s,'greenlight',{id:m.id,sets:300,crew:350,effects:200,duration:8});}
+export function wrap(s,m){for(let i=0;i<50&&m.stage!=='ready';i++){if(m.event)E.act(s,'event',{id:m.id,choice:'pay'});s.notices=[];E.act(s,'next');}if(m.stage!=='ready')throw Error('Film did not wrap.');}
+export function release(s,m){E.act(s,'setRelease',{id:m.id,release:s.week+1});E.act(s,'confirmMarketing',{id:m.id,none:true});E.act(s,'distribute',{id:m.id,deal:'secure'});s.notices=[];E.act(s,'next');}
