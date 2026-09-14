@@ -3497,3 +3497,12 @@ dialog:has(.narrative-report){width:min(1040px,calc(100vw - 28px));max-width:104
 .advance-tools [aria-disabled="true"]{opacity:.55}
 .action-footer:has(.advance-tools){flex-wrap:wrap}.action-footer .advance-tools{flex-basis:100%;margin:0}
 .brief-estimate{border-left:3px solid #91e3c0;background:#132a31;padding:12px;margin:14px 0}.brief-estimate>small{font-size:12px;color:#b1c2cb}.brief-estimate details{margin:8px 0}.brief-estimate label{margin:8px 0}
+/* Compact decision surfaces: essential facts first; explanations on demand. */
+.brief-person{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:14px}.brief-person .ceo-avatar{width:44px;height:44px;min-width:44px;font-size:16px}.brief-person em{font-style:normal;color:var(--muted)}
+.estimate-strip{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px}.brief-estimate{padding:10px 12px;margin:12px 0}.brief-stakes,.client-stakes{font-size:12px;margin:10px 0}.brief-details{margin-top:8px}
+.compact-history{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 0;font-size:13px;border-bottom:1px solid var(--line)}
+.chemistry-inline{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;margin:8px 0;color:var(--muted)}
+.casting-card .casting-metrics{flex-direction:row;gap:16px}.casting-card .quick-offer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;flex:1}.quick-offer>small{grid-column:1/-1}.casting-card .card-bottom{flex-wrap:wrap;gap:8px}.casting-card .card-bottom>small:empty{display:none}
+.casting-card .talent-secondary summary{min-height:44px;display:flex;align-items:center}.casting-card .person-heading h3{font-size:18px}
+.fan-summary{display:flex;gap:16px;align-items:center}.fan-summary .poster{width:64px;min-width:64px;height:96px;font-size:10px}.fan-summary .poster strong{font-size:12px}.fan-summary .poster-top,.fan-summary .poster-bottom{display:none}.fan-summary>div:last-child{display:grid;gap:8px}.fan-summary .fan-score{font-size:32px}.fan-quote{font-size:18px;line-height:1.45;margin:16px 0;padding:8px 14px}.compact-status{padding:12px;border-left:3px solid var(--mint);background:#183233;font-size:14px;line-height:1.5}
+.fan-summary .poster strong{display:none}
