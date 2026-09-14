@@ -1,4 +1,4 @@
-import * as COL from "./collection.js?v=0.43.0";
+import * as COL from "./collection.js?v=0.44.0";
 // Recurring industry clients. Rewards are in thousands of dollars.
 export const CLIENTS = [
  {genre:'Adventure',collectionCards:[['setting','Small Town']],id:'starlight',name:'Mira Sol',initials:'MS',company:'Starlight Cinemas',role:'Cinema owner',start:0,weeks:18,payment:562.5,bonus:125,cooldown:10,

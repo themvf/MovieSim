@@ -1,20 +1,21 @@
-import * as COL from "./collection.js?v=0.43.0";
-import * as REC from "./reception.js?v=0.43.0";
-import * as LIFE from "./studio-life.js?v=0.43.0";
-import * as CL from "./clients.js?v=0.43.0";
-import * as PRESS from "./press.js?v=0.43.0";
-import * as CH from "./chemistry.js?v=0.43.0";
-import * as C from "./commissions.js?v=0.43.0";
-import * as D from "./delays.js?v=0.43.0";
+import * as APPEAL from "./cast-appeal.js?v=0.44.0";
+import * as COL from "./collection.js?v=0.44.0";
+import * as REC from "./reception.js?v=0.44.0";
+import * as LIFE from "./studio-life.js?v=0.44.0";
+import * as CL from "./clients.js?v=0.44.0";
+import * as PRESS from "./press.js?v=0.44.0";
+import * as CH from "./chemistry.js?v=0.44.0";
+import * as C from "./commissions.js?v=0.44.0";
+import * as D from "./delays.js?v=0.44.0";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.43.0";
+import * as P from "./personality.js?v=0.44.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.43.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.43.0";
+import * as SF from "./scifi.js?v=0.44.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.44.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -1150,7 +1151,15 @@ export const participationRate = (m) =>
     (sum, c) => sum + (c.grossShare ?? 0),
     0,
   );
+export function castAppeal(s,m){return m.castCommercial??APPEAL.evaluate(s,m);}
+export function candidateAppeal(s,m,p,role=0){
+ const before=castDraw(s,m),candidate={...m,castAppeal:null,castCommercial:null,performances:null,directorPerformance:null};
+ if(p.kind==='director')candidate.director={id:p.id};else candidate.contracts=[...m.contracts.filter(c=>c.role!==role),{id:p.id,role}];
+ const after=castDraw(s,candidate),reach=campaignReach(s,m),baseline=.36+before/100+reach/95;
+ return {fame:Math.round(p.star),percent:100*((.36+after/100+reach/95)/baseline-1)};
+}
 export function castDraw(s, m) {
+  if(m.movieCards){if(!m.castAppeal&&m.releaseFactors&&['theaters','catalog'].includes(m.stage))return m.releaseFactors.stars;return castAppeal(s,m).draw;}
   const cast = m.contracts.map((c) => ({
     p: person(s, c.id),
     weight: c.role === 0 ? 1 : 0.5,
@@ -1373,6 +1382,7 @@ function addMovie(s, sc, parent = null, developing = false) {
     awards: [],
     cancelled: false,
   };
+  delete m.castAppeal;delete m.castCommercial;
   delete m.scifiReception;delete m.receptionContext;delete m.screeningModel;
   delete m.delayPlan;delete m.sponsorIncome;
   delete m.life;delete m.passion;delete m.cult;delete m.releaseDeal;delete m.castChemistry;delete m.peopleStory;delete m.fanCommunity;delete m.directorApproach;delete m.storyExecution;
@@ -1676,6 +1686,7 @@ export function act(s, type, a = {}) {
       m.start = s.week;
       m.release = null;
       m.stage = "filming";
+      if(m.movieCards)m.castAppeal=APPEAL.snapshot(s,m);
       P.lock(s,m);
       CH.lock(s,m);
       LIFE.lock(s,m);if(m.endingCards)m.receptionContext=REC.snapshot(s,m);
@@ -2053,6 +2064,7 @@ function finish(s, m) {
   m.directorPerformance = clamp(
     directorAbility(person(s, m.director.id), m.genre) + roll(s, -10, 10)+approach.direction,
   );
+  if(m.movieCards)m.castCommercial=APPEAL.evaluate(s,m);
   m.craft = craft;
   const scriptQuality = clamp((m.scriptQuality ?? 60)+approach.story);
   if(m.peopleStory)m.storyExecution=scriptQuality;

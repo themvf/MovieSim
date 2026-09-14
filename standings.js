@@ -1,4 +1,4 @@
-import {RIVAL_STUDIOS,rivalStudio} from './engine.js?v=0.43.0';
+import {RIVAL_STUDIOS,rivalStudio} from './engine.js?v=0.44.0';
 // Read-only run-to-date totals. Never expose unreleased films or unopened envelopes.
 export function standings(s,sort='gross'){
  const rows=[{id:'player',name:s.name,player:true,gross:0,awards:0,films:0},...RIVAL_STUDIOS.map(r=>({id:r.id,name:r.name,player:false,gross:0,awards:0,films:0}))];

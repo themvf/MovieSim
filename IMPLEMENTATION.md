@@ -468,3 +468,14 @@ The movie board has a genre target, three story cards, and one tile per characte
 Standings is available in desktop navigation and mobile More. Shows all four studios, highlights the player, and sorts by cumulative gross ticket sales or revealed awards, with the other metric as tie-breaker and shared ranks for exact ties. Uses exact player film gross, existing simulated rival results, and revealed ceremony winners; no sponsor/streaming receipts, future releases, unrevealed awards, RNG draws or save mutation. Rival simulation is labeled. Repeated saved rival keys are counted only once.
 
 Validation: 226 unit tests pass. browser-board43.cjs (also the replacement entry for browser-collection42.cjs) tests the flat board, single character picker, naming, role addition, scope checkout, navigation and standings sorting. Screenshots visually reviewed at mobile size; overflow checked at 375/390px and desktop, including a billion-dollar rival total. Native iOS Safari still requires device testing.
+
+
+## 0.44.0 — Ensemble fame and performance-sensitive ticket demand
+
+Universal-card films now combine individual fame instead of averaging it. Cast fame = 100 × (1 − exp(−weighted fame sum / 100)); weights: lead 1, each supporting role 0.65, director 0.3. The existing commercial draw input becomes 1.5 × effective cast fame. Contributions have diminishing returns, stay below a 100-point fame score, and never dilute a lineup simply because an added actor is less famous. Salaries and participation still affect profitability: this is added demand, not a guaranteed net-profit bonus.
+
+Fame is snapshotted at greenlight. Delivered performance retains clamp((performance − 20) / 30, 0, 1) of each person's contribution: 50+ retains all, 35 retains half, 20 or less retains none. Existing quality and word-of-mouth effects remain. Projection, distributor demand and opening ticket sales use the same commercial draw. The released snapshot is stable despite later career fame changes; sequels clear it and capture their own cast. Previously released films retain their recorded releaseFactors.stars.
+
+Casting now shows Fame /100 and estimated ticket lift relative to the current cast, assuming solid performance and unchanged marketing, excluding fees. The project/release screen has one compact Cast fame metric and optional contribution details. Small-screen release totals use a full-width box-office row to avoid splitting currency digits.
+
+Validation: 231 unit tests pass, including five new tests for additive supporting-actor demand, diminishing returns, contract order independence, performance penalties, actual release snapshot stability and sequel reset. browser-cast44.cjs checks mobile casting metrics and report layout. Its poor-performance report is a controlled rendering fixture after real engine production/release. Screenshots inspected; native iOS Safari not tested. No changes to signed fees or existing release earnings.
