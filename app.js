@@ -1,16 +1,16 @@
-import {standings} from "./standings.js?v=0.46.0";
-import * as COL from "./collection.js?v=0.46.0";
-import * as COMM from './commissions.js?v=0.46.0';
-import {nextHire, standardOffer, deadlineWindows, commissionEstimate} from './experience.js?v=0.46.0';
-import * as REC from "./reception.js?v=0.46.0";
-import * as LIFE from "./studio-life.js?v=0.46.0";
-import {GENRE_SYMBOLS} from "./card-genres.js?v=0.46.0";
-import * as CL from "./clients.js?v=0.46.0";
-import * as CH from "./chemistry.js?v=0.46.0";
-import * as SF from "./scifi.js?v=0.46.0";
-import * as N from "./narrative.js?v=0.46.0";
-import * as E from "./engine.js?v=0.46.0";
-import { portrait, poster, studioArt, settingCardArt, escapeHtml as h } from "./art.js?v=0.46.0";
+import {standings} from "./standings.js?v=0.47.0";
+import * as COL from "./collection.js?v=0.47.0";
+import * as COMM from './commissions.js?v=0.47.0';
+import {nextHire, standardOffer, deadlineWindows, commissionEstimate} from './experience.js?v=0.47.0';
+import * as REC from "./reception.js?v=0.47.0";
+import * as LIFE from "./studio-life.js?v=0.47.0";
+import {GENRE_SYMBOLS} from "./card-genres.js?v=0.47.0";
+import * as CL from "./clients.js?v=0.47.0";
+import * as CH from "./chemistry.js?v=0.47.0";
+import * as SF from "./scifi.js?v=0.47.0";
+import * as N from "./narrative.js?v=0.47.0";
+import * as E from "./engine.js?v=0.47.0";
+import { portrait, poster, studioArt, settingCardArt, escapeHtml as h } from "./art.js?v=0.47.0";
 const BUILD = "0.42.0";
 const KEY = "moviesim-collection-save-v1",
   app = document.querySelector("#app"),
@@ -199,7 +199,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.46.0 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.47.0 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
   <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.accountMoney(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : s.movies.some((m) => m.stage === "ready" && m.release == null) ? "Choose release date →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main>${COL.credits(s)?`<div class="notice-banner">✦ ${COL.credits(s)} card packs ready ${button("Choose packs","packs","","outline")}</div>`:""}<div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "YOUR SHARED CARD LIBRARY" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Build movie", "cardNew", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">${h(s.endReason || "Your studio run is complete.")} Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
@@ -1118,6 +1118,7 @@ function getProductionPlan(m) {
   if (!productionPlans.has(m.id))
     productionPlans.set(m.id, {
       composer:m.composer??0,
+      musicStyle:m.musicStyle??0,
       location:m.location??0,
       effectsApproach:m.effectsApproach??0,
       duration: E.recommendedWeeks(m),
@@ -1131,7 +1132,7 @@ function production(m) {
   const plan = getProductionPlan(m);
   modal(
     "Plan the shoot",
-    `<p>${h(m.title)} · ${E.scopeName(m.scale)} · ${h(m.genre)}</p>${m.narrativePack?`<div class="story-budget-note">Your story calls for ${E.accountMoney(N.evaluate(m.narrative).effects)} in base ${h(N.packFor(m.narrative).departmentLabel.toLowerCase())} allocation. Underfunding loses 1 quality point per $100,000 short, capped at 8. This is separate from normal production craft.</div>`:""}<form id="production-form"><label>♫ Film score<select name="composer">${E.COMPOSERS.map((c,i)=>`<option value="${i}" ${plan.composer===i?"selected":""}>${h(c.name)} · ${i?E.accountMoney(E.scoreCost({...m,composer:i})):"Included"}</option>`).join("")}</select><small id="composer-summary"></small></label><div class="production-choices">${[["location","📍 Filming locations",E.LOCATION_PLANS],["effectsApproach","🎬 Effects approach",E.EFFECTS_PLANS]].map(([key,label,options])=>`<label>${label}<select name="${key}">${options.map((o,i)=>`<option value="${i}" ${plan[key]===i?"selected":""}>${o.name}</option>`).join("")}</select><small id="${key}-summary"></small></label>`).join("")}</div>${["sets", "crew", "effects"].map((key) => `<label class="budget-slider"><span class="slider-heading"><strong>${{ sets: "Sets & locations", crew: "Crew & post-production", effects: "Effects" }[key]}</strong><output id="${key}-cost"></output></span><input type="range" name="${key}" min="0" max="4" step="1" value="${plan[key]}" aria-label="${key} production tier"><span class="slider-ends"><span>Shoestring</span><span>Flagship</span></span><span class="tier-summary" id="${key}-description"></span></label>`).join("")}<label class="budget-slider"><span class="slider-heading"><strong>Filming schedule</strong><output id="duration-value"></output></span><input type="range" name="duration" min="4" max="20" step="2" value="${plan.duration}" aria-label="Filming weeks"><span class="slider-ends"><span>4 weeks · faster</span><span>20 weeks · more time</span></span></label><div id="production-preview"></div></form>`,
+    `<p>${h(m.title)} · ${E.scopeName(m.scale)} · ${h(m.genre)}</p>${m.narrativePack?`<div class="story-budget-note">Your story calls for ${E.accountMoney(N.evaluate(m.narrative).effects)} in base ${h(N.packFor(m.narrative).departmentLabel.toLowerCase())} allocation. Underfunding loses 1 quality point per $100,000 short, capped at 8. This is separate from normal production craft.</div>`:""}<form id="production-form"><label>♫ Music style<select name="musicStyle">${E.MUSIC_STYLES.map((style,i)=>`<option value="${i}" ${plan.musicStyle===i?"selected":""}>${h(style.name)}</option>`).join("")}</select><small id="music-style-summary"></small></label><label>Composer<select name="composer">${E.COMPOSERS.map((c,i)=>`<option value="${i}" ${plan.composer===i?"selected":""}>${h(c.name)} · ${i?E.accountMoney(E.scoreCost({...m,composer:i})):"Included"}</option>`).join("")}</select><small id="composer-summary"></small></label><div class="production-choices">${[["location","📍 Filming locations",E.LOCATION_PLANS],["effectsApproach","🎬 Effects approach",E.EFFECTS_PLANS]].map(([key,label,options])=>`<label>${label}<select name="${key}">${options.map((o,i)=>`<option value="${i}" ${plan[key]===i?"selected":""}>${o.name}</option>`).join("")}</select><small id="${key}-summary"></small></label>`).join("")}</div>${["sets", "crew", "effects"].map((key) => `<label class="budget-slider"><span class="slider-heading"><strong>${{ sets: "Sets & locations", crew: "Crew & post-production", effects: "Effects" }[key]}</strong><output id="${key}-cost"></output></span><input type="range" name="${key}" min="0" max="4" step="1" value="${plan[key]}" aria-label="${key} production tier"><span class="slider-ends"><span>Shoestring</span><span>Flagship</span></span><span class="tier-summary" id="${key}-description"></span></label>`).join("")}<label class="budget-slider"><span class="slider-heading"><strong>Filming schedule</strong><output id="duration-value"></output></span><input type="range" name="duration" min="4" max="20" step="2" value="${plan.duration}" aria-label="Filming weeks"><span class="slider-ends"><span>4 weeks · faster</span><span>20 weeks · more time</span></span></label><div id="production-preview"></div></form>`,
     "COSTS YOU CAN SEE",
   );
   dialog.insertAdjacentHTML(
@@ -1147,8 +1148,10 @@ function productionPreview(m) {
     [...new FormData(f)].map(([k, v]) => [k, Number(v)]),
   );
   productionPlans.set(m.id, plan);
-  m={...m,location:plan.location,effectsApproach:plan.effectsApproach,composer:plan.composer};
-  $("composer-summary").textContent=E.COMPOSERS[plan.composer].style+(E.COMPOSERS[plan.composer].genres.includes(m.genre)?" · Genre match":"");
+  m={...m,location:plan.location,effectsApproach:plan.effectsApproach,composer:plan.composer,musicStyle:plan.musicStyle};
+  const composer=E.COMPOSERS[plan.composer],pairing=E.musicPairing(m);
+  $("music-style-summary").textContent=E.MUSIC_STYLES[plan.musicStyle].feel;
+  $("composer-summary").textContent=plan.composer?`${composer.reputation} · ${composer.strengths.join(" / ")}${pairing.specialty?" · Style match":""}`:"Included · Not eligible for Original Score";
   const b = Object.fromEntries(
     ["sets", "crew", "effects"].map((key) => [
       key,
@@ -1819,7 +1822,7 @@ dialog.addEventListener("submit", (e) => {
         ...Object.fromEntries(
           Object.entries(d).map(([k, val]) => [
             k,
-            ["duration","location","effectsApproach","composer"].includes(k)
+            ["duration","location","effectsApproach","composer","musicStyle"].includes(k)
               ? Number(val)
               : E.budgetCost(E.movie(s, v.id), k, Number(val)),
           ]),
@@ -2120,7 +2123,7 @@ function cardRoom(){
  return modal('Your movie',`<div class="simple-movie-board"><div class="genre-target">${slot('genre')}</div><div class="story-strip">${['setting','problem','ending'].map(slot).join('')}</div><div class="character-tiles">${d.characters.map((c,j)=>button(`<small>${h(c.role)}</small><strong>${h([c.trait,c.persona].filter(Boolean).join(' ')||'Choose persona')}</strong>${c.outcome?`<span>${h(c.outcome)}</span>`:''}${c.name?`<span>${h(c.name)}</span>`:''}`,'characterEdit',`data-character="${j}"`,'character-tile')).join('')}${d.characters.length<6?button('+ Character','chooseRole','','character-tile add-character'):''}</div><button class="primary full" data-action="cardCheckout" ${!valid?'disabled':''}>${view.id?'Review changes →':'Make Movie →'}</button></div>`,'CINEMA COLLECTION');
 }
 function movieCardSummary(m){const d=m.movieCards;return `<details class="movie-card-summary"><summary>Your movie cards · ${COL.selected(d).length}</summary><div class="collection-tags">${['genre','setting','problem','ending'].map(k=>`<span>${COL.ICONS[k]} ${h(d[k])}</span>`).join('')}</div>${d.characters.map(c=>`<p><strong>${h(c.name||c.role)}</strong> · ${h([c.trait,c.persona,c.outcome].filter(Boolean).join(' · '))}</p>`).join('')}${m.parent?`<small>${m.sequelMode==='prequel'?'Prequel':'Sequel'} · character outcomes carried in franchise history</small>`:''}</details>`;}
-function cardReleaseReport(m){return `<section class="panel card-release-report"><div class="scores">${stat('FANS',E.score(m.fans))}${stat('CRITICS',E.score(m.critics))}${stat('BOX OFFICE',E.accountMoney(m.gross))}</div>${filmResult(m)}${m.music?`<p>♫ <strong>Film score ${E.score(m.music.quality)}/100</strong> · ${h(m.music.composer)}<br><small>Fans ${m.music.fans>=0?"+":""}${m.music.fans} · Critics ${m.music.critics>=0?"+":""}${m.music.critics}</small></p>`:""}${castAppealPanel(m)}${movieCardSummary(m)}<p class="small">Creative focus: ${(m.cardReception?.focus??[]).map(x=>({story:'Story',acting:'Performances',direction:'Direction',craft:'Craft'})[x]).join(' · ')}</p><details><summary>How your cards mattered</summary><p>Your card combination sets the balance of story, performance, direction and craft. Production delivers those qualities. Extra or unlocked cards add no score bonus.</p><p>Character outcomes shape the next chapter.</p></details>${button('Build another movie','cardNew','','outline full')}</section>`;}
+function cardReleaseReport(m){return `<section class="panel card-release-report"><div class="scores">${stat('FANS',E.score(m.fans))}${stat('CRITICS',E.score(m.critics))}${stat('BOX OFFICE',E.accountMoney(m.gross))}</div>${filmResult(m)}${m.music?`<p>♫ <strong>Film score ${E.score(m.music.quality)}/100</strong> · ${h(m.music.composer)}<br><small>${h(m.music.style)}${m.music.discovery?" · Inspired pairing":""} · Fans ${m.music.fans>=0?"+":""}${m.music.fans} · Critics ${m.music.critics>=0?"+":""}${m.music.critics}</small></p>`:""}${castAppealPanel(m)}${movieCardSummary(m)}<p class="small">Creative focus: ${(m.cardReception?.focus??[]).map(x=>({story:'Story',acting:'Performances',direction:'Direction',craft:'Craft'})[x]).join(' · ')}</p><details><summary>How your cards mattered</summary><p>Your card combination sets the balance of story, performance, direction and craft. Production delivers those qualities. Extra or unlocked cards add no score bonus.</p><p>Character outcomes shape the next chapter.</p></details>${button('Build another movie','cardNew','','outline full')}</section>`;}
 dialog.addEventListener('input',e=>{if(view?.kind!=='cards')return;if(e.target.name==='title')view.title=e.target.value;if(e.target.dataset.characterName!=null)view.cards.characters[Number(e.target.dataset.characterName)].name=e.target.value;});
 dialog.addEventListener('change',e=>{if(view?.kind!=='cards')return;if(e.target.name==='cardScale'){view.scale=e.target.value;drawDialog();}if(e.target.name==='sequelMode'){view.mode=e.target.value;drawDialog();}});
 
