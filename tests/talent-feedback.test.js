@@ -78,10 +78,10 @@ test("hire snapshots survive staff upgrades and match real actor/director delive
 
 test("expanded subgenres remain valid choices without changing legacy scope keys", () => {
   const s = E.newGame(52);
-  assert.equal(Object.values(E.GENRES).flat().length, 58);
+  assert.equal(Object.values(E.GENRES).flat().filter(x=>x!=="Original").length, 58);
   for (const [genre, subgenres] of Object.entries(E.GENRES)) {
     assert.equal(new Set(subgenres).size, subgenres.length);
-    assert.ok(subgenres.length >= 9);
+    assert.ok(subgenres.includes("Original"));
     E.act(s, "original", {
       title: "A new story",
       genre,

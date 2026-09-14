@@ -90,7 +90,7 @@ test("new stories are distinct in a market and commissioned stories match subgen
     const s = E.newGame(seed);
     assert.equal(new Set(s.market.map((m) => m.premise)).size, s.market.length);
   }
-  for (const subgenre of Object.values(E.GENRES).flat())
+  for (const subgenre of Object.values(E.GENRES).flat().filter(x=>x!=="Original"))
     assert.ok(!storyFor(subgenre).premise.includes("unlikely outsider"));
   const s = E.newGame(67),
     m = E.act(s, "original", {
