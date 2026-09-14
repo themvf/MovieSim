@@ -1,4 +1,4 @@
-import * as COL from "./collection.js?v=0.42.0";
+import * as COL from "./collection.js?v=0.43.0";
 export const WEEKS=22,EXTENSION_WEEKS=2,EXTENSION_DISCOUNT=.25;
 // A recurring fictional sponsor. Amounts use the engine's thousands-of-dollars unit.
 export function ensure(s){s.marsTravel??={version:1,wins:0,strikes:0,nextOffer:0,deal:null,history:[],last:'Elena Vale wants audiences to imagine a life beyond Earth.'};}

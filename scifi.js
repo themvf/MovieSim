@@ -1,4 +1,4 @@
-import {GENRE_CARDS} from "./card-genres.js?v=0.42.0";
+import {GENRE_CARDS} from "./card-genres.js?v=0.43.0";
 // Sci-fi card experiment v1. Pure evaluation; no random draws during reporting.
 export const SECTIONS = [
  ['setting','Setting','Where does it happen?',['Earth','Deep Space','Alien World','Space Station','Colony']],

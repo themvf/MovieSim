@@ -1,15 +1,16 @@
-import * as COL from "./collection.js?v=0.42.0";
-import * as COMM from './commissions.js?v=0.42.0';
-import {nextHire, standardOffer, deadlineWindows, commissionEstimate} from './experience.js?v=0.42.0';
-import * as REC from "./reception.js?v=0.42.0";
-import * as LIFE from "./studio-life.js?v=0.42.0";
-import {GENRE_SYMBOLS} from "./card-genres.js?v=0.42.0";
-import * as CL from "./clients.js?v=0.42.0";
-import * as CH from "./chemistry.js?v=0.42.0";
-import * as SF from "./scifi.js?v=0.42.0";
-import * as N from "./narrative.js?v=0.42.0";
-import * as E from "./engine.js?v=0.42.0";
-import { portrait, poster, studioArt, settingCardArt, escapeHtml as h } from "./art.js?v=0.42.0";
+import {standings} from "./standings.js?v=0.43.0";
+import * as COL from "./collection.js?v=0.43.0";
+import * as COMM from './commissions.js?v=0.43.0';
+import {nextHire, standardOffer, deadlineWindows, commissionEstimate} from './experience.js?v=0.43.0';
+import * as REC from "./reception.js?v=0.43.0";
+import * as LIFE from "./studio-life.js?v=0.43.0";
+import {GENRE_SYMBOLS} from "./card-genres.js?v=0.43.0";
+import * as CL from "./clients.js?v=0.43.0";
+import * as CH from "./chemistry.js?v=0.43.0";
+import * as SF from "./scifi.js?v=0.43.0";
+import * as N from "./narrative.js?v=0.43.0";
+import * as E from "./engine.js?v=0.43.0";
+import { portrait, poster, studioArt, settingCardArt, escapeHtml as h } from "./art.js?v=0.43.0";
 const BUILD = "0.42.0";
 const KEY = "moviesim-collection-save-v1",
   app = document.querySelector("#app"),
@@ -33,6 +34,7 @@ E.addHeadshotActors(s);
 COL.ensure(s);
 E.ensurePersonalities(s);
 E.ensureCommissions(s);
+let standingsSort="gross";
 let tab = "slate",
   filter = "active",
   view = null,
@@ -49,6 +51,7 @@ const icons = {
   calendar: "▦",
   finance: "＄",
   awards: "♜",
+  standings: "≡",
   press: "▧",
 };
 const titles = {
@@ -59,9 +62,11 @@ const titles = {
   calendar: "The release calendar",
   finance: "Keep the cameras rolling",
   awards: "For your consideration",
+  standings: "Studio standings",
   press: "The Final Cut",
 };
 const subs = {
+  standings: "Your studio. Your competition.",
   slate: "Every great studio starts with a story.",
   scripts: "Mix your cards. Make your movie.",
   talent: "An unfamiliar name today. A household name tomorrow.",
@@ -156,7 +161,8 @@ function focusDialogHeading() {
   dialog.querySelector(".modal-head h2")?.focus({ preventScroll: true });
 }
 function modal(title, body, eyebrow = "STUDIO DESK") {
-  dialog.innerHTML = `<div class="modal-head"><div><span class="eyebrow">${eyebrow}</span><h2 tabindex="-1" autofocus>${title}</h2></div>${view?.back ? button("←", "back", "", "icon-button back-button") : ""}${["awardsInvite", "nominations", "ceremony"].includes(view?.kind) ? "" : button("×", "close", "", "icon-button close-button")}</div><div class="modal-body">${body}</div>`;
+  dialog.classList.toggle("card-sheet",view?.kind==="cards"&&!!view.panel);
+  dialog.innerHTML = `<div class="modal-head"><div><span class="eyebrow">${eyebrow}</span><h2 tabindex="-1" autofocus>${title}</h2></div>${view?.kind==="cards"&&view.panel?button("←","cardDone","","icon-button back-button"):view?.back ? button("←", "back", "", "icon-button back-button") : ""}${(["awardsInvite", "nominations", "ceremony"].includes(view?.kind)||view?.kind==="cards"&&view.panel) ? "" : button("×", view?.kind==="cards"&&view.panel?"cardDone":"close", "", "icon-button close-button")}</div><div class="modal-body">${body}</div>`;
 }
 function isStreaming(m) {
   return m.stage === "catalog" && m.streamingDeal && s.week <= m.streamingDeal.endWeek;
@@ -185,6 +191,7 @@ function render() {
     ["finance", "Finances"],
     ["awards", "Awards"],
     ["press", "The Final Cut"],
+    ["standings", "Standings"],
   ]
     .map(
       ([key, name]) =>
@@ -192,11 +199,11 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.42.0 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.43.0 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
   <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.accountMoney(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : s.movies.some((m) => m.stage === "ready" && m.release == null) ? "Choose release date →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main>${COL.credits(s)?`<div class="notice-banner">✦ ${COL.credits(s)} card packs ready ${button("Choose packs","packs","","outline")}</div>`:""}<div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "YOUR SHARED CARD LIBRARY" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Build movie", "cardNew", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">${h(s.endReason || "Your studio run is complete.")} Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}
-  ${tab === "slate" ? slate() : tab === "scripts" ? scripts() : tab === "talent" ? talents() : tab === "studio" ? studio() : tab === "calendar" ? calendar() : tab === "finance" ? finance() : tab === "press" ? pressPage() : awards()}
+  ${tab === "slate" ? slate() : tab === "scripts" ? scripts() : tab === "talent" ? talents() : tab === "studio" ? studio() : tab === "calendar" ? calendar() : tab === "finance" ? finance() : tab === "press" ? pressPage() : tab === "standings" ? standingsPage() : awards()}
   <footer><span>MOVIESIM <i> / </i> FIVE YEARS. YOUR STORY.</span>${button("Guide & save", "help", "", "text-button")}</footer></main></div>
   <nav class="mobile-nav">${[
     ["slate", "Movies"],
@@ -406,7 +413,7 @@ function calendar() {
   ).join("")}</div>`;
 }
 function finance() {
-  return `${sharkWarning()}<div class="mobile-more">${button("Release calendar", "nav", 'data-tab="calendar"', "outline")}${button("Annual awards", "nav", 'data-tab="awards"', "outline")}${button("The Final Cut", "nav", 'data-tab="press"', "outline")}${button("Guide & save", "help", "", "outline")}</div><div class="metrics">${stat("AVAILABLE CASH", E.accountMoney(s.cash))}${stat("OUTSTANDING DEBT", E.accountMoney(E.debtTotal(s)))}${stat("WEEKLY OUTFLOW", E.accountMoney(E.burn(s)))}${stat("REMAINING CREDIT", E.accountMoney(E.creditAvailable(s)))}</div><div class="two-columns"><section class="panel"><span class="eyebrow">THREE BANKS · THREE OFFERS</span><h2>Room to take a chance.</h2><p>Borrow from day one. Banks offer 8%, 12%, or 18% annual interest, with separate lending limits and 104 weekly principal payments. Interest declines as the balance falls.</p><div class="finance-lines"><div><span>Total bank lending capacity</span><strong>${E.accountMoney(E.creditLimit(s))}</strong></div><div><span>Current weekly debt payment</span><strong>${E.accountMoney(E.loanPayment(s))}</strong></div><div><span>Operating overhead / week</span><strong>${E.accountMoney(E.overhead(s))}</strong></div><div><span>Committed filming costs remaining</span><strong>${E.accountMoney(s.movies.reduce((v, m) => v + E.remaining(m), 0))}</strong></div></div><div class="button-row">${button("Review a loan →", "bank", "", "primary")}${E.debtTotal(s) > 0 ? button("Repay debt", "repay", "", "outline") : ""}</div></section><section class="panel"><span class="eyebrow">THE FINANCIAL PICTURE</span><h2>Know what comes home.</h2><p>Gross box office is what audiences pay. Your studio receives its distribution share, plus any advance and later catalog earnings.</p><div class="finance-lines"><div><span>Total movie spending</span><strong>${E.accountMoney(s.movies.reduce((v, m) => v + m.spent, 0))}</strong></div><div><span>Studio movie receipts</span><strong>${E.accountMoney(s.movies.reduce((v, m) => v + m.receipts, 0))}</strong></div><div><span>Streaming & licensing receipts</span><strong>${E.accountMoney(s.movies.reduce((v, m) => v + m.catalog, 0))}</strong></div><div><span>Facility & department investments</span><strong>${E.accountMoney(s.invested)}</strong></div></div></section></div><div class="section-title"><h2>Project accounts</h2></div><div class="table-wrap"><table><thead><tr><th>Movie</th><th>Spent</th><th>Studio receipts</th><th>Net to date</th></tr></thead><tbody>${s.movies.map((m) => `<tr><td><button class="text-button" data-action="movie" data-id="${m.id}">${h(m.title)}</button></td><td>${E.accountMoney(m.spent)}</td><td>${E.accountMoney(m.receipts)}</td><td class="${m.receipts - m.spent >= 0 ? "mint" : "negative"}">${E.accountMoney(m.receipts - m.spent)}</td></tr>`).join("") || '<tr><td colspan="4">No projects yet. Your first ledger entry is waiting.</td></tr>'}</tbody></table></div>`;
+  return `${sharkWarning()}<div class="mobile-more">${button("Studio standings", "nav", 'data-tab="standings"', "outline")}${button("Release calendar", "nav", 'data-tab="calendar"', "outline")}${button("Annual awards", "nav", 'data-tab="awards"', "outline")}${button("The Final Cut", "nav", 'data-tab="press"', "outline")}${button("Guide & save", "help", "", "outline")}</div><div class="metrics">${stat("AVAILABLE CASH", E.accountMoney(s.cash))}${stat("OUTSTANDING DEBT", E.accountMoney(E.debtTotal(s)))}${stat("WEEKLY OUTFLOW", E.accountMoney(E.burn(s)))}${stat("REMAINING CREDIT", E.accountMoney(E.creditAvailable(s)))}</div><div class="two-columns"><section class="panel"><span class="eyebrow">THREE BANKS · THREE OFFERS</span><h2>Room to take a chance.</h2><p>Borrow from day one. Banks offer 8%, 12%, or 18% annual interest, with separate lending limits and 104 weekly principal payments. Interest declines as the balance falls.</p><div class="finance-lines"><div><span>Total bank lending capacity</span><strong>${E.accountMoney(E.creditLimit(s))}</strong></div><div><span>Current weekly debt payment</span><strong>${E.accountMoney(E.loanPayment(s))}</strong></div><div><span>Operating overhead / week</span><strong>${E.accountMoney(E.overhead(s))}</strong></div><div><span>Committed filming costs remaining</span><strong>${E.accountMoney(s.movies.reduce((v, m) => v + E.remaining(m), 0))}</strong></div></div><div class="button-row">${button("Review a loan →", "bank", "", "primary")}${E.debtTotal(s) > 0 ? button("Repay debt", "repay", "", "outline") : ""}</div></section><section class="panel"><span class="eyebrow">THE FINANCIAL PICTURE</span><h2>Know what comes home.</h2><p>Gross box office is what audiences pay. Your studio receives its distribution share, plus any advance and later catalog earnings.</p><div class="finance-lines"><div><span>Total movie spending</span><strong>${E.accountMoney(s.movies.reduce((v, m) => v + m.spent, 0))}</strong></div><div><span>Studio movie receipts</span><strong>${E.accountMoney(s.movies.reduce((v, m) => v + m.receipts, 0))}</strong></div><div><span>Streaming & licensing receipts</span><strong>${E.accountMoney(s.movies.reduce((v, m) => v + m.catalog, 0))}</strong></div><div><span>Facility & department investments</span><strong>${E.accountMoney(s.invested)}</strong></div></div></section></div><div class="section-title"><h2>Project accounts</h2></div><div class="table-wrap"><table><thead><tr><th>Movie</th><th>Spent</th><th>Studio receipts</th><th>Net to date</th></tr></thead><tbody>${s.movies.map((m) => `<tr><td><button class="text-button" data-action="movie" data-id="${m.id}">${h(m.title)}</button></td><td>${E.accountMoney(m.spent)}</td><td>${E.accountMoney(m.receipts)}</td><td class="${m.receipts - m.spent >= 0 ? "mint" : "negative"}">${E.accountMoney(m.receipts - m.spent)}</td></tr>`).join("") || '<tr><td colspan="4">No projects yet. Your first ledger entry is waiting.</td></tr>'}</tbody></table></div>`;
 }
 function awards() {
   const eligible = s.movies.filter((m) => E.canCampaign(s, m)),
@@ -1300,6 +1307,7 @@ app.addEventListener("keydown", (e) => {
     e.target.click();
 });
 dialog.addEventListener("cancel", (e) => {
+  if(view?.kind==="cards"&&view.panel){e.preventDefault();view.panel=null;view.character=null;view.naming=false;drawDialog();return;}
   if ((s.cash < 0 && !s.ended && !s.epilogue) || lockedAnnouncement())
     e.preventDefault();
   else {
@@ -1583,10 +1591,17 @@ function handle(e) {
     case "cardEdit": {const m=E.movie(s,id);open('cards',{id,cards:structuredClone(m.movieCards??COL.blank(s)),title:m.title,scale:m.scale,slot:'genre',mode:m.sequelMode??'continuation'});break;}
     case "packs": open('packs',{back:view?structuredClone(view):null});break;
     case "claimPack": transact('claimPack',{family:b.dataset.family},()=>{toast('New cards added to your collection.');});break;
-    case "cardSlot":view.slot=b.dataset.deck;view.character=b.dataset.character==null?null:Number(b.dataset.character);drawDialog();dialog.querySelector('.card-picker').scrollIntoView({block:'start'});break;
-    case "cardPick":{const deck=view.slot,value=b.dataset.card;if(view.character!=null)view.cards.characters[view.character][deck]=value;else view.cards[deck]=value;const top=dialog.querySelector('.modal-body').scrollTop;drawDialog();dialog.querySelector('.modal-body').scrollTop=top;break;}
-    case "addCharacter":{const role=b.dataset.role;if(!COL.ROLES.includes(role)||view.cards.characters.some(c=>c.role===role))break;view.cards.characters.push({role,persona:s.collection.owned.persona[0],trait:'',outcome:'',name:''});view.character=view.cards.characters.length-1;view.slot='persona';drawDialog();break;}
-    case "removeCharacter":{const i=Number(b.dataset.character);if(i>0)view.cards.characters.splice(i,1);view.character=null;view.slot='genre';drawDialog();break;}
+    case "standingsSort": standingsSort=b.dataset.sort;render();break;
+    case "cardSlot":view.panel='picker';view.slot=b.dataset.deck;view.character=null;drawDialog();break;
+    case "characterEdit":view.panel='picker';view.character=Number(b.dataset.character);view.slot='persona';drawDialog();break;
+    case "characterTab":view.slot=b.dataset.deck;drawDialog();break;
+    case "cardDone":view.panel=null;view.character=null;view.naming=false;drawDialog();break;
+    case "characterName":view.naming=!view.naming;drawDialog();if(view.naming)dialog.querySelector('[data-character-name]')?.focus();break;
+    case "chooseRole":view.panel='roles';drawDialog();break;
+    case "cardCheckout":view.panel='checkout';drawDialog();break;
+    case "cardPick":{const deck=view.slot,value=b.dataset.card;if(view.character!=null){view.cards.characters[view.character][deck]=value;}else{view.cards[deck]=value;view.panel=null;}drawDialog();break;}
+    case "addCharacter":{const role=b.dataset.role;if(!COL.ROLES.includes(role)||view.cards.characters.some(c=>c.role===role))break;view.cards.characters.push({role,persona:'',trait:'',outcome:'',name:''});view.character=view.cards.characters.length-1;view.slot='persona';view.panel='picker';drawDialog();break;}
+    case "removeCharacter":{const i=view.character;if(i>0)view.cards.characters.splice(i,1);view.character=null;view.panel=null;drawDialog();break;}
     case "casting":
       budgetFilter = "all";
       castingGenre = "all";
@@ -2092,14 +2107,22 @@ function packShelf(){
 }
 function collectionGallery(){return `<details><summary>Browse all 140 cards</summary>${Object.entries(COL.DECKS).map(([deck,cards])=>`<h3>${COL.LABELS[deck]}</h3><div class="collection-tags">${cards.map(c=>`<span class="${COL.owns(s,deck,c)?'owned':'locked'}">${COL.owns(s,deck,c)?'✓':'◇'} ${h(c)}</span>`).join('')}</div>`).join('')}</details>`;}
 function cardRoom(){
- const d=view.cards,deck=view.slot??'genre',i=view.character??null,selected=i!=null?d.characters[i]?.[deck]:d[deck],cost=view.id?50:100*(E.SCALES.indexOf(view.scale)+1)*LIFE.scriptMultiplier(s,d.genre),parent=view.id?s.movies.find(m=>m.id===E.movie(s,view.id).parent):null;
- const slot=(key,value,character=null)=>button(`<small>${COL.ICONS[key]} ${COL.LABELS[key]}</small><strong>${h(value||(['trait','outcome'].includes(key)?'None':'Choose'))}</strong>`,'cardSlot',`data-deck="${key}" ${character!=null?`data-character="${character}"`:''} aria-pressed="${deck===key&&i===character}"`,'collection-slot');
- const issues=COL.continuity(parent?.movieCards,d,view.mode);
- return modal(view.id?'Edit movie cards':'Build a movie',`<div class="movie-builder"><form id="card-form"><label>Movie title<input name="title" maxlength="60" required value="${h(view.title)}" ${view.id?'readonly':''} placeholder="Name your movie"></label><details><summary>Production${parent?' & sequel':''}</summary><label>Scope<select name="cardScale" ${view.id?'disabled':''}>${E.SCALES.map(x=>`<option ${view.scale===x?'selected':''}>${x}</option>`).join('')}</select></label>${parent?`<label>Story order<select name="sequelMode"><option value="continuation" ${view.mode!=='prequel'?'selected':''}>Sequel</option><option value="prequel" ${view.mode==='prequel'?'selected':''}>Prequel</option></select></label>`:''}</details></form><div class="story-slots">${['genre','setting','problem','ending'].map(k=>slot(k,d[k])).join('')}</div><div class="character-board">${d.characters.map((c,j)=>`<article class="character-slot"><header><strong>${h(c.role)}</strong>${j?button('Remove','removeCharacter',`data-character="${j}"`,'text-button'):''}</header><div class="character-cards">${['persona','trait','outcome'].map(k=>slot(k,c[k],j)).join('')}</div><details><summary>Character name</summary><input aria-label="${h(c.role)} name" data-character-name="${j}" maxlength="30" value="${h(c.name)}" placeholder="Optional name"></details></article>`).join('')}</div><details class="add-roles"><summary>+ Add a character</summary><div class="collection-tags">${COL.ROLES.filter(r=>!d.characters.some(c=>c.role===r)).map(r=>button(r,'addCharacter',`data-role="${h(r)}"`,'outline')).join('')}</div></details><section class="card-picker"><h3>${i!=null?h(d.characters[i].role)+' · ':''}${COL.LABELS[deck]}</h3>${deck==='trait'||deck==='outcome'?'<p class="small muted">Optional · tap a card to choose.</p>':''}<div class="shared-card-grid">${(deck==='trait'||deck==='outcome'?['',...s.collection.owned[deck]]:s.collection.owned[deck]).map((c,j)=>button(`<span class="shared-art" style="--variant:${j%5}" aria-hidden="true">${c?COL.ICONS[deck]:'−'}</span><strong>${h(c||'None')}</strong>${selected===c?'<span class="album-check">✓</span>':''}`,'cardPick',`data-card="${h(c)}" aria-pressed="${selected===c}"`,'shared-card')).join('')}</div>${!s.collection.owned[deck].length?'<p class="small">Earn outcomes in Final Curtain packs.</p>':''}${button(`${s.collection.owned[deck].length} / 20 collected · View packs`,'packs','','text-button')}</section>${parent?.movieCards?`<details><summary>Previous character outcomes</summary>${parent.movieCards.characters.map(c=>`<p>${h(c.name||c.role)} · ${h(c.outcome||'Unspecified')}</p>`).join('')}</details>`:''}${issues.map(t=>`<p class="small peach">${h(t)}</p>`).join('')}<p class="small muted">${view.id?'Changed or removed characters need recasting.':'Personas can be reused. Traits and outcomes are optional.'}</p><footer class="album-footer"><span>${E.accountMoney(cost)}</span><button class="primary" type="submit" form="card-form" ${COL.valid(d,s)&&!issues.length?'':'disabled'}>${view.id?'Save cards':'Make this movie →'}</button></footer></div>`,'CINEMA COLLECTION');
+ const d=view.cards,i=view.character??null,deck=view.slot??'genre',parent=view.id?s.movies.find(m=>m.id===E.movie(s,view.id).parent):null,issues=COL.continuity(parent?.movieCards,d,view.mode),valid=COL.valid(d,s);
+ if(view.panel==='roles')return modal('Add a character',`<div class="role-picker">${COL.ROLES.filter(r=>!d.characters.some(c=>c.role===r)).map(r=>button(h(r)+' →','addCharacter',`data-role="${h(r)}"`,'outline full')).join('')}</div>`,'CHOOSE A ROLE');
+ if(view.panel==='picker'){
+  const c=i!=null?d.characters[i]:null,selected=c?c[deck]:d[deck];
+  return modal(c?c.role:({genre:'Genre',setting:'Setting',problem:'Problem',ending:'Ending'})[deck],`${c?`<div class="character-preview"><div><strong>${h([c.trait,c.persona].filter(Boolean).join(' ')||'Choose a persona')}</strong><small>${h(c.outcome||'Outcome optional')}</small>${c.name?`<small>${h(c.name)}</small>`:''}</div>${button('✎','characterName',`aria-label="Name ${h(c.role)}"`,'icon-button')}</div>${view.naming?`<input aria-label="${h(c.role)} name" data-character-name="${i}" maxlength="30" value="${h(c.name)}" placeholder="Character name">`:''}<nav class="character-tabs" aria-label="Character cards">${['persona','trait','outcome'].map(k=>button({persona:'Persona',trait:'Trait',outcome:'Outcome'}[k],'characterTab',`data-deck="${k}" aria-pressed="${deck===k}"`,'outline')).join('')}</nav>`:''}<div class="shared-card-grid">${(['trait','outcome'].includes(deck)?['',...s.collection.owned[deck]]:s.collection.owned[deck]).map(name=>button(`<span class="shared-art" aria-hidden="true">${name?COL.ICONS[deck]:'−'}</span><strong>${h(name||'None')}</strong>${selected===name?'<span class="album-check">✓</span>':''}`,'cardPick',`data-card="${h(name)}" aria-pressed="${selected===name}"`,'shared-card')).join('')}</div>${!s.collection.owned[deck].length?'<p class="small muted">Unlock outcomes in Collection.</p>':''}${c?`<div class="sheet-actions">${i>0?button('Remove character','removeCharacter','','text-button'):''}${button('Done','cardDone',`${!c.persona?'disabled':''}`,'primary')}</div>`:''}`,'YOUR CARDS');
+ }
+ if(view.panel==='checkout')return modal(view.id?'Save screenplay':'Make this movie',`<form id="card-form"><label>Movie title<input name="title" maxlength="60" required value="${h(view.title)}" ${view.id?'readonly':''} placeholder="Name your movie"></label>${!view.id?`<label>Production scope<select name="cardScale">${E.SCALES.map(x=>`<option ${view.scale===x?'selected':''}>${x}</option>`).join('')}</select></label>`:''}${parent?`<label>Story order<select name="sequelMode"><option value="continuation" ${view.mode!=='prequel'?'selected':''}>Sequel</option><option value="prequel" ${view.mode==='prequel'?'selected':''}>Prequel</option></select></label>`:''}${issues.map(t=>`<p class="small peach">${h(t)}</p>`).join('')}<p class="small">Screenplay · ${E.accountMoney(view.id?50:100*(E.SCALES.indexOf(view.scale)+1)*LIFE.scriptMultiplier(s,d.genre))}</p><button type="submit" class="primary full" ${valid&&!issues.length?'':'disabled'}>${view.id?'Save changes':'Start development →'}</button></form>`,'SCREENPLAY');
+ const slot=k=>button(`<small>${COL.ICONS[k]} ${{genre:'Genre',setting:'Setting',problem:'Problem',ending:'Ending'}[k]}</small><strong>${h(d[k]||'Choose '+k)}</strong>`,'cardSlot',`data-deck="${k}"`,'collection-slot');
+ return modal('Your movie',`<div class="simple-movie-board"><div class="genre-target">${slot('genre')}</div><div class="story-strip">${['setting','problem','ending'].map(slot).join('')}</div><div class="character-tiles">${d.characters.map((c,j)=>button(`<small>${h(c.role)}</small><strong>${h([c.trait,c.persona].filter(Boolean).join(' ')||'Choose persona')}</strong>${c.outcome?`<span>${h(c.outcome)}</span>`:''}${c.name?`<span>${h(c.name)}</span>`:''}`,'characterEdit',`data-character="${j}"`,'character-tile')).join('')}${d.characters.length<6?button('+ Character','chooseRole','','character-tile add-character'):''}</div><button class="primary full" data-action="cardCheckout" ${!valid?'disabled':''}>${view.id?'Review changes →':'Make Movie →'}</button></div>`,'CINEMA COLLECTION');
 }
 function movieCardSummary(m){const d=m.movieCards;return `<details class="movie-card-summary"><summary>Your movie cards · ${COL.selected(d).length}</summary><div class="collection-tags">${['genre','setting','problem','ending'].map(k=>`<span>${COL.ICONS[k]} ${h(d[k])}</span>`).join('')}</div>${d.characters.map(c=>`<p><strong>${h(c.name||c.role)}</strong> · ${h([c.trait,c.persona,c.outcome].filter(Boolean).join(' · '))}</p>`).join('')}${m.parent?`<small>${m.sequelMode==='prequel'?'Prequel':'Sequel'} · character outcomes carried in franchise history</small>`:''}</details>`;}
 function cardReleaseReport(m){return `<section class="panel"><div class="scores">${stat('FANS',E.score(m.fans))}${stat('CRITICS',E.score(m.critics))}${stat('BOX OFFICE',E.accountMoney(m.gross))}</div>${filmResult(m)}${movieCardSummary(m)}<p class="small">Creative focus: ${(m.cardReception?.focus??[]).map(x=>({story:'Story',acting:'Performances',direction:'Direction',craft:'Craft'})[x]).join(' · ')}</p><details><summary>How your cards mattered</summary><p>Your card combination sets the balance of story, performance, direction and craft. Production delivers those qualities. Extra or unlocked cards add no score bonus.</p><p>Character outcomes shape the next chapter.</p></details>${button('Build another movie','cardNew','','outline full')}</section>`;}
 dialog.addEventListener('input',e=>{if(view?.kind!=='cards')return;if(e.target.name==='title')view.title=e.target.value;if(e.target.dataset.characterName!=null)view.cards.characters[Number(e.target.dataset.characterName)].name=e.target.value;});
 dialog.addEventListener('change',e=>{if(view?.kind!=='cards')return;if(e.target.name==='cardScale'){view.scale=e.target.value;drawDialog();}if(e.target.name==='sequelMode'){view.mode=e.target.value;drawDialog();}});
 
-dialog.addEventListener('change',e=>{if(view?.kind==='cards'&&e.target.dataset.characterName!=null){const top=dialog.querySelector('.modal-body').scrollTop;drawDialog();dialog.querySelector('.modal-body').scrollTop=top;}});
+
+
+
+function standingsPage(){const rows=standings(s,standingsSort);return `<div class="standings-controls">${button('Box office','standingsSort',`data-sort="gross" aria-pressed="${standingsSort==='gross'}"`,'outline')}${button('Awards','standingsSort',`data-sort="awards" aria-pressed="${standingsSort==='awards'}"`,'outline')}</div><table class="standings-table"><thead><tr><th scope="col">#</th><th scope="col">Studio</th><th scope="col">Box office</th><th scope="col">Awards</th></tr></thead><tbody>${rows.map(r=>`<tr class="${r.player?'your-studio':''}"><td>${r.rank}</td><th scope="row">${h(r.name)}${r.player?'<span class="you-label">YOU</span>':''}<small>${r.films} films</small></th><td>${E.accountMoney(r.gross)}</td><td>♜ ${r.awards}</td></tr>`).join('')}</tbody></table><p class="small muted">Run-to-date ticket sales, before studio shares. Rival box office is simulated. Awards count after their winners are revealed.</p>`;}
