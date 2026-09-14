@@ -1,16 +1,16 @@
-import {standings} from "./standings.js?v=0.44.0";
-import * as COL from "./collection.js?v=0.44.0";
-import * as COMM from './commissions.js?v=0.44.0';
-import {nextHire, standardOffer, deadlineWindows, commissionEstimate} from './experience.js?v=0.44.0';
-import * as REC from "./reception.js?v=0.44.0";
-import * as LIFE from "./studio-life.js?v=0.44.0";
-import {GENRE_SYMBOLS} from "./card-genres.js?v=0.44.0";
-import * as CL from "./clients.js?v=0.44.0";
-import * as CH from "./chemistry.js?v=0.44.0";
-import * as SF from "./scifi.js?v=0.44.0";
-import * as N from "./narrative.js?v=0.44.0";
-import * as E from "./engine.js?v=0.44.0";
-import { portrait, poster, studioArt, settingCardArt, escapeHtml as h } from "./art.js?v=0.44.0";
+import {standings} from "./standings.js?v=0.45.0";
+import * as COL from "./collection.js?v=0.45.0";
+import * as COMM from './commissions.js?v=0.45.0';
+import {nextHire, standardOffer, deadlineWindows, commissionEstimate} from './experience.js?v=0.45.0';
+import * as REC from "./reception.js?v=0.45.0";
+import * as LIFE from "./studio-life.js?v=0.45.0";
+import {GENRE_SYMBOLS} from "./card-genres.js?v=0.45.0";
+import * as CL from "./clients.js?v=0.45.0";
+import * as CH from "./chemistry.js?v=0.45.0";
+import * as SF from "./scifi.js?v=0.45.0";
+import * as N from "./narrative.js?v=0.45.0";
+import * as E from "./engine.js?v=0.45.0";
+import { portrait, poster, studioArt, settingCardArt, escapeHtml as h } from "./art.js?v=0.45.0";
 const BUILD = "0.42.0";
 const KEY = "moviesim-collection-save-v1",
   app = document.querySelector("#app"),
@@ -199,7 +199,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.44.0 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
+    )}</nav><div class="sidebar-bottom"><div class="year-progress"><span>YOUR FIVE-YEAR STORY</span><strong>Year ${Math.min(5, Math.floor(s.week / 52) + 1)} <i>/ 5</i></strong><div class="bar"><i style="width:${(s.week / 260) * 100}%"></i></div></div>${button("How to play ↗", "help", "", "quiet")}<small>DEMO 0.45.0 · SAVED ${saveError ? "UNAVAILABLE" : "ON THIS DEVICE"}</small></div></aside>
   <div class="workspace"><header class="topbar"><span class="mobile-brand">▰ MOVIESIM</span><div class="date"><span class="status-dot"></span><strong>${d.label}</strong><span>Week ${d.week}</span></div><div class="top-stats"><div><small>AVAILABLE CASH</small><strong class="${s.cash < 0 ? "negative" : ""}">${E.accountMoney(s.cash)}</strong></div><div><small>STUDIO PRESTIGE</small><strong><span class="gold">✦</span> ${Math.round(s.prestige)}<em> / 100</em></strong></div></div>${button(s.ended ? "Studio recap" : s.cash < 0 && !s.epilogue ? "Review financing" : s.epilogue ? "Final awards →" : s.notices.length ? "New announcement →" : decisions.some((m) => m.event) ? "Next decision →" : s.movies.some((m) => m.stage === "ready" && m.release == null) ? "Choose release date →" : "Next week →", s.ended ? "recap" : s.cash < 0 && !s.epilogue ? "bank" : s.epilogue || s.notices.length ? "announcements" : decisions.some((m) => m.event) ? "nextDecision" : "next", "", "primary advance")}</header>
   <main>${COL.credits(s)?`<div class="notice-banner">✦ ${COL.credits(s)} card packs ready ${button("Choose packs","packs","","outline")}</div>`:""}<div class="page-heading"><div><span class="eyebrow">${tab === "slate" ? "THE PRODUCTION OFFICE" : tab === "scripts" ? "YOUR SHARED CARD LIBRARY" : tab === "talent" ? "CASTING & DIRECTION" : tab === "awards" ? "THE SILVER SCREEN AWARDS" : "SILVERLINE / STUDIO OPERATIONS"}</span><h1>${titles[tab]}</h1><p>${subs[tab]}</p></div>${tab === "slate" ? button("+ New movie", "nav", 'data-tab="scripts"', "primary") : tab === "scripts" ? button("+ Build movie", "cardNew", "", "primary") : ""}</div>
   ${s.ended ? `<div class="notice-banner">${h(s.endReason || "Your studio run is complete.")} Explore your studio or ${button("see your retrospective →", "recap", "", "text-button")}.</div>` : ""}

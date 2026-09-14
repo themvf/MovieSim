@@ -1,21 +1,21 @@
-import * as APPEAL from "./cast-appeal.js?v=0.44.0";
-import * as COL from "./collection.js?v=0.44.0";
-import * as REC from "./reception.js?v=0.44.0";
-import * as LIFE from "./studio-life.js?v=0.44.0";
-import * as CL from "./clients.js?v=0.44.0";
-import * as PRESS from "./press.js?v=0.44.0";
-import * as CH from "./chemistry.js?v=0.44.0";
-import * as C from "./commissions.js?v=0.44.0";
-import * as D from "./delays.js?v=0.44.0";
+import * as APPEAL from "./cast-appeal.js?v=0.45.0";
+import * as COL from "./collection.js?v=0.45.0";
+import * as REC from "./reception.js?v=0.45.0";
+import * as LIFE from "./studio-life.js?v=0.45.0";
+import * as CL from "./clients.js?v=0.45.0";
+import * as PRESS from "./press.js?v=0.45.0";
+import * as CH from "./chemistry.js?v=0.45.0";
+import * as C from "./commissions.js?v=0.45.0";
+import * as D from "./delays.js?v=0.45.0";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.44.0";
+import * as P from "./personality.js?v=0.45.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.44.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.44.0";
+import * as SF from "./scifi.js?v=0.45.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.45.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -1476,8 +1476,15 @@ export function act(s, type, a = {}) {
       if(JSON.stringify(m.movieCards)===JSON.stringify(a.cards)&&(m.sequelMode??'continuation')===(a.mode??'continuation'))return m;
       if(s.cash<50)throw Error("Revising the screenplay costs $50,000.");
       const old=m.movieCards;
+      const auditions={};
+      for(const [key,score] of Object.entries(m.auditions)){
+        if(key.startsWith('director:')){auditions[key]=score;continue;}
+        const separator=key.indexOf(':'),before=old?.characters[Number(key.slice(0,separator))];
+        const role=a.cards.characters.findIndex(n=>n.role===before?.role&&n.persona===before.persona&&n.name===before.name);
+        if(role>=0)auditions[`${role}${key.slice(separator)}`]=score;
+      }
       m.contracts=m.contracts.flatMap(c=>{const before=old?.characters[c.role],i=a.cards.characters.findIndex(n=>n.role===before?.role&&n.persona===before.persona&&n.name===before.name);return i<0?[]:[{...c,role:i}];});
-      m.auditions={};m.movieCards=structuredClone(a.cards);m.sequelMode=a.mode??'continuation';Object.assign(m,COL.identity(a.cards));m.castingDirections=m.roles.map((_,i)=>castingGuidance(m,i));
+      m.auditions=auditions;m.movieCards=structuredClone(a.cards);m.sequelMode=a.mode??'continuation';Object.assign(m,COL.identity(a.cards));m.castingDirections=m.roles.map((_,i)=>castingGuidance(m,i));
       for(const k of ['scifiCards','endingCards','publicPromise','narrativePack','narrative','originalNarrative','acts','story'])delete m[k];
       debit(s,50);m.spent+=50;return m;
     }
@@ -1639,6 +1646,7 @@ export function act(s, type, a = {}) {
         grossShare: q.grossShare,
         option: !!a.option,
         optionCost: a.option ? offer * 0.2 : 0,
+        auditionScore: m.auditions[auditionKey(p, a.role)],
         expectation: talentEstimate(
           s,
           p,
@@ -1680,6 +1688,8 @@ export function act(s, type, a = {}) {
         effects: amt(a.effects, 0, 20000),
       };
       m.location=location;m.effectsApproach=effectsApproach;
+      // Restore drafts affected by the old card rewrite clearing their auditions.
+      for(const c of m.contracts)m.auditions[`${c.role}:${c.id}`]=castAudition(s,m,c);
       m.budget = b;
       m.duration = duration;
       m.progress = 0;
@@ -2052,11 +2062,19 @@ export function distribution(s, m) {
   };
   return Object.fromEntries(Object.entries(offers).map(([k,o])=>[k,k==="self"?o:relationshipOffer(s,o)]));
 }
+function castAudition(s,m,c){
+  const score=m.auditions[`${c.role}:${c.id}`];
+  if(Number.isFinite(score))return score;
+  if(Number.isFinite(c.auditionScore))return c.auditionScore;
+  // Older affected films have no recoverable roll; use the actor's base ability.
+  const p=person(s,c.id);
+  return clamp(roleAbility(p,m.genre)-Math.max(0,m.difficulty-p.talent)*.2);
+}
 function finish(s, m) {
   const approach=P.adjustments(m);
   const craft = clamp(productionCraft(m)+approach.craft);
   const performances = m.contracts.map((c) =>
-    clamp(m.auditions[`${c.role}:${c.id}`] + (()=>{const credits=person(s,c.id).majorCredits??0;const spread=m.economyVersion>=3?(credits>=4?8:credits?12:18):12;return roll(s,-spread,spread);})()),
+    clamp(castAudition(s,m,c) + (()=>{const credits=person(s,c.id).majorCredits??0;const spread=m.economyVersion>=3?(credits>=4?8:credits?12:18):12;return roll(s,-spread,spread);})()),
   );
   for(let i=0;i<performances.length;i++)performances[i]=clamp(performances[i]+CH.adjustment(m,m.contracts[i].id)+approach.acting+(m.peopleStory?.actors.find(a=>a.id===m.contracts[i].id)?.supported?4:0));
   m.performances = performances;
