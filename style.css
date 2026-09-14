@@ -3513,3 +3513,10 @@ dialog:has(.narrative-report){width:min(1040px,calc(100vw - 28px));max-width:104
 .cast-appeal{padding:12px 16px;border:1px solid #52685e;border-radius:12px;margin:16px 0;background:#182d2b}.cast-appeal>div{display:flex;justify-content:space-between;gap:12px}.cast-appeal strong{color:#e5cd8b}.cast-appeal summary{font-size:13px;padding-top:12px;min-height:44px}.casting-metrics{flex-wrap:wrap}.casting-metrics>span{min-width:90px}
 
 @media(max-width:650px){.card-release-report .scores{grid-template-columns:1fr 1fr}.card-release-report .scores>div:last-child{grid-column:1/-1}.card-release-report .scores>div:last-child strong{white-space:nowrap;font-size:22px}}
+
+/* Modal dialogs sit above page toasts, regardless of their z-index. */
+#dialog-feedback { padding:10px 12px; border:1px solid #e4a476; border-radius:8px; background:#412c25; color:#ffe0c2; font-size:13px; line-height:1.4; }
+.production-footer:has(#dialog-feedback) { flex-wrap:wrap; }
+.production-footer #dialog-feedback { flex-basis:100%; }
+.production-footer #production-total { flex:1; }
+.production-footer > button { max-width:45%; }

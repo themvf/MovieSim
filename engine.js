@@ -1,26 +1,26 @@
-import * as MUSIC from './music.js?v=0.47.0';
+import * as MUSIC from './music.js?v=0.48.0';
 export const COMPOSERS=MUSIC.COMPOSERS;
 export const MUSIC_STYLES=MUSIC.STYLES;
 export const musicPairing=MUSIC.pairing;
 export const scoreCost=MUSIC.cost;
-import * as APPEAL from "./cast-appeal.js?v=0.47.0";
-import * as COL from "./collection.js?v=0.47.0";
-import * as REC from "./reception.js?v=0.47.0";
-import * as LIFE from "./studio-life.js?v=0.47.0";
-import * as CL from "./clients.js?v=0.47.0";
-import * as PRESS from "./press.js?v=0.47.0";
-import * as CH from "./chemistry.js?v=0.47.0";
-import * as C from "./commissions.js?v=0.47.0";
-import * as D from "./delays.js?v=0.47.0";
+import * as APPEAL from "./cast-appeal.js?v=0.48.0";
+import * as COL from "./collection.js?v=0.48.0";
+import * as REC from "./reception.js?v=0.48.0";
+import * as LIFE from "./studio-life.js?v=0.48.0";
+import * as CL from "./clients.js?v=0.48.0";
+import * as PRESS from "./press.js?v=0.48.0";
+import * as CH from "./chemistry.js?v=0.48.0";
+import * as C from "./commissions.js?v=0.48.0";
+import * as D from "./delays.js?v=0.48.0";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.47.0";
+import * as P from "./personality.js?v=0.48.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.47.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.47.0";
+import * as SF from "./scifi.js?v=0.48.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.48.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -1683,7 +1683,7 @@ export function act(s, type, a = {}) {
       const people = [...m.contracts, m.director].map((c) => person(s, c.id));
       if (people.some((p) => !available(p, s.week, s.week + duration)))
         throw Error(
-          "Someone in your cast or directing team is booked. Choose available talent or wait until their shoot ends.",
+          `${people.filter(p=>!available(p,s.week,s.week+duration)).map(p=>p.name).join(", ")} booked during this shoot. Replace them or wait until they are available.`,
         );
       const musicStyle=a.musicStyle??m.musicStyle??0;
       if(!Number.isInteger(musicStyle)||!MUSIC.STYLES[musicStyle])throw Error("Choose a music style.");

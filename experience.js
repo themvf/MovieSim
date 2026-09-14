@@ -1,5 +1,5 @@
 // Compact, read-only guidance for repeated filmmaking.
-import {CLIENTS} from './clients.js?v=0.47.0';
+import {CLIENTS} from './clients.js?v=0.48.0';
 export function nextHire(m) {
  const role=m.roles.findIndex((_,i)=>!m.contracts.some(c=>c.role===i));
  return role>=0?{kind:'casting',role,label:`Next role: ${m.roles[role]}`}:
