@@ -1,5 +1,5 @@
-import * as COL from "./collection.js?v=0.45.0";
-import * as Cards from './scifi.js?v=0.45.0';
+import * as COL from "./collection.js?v=0.46.0";
+import * as Cards from './scifi.js?v=0.46.0';
 const hash=text=>[...String(text)].reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,17);
 const clamp=(n,lo=0,hi=100)=>Math.max(lo,Math.min(hi,n));
 const released=m=>['theaters','catalog'].includes(m.stage);

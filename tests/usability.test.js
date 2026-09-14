@@ -116,7 +116,7 @@ test("winner reveals are persistent and exactly once, with no skipped categories
   assert.deepEqual(reloaded.awards[0].results, original);
   assert.equal(reloaded.awards[0].revealed, 1);
   E.act(reloaded, "awardSummary", { year: 2026 });
-  assert.equal(reloaded.awards[0].revealed, 4);
+  assert.equal(reloaded.awards[0].revealed, E.AWARD_CATEGORIES.length);
   assert.ok(reloaded.awards[0].completed);
   const prestige = reloaded.prestige;
   E.act(reloaded, "awardSummary", { year: 2026 });

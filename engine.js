@@ -1,21 +1,24 @@
-import * as APPEAL from "./cast-appeal.js?v=0.45.0";
-import * as COL from "./collection.js?v=0.45.0";
-import * as REC from "./reception.js?v=0.45.0";
-import * as LIFE from "./studio-life.js?v=0.45.0";
-import * as CL from "./clients.js?v=0.45.0";
-import * as PRESS from "./press.js?v=0.45.0";
-import * as CH from "./chemistry.js?v=0.45.0";
-import * as C from "./commissions.js?v=0.45.0";
-import * as D from "./delays.js?v=0.45.0";
+import * as MUSIC from './music.js?v=0.46.0';
+export const COMPOSERS=MUSIC.COMPOSERS;
+export const scoreCost=MUSIC.cost;
+import * as APPEAL from "./cast-appeal.js?v=0.46.0";
+import * as COL from "./collection.js?v=0.46.0";
+import * as REC from "./reception.js?v=0.46.0";
+import * as LIFE from "./studio-life.js?v=0.46.0";
+import * as CL from "./clients.js?v=0.46.0";
+import * as PRESS from "./press.js?v=0.46.0";
+import * as CH from "./chemistry.js?v=0.46.0";
+import * as C from "./commissions.js?v=0.46.0";
+import * as D from "./delays.js?v=0.46.0";
 export const ensureCommissions=C.ensure;
 export const commissionAvailable=C.offer;
 export const commissionEligible=C.eligible;
 export const delayChoices=(s,m)=>D.INCIDENTS[m.event.index].options.map(o=>D.plan(s,m,o[0]));
-import * as P from "./personality.js?v=0.45.0";
+import * as P from "./personality.js?v=0.46.0";
 export const ensurePersonalities=P.ensure;
 export const workingStyle=P.style;
-import * as SF from "./scifi.js?v=0.45.0";
-import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.45.0";
+import * as SF from "./scifi.js?v=0.46.0";
+import { authoredSpecs, evaluate as evaluateNarrative, executionPenalty } from "./narrative.js?v=0.46.0";
 import { storyFor } from "./stories.js?v=0.10.0";
 // All money is in thousands of dollars. The simulation is deterministic from its saved seed.
 export const VERSION = 5;
@@ -447,7 +450,7 @@ export function productionCosts(s, m, b, duration) {
     crew: (b.crew - s.facilities["Editing suite"] * .04 * b.crew) * multiplier,
     effects: (b.effects * (EFFECTS_PLANS[m.effectsApproach??0]?.cost??1) - s.facilities["Effects workshop"] * .09 * b.effects) * multiplier,
   };
-  const total = departments.sets + departments.crew + departments.effects;
+  const total = departments.sets + departments.crew + departments.effects + MUSIC.cost(m);
   return { saving, total, weekly: total / duration, departments };
 }
 const DEBT_EPSILON = 1e-10; // Internal thousands: far below one cent; only arithmetic residue.
@@ -1382,7 +1385,7 @@ function addMovie(s, sc, parent = null, developing = false) {
     awards: [],
     cancelled: false,
   };
-  delete m.castAppeal;delete m.castCommercial;
+  delete m.castAppeal;delete m.castCommercial;delete m.composer;delete m.music;
   delete m.scifiReception;delete m.receptionContext;delete m.screeningModel;
   delete m.delayPlan;delete m.sponsorIncome;
   delete m.life;delete m.passion;delete m.cult;delete m.releaseDeal;delete m.castChemistry;delete m.peopleStory;delete m.fanCommunity;delete m.directorApproach;delete m.storyExecution;
@@ -1680,6 +1683,8 @@ export function act(s, type, a = {}) {
         throw Error(
           "Someone in your cast or directing team is booked. Choose available talent or wait until their shoot ends.",
         );
+      const composer=a.composer??m.composer??0;
+      if(!Number.isInteger(composer)||!MUSIC.COMPOSERS[composer])throw Error("Choose a composer.");
       const location=a.location??m.location??0,effectsApproach=a.effectsApproach??m.effectsApproach??0;
       if(!Number.isInteger(location)||!LOCATION_PLANS[location]||!Number.isInteger(effectsApproach)||!EFFECTS_PLANS[effectsApproach])throw Error("Choose a valid location and effects approach.");
       const b = {
@@ -1687,7 +1692,7 @@ export function act(s, type, a = {}) {
         crew: amt(a.crew, 25, 15000),
         effects: amt(a.effects, 0, 20000),
       };
-      m.location=location;m.effectsApproach=effectsApproach;
+      m.location=location;m.effectsApproach=effectsApproach;m.composer=composer;
       // Restore drafts affected by the old card rewrite clearing their auditions.
       for(const c of m.contracts)m.auditions[`${c.role}:${c.id}`]=castAudition(s,m,c);
       m.budget = b;
@@ -2119,6 +2124,11 @@ function finish(s, m) {
     m.scifiReception=m.endingCards?REC.evaluate(delivered,SF.sections(m.genre),fn,cn):SF.evaluate(delivered,fn,cn);
     m.fans=m.scifiReception.fans;m.critics=m.scifiReception.critics;
   }
+  if(m.composer!==undefined){
+    m.music=MUSIC.resolve(m,m.composer?roll(s,-12,12):0);
+    m.fans=clamp(m.fans+m.music.fans,5,99);m.critics=clamp(m.critics+m.music.critics,5,99);
+    if(m.cardReception){m.cardReception.fans=m.fans;m.cardReception.critics=m.critics;}
+  }
   LIFE.finish(m);
   m.criticBaseline = m.critics;
   m.reviews = criticReviews(m);
@@ -2220,6 +2230,12 @@ function opening(s, m) {
   );
 }
 export const AWARD_CATEGORIES = [
+  "Screenplay",
+  "Original Score",
+  "Cinematography",
+  "Editing",
+  "Production Design",
+  "Visual Effects",
   "Supporting Acting",
   "Lead Acting",
   "Director",
@@ -2237,7 +2253,7 @@ export function canCampaign(s, m) {
   );
 }
 export function candidate(s, m, category) {
-  const role = category === "Supporting Acting" ? (m.narrativePack ? m.contracts.filter(c=>c.role>0).sort((a,b)=>(m.performances?.[m.contracts.indexOf(b)]??0)-(m.performances?.[m.contracts.indexOf(a)]??0))[0]?.role : m.roles.length - 1) : 0;
+  const role = category === "Supporting Acting" ? ((m.narrativePack||m.movieCards) ? m.contracts.filter(c=>c.role>0).sort((a,b)=>(m.performances?.[m.contracts.indexOf(b)]??0)-(m.performances?.[m.contracts.indexOf(a)]??0))[0]?.role : m.roles.length - 1) : 0;
   const idx = m.contracts.findIndex((c) => c.role === role);
   const personId =
     category === "Director"
@@ -2246,18 +2262,33 @@ export function candidate(s, m, category) {
         ? m.contracts[idx]?.id
         : null;
   const performance=m.performances?.[idx]??m.critics;
-  const score = m.economyVersion>=3
+  const craft=m.craft??m.quality??m.critics;
+  const technical={
+    Screenplay:m.storyExecution??m.scriptQuality??m.critics,
+    'Original Score':m.music?.quality??0,
+    Cinematography:craft*.6+(m.directorPerformance??m.critics)*.4,
+    Editing:craft*.5+(m.directorPerformance??m.critics)*.3+(m.quality??m.critics)*.2,
+    'Production Design':clamp((m.budget?.sets??0)/Math.max(1,budgetCost(m,'sets',2))*60,0,95)*.7+craft*.3,
+    'Visual Effects':clamp((m.budget?.effects??0)/Math.max(1,budgetCost(m,'effects',2))*60,0,95)*.7+craft*.3,
+  };
+  const score = technical[category] ?? (m.economyVersion>=3
     ? category.includes("Acting") ? performance
       : category==="Director" ? (m.directorPerformance??m.critics)*.6+(m.quality??m.critics)*.25+m.critics*.15
       : m.critics*.5+(m.quality??m.critics)*.3+(m.scriptQuality??m.critics)*.2
-    : category.includes("Acting") ? performance*.8+m.difficulty*.2 : m.critics;
+    : category.includes("Acting") ? performance*.8+m.difficulty*.2 : m.critics);
   return {
     id: m.id,
     title: m.title,
     person: personId,
-    name: personId ? person(s, personId).name : null,
+    name: personId ? person(s, personId).name : category==="Original Score" ? m.music?.composer : null,
     score,
   };
+}
+export function awardEligible(m,category){
+  if(category==='Supporting Acting')return m.contracts.some(c=>c.role>0);
+  if(category==='Original Score')return !!m.music?.original;
+  if(category==='Visual Effects')return (m.budget?.effects??0)>0;
+  return true;
 }
 export function nominations(s, year, epilogue = false) {
   if (
@@ -2271,7 +2302,7 @@ export function nominations(s, year, epilogue = false) {
       date(m.release).year === year,
   );
   const categories = AWARD_CATEGORIES.map((category) => {
-    const candidates = eligible.map((m) => ({
+    const candidates = eligible.filter(m=>awardEligible(m,category)).map((m) => ({
       ...candidate(s, m, category),
       nominationScore:
         candidate(s, m, category).score +
